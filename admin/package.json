@@ -1,0 +1,31 @@
+{
+  "name": "admin",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@nuxtjs/tailwindcss": "^6.11.4",
+    "@pinia/nuxt": "^0.5.1",
+    "@vueup/vue-quill": "^1.0.0-alpha.40",
+    "lucide-vue-next": "^0.344.0",
+    "nuxt": "^4.3.1",
+    "pinia": "^2.1.7",
+    "quill-better-table": "^1.2.10",
+    "quill-resize-module": "^2.1.2",
+    "vue": "^3.5.28",
+    "vue-router": "^4.6.4",
+    "vue-sonner": "^2.0.9"
+  },
+  "devDependencies": {
+    "@nuxtjs/color-mode": "^4.0.0",
+    "autoprefixer": "^10.4.17",
+    "postcss": "^8.4.35",
+    "tailwindcss": "^3.4.1"
+  }
+}
