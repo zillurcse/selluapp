@@ -24,6 +24,8 @@ class RoleSeeder extends Seeder
             'brands.view', 'brands.create', 'brands.edit', 'brands.delete', 'brands.sort',
             // Units
             'units.view', 'units.create', 'units.edit', 'units.delete',
+            // Categories
+            'categories.view', 'categories.create', 'categories.edit', 'categories.delete', 'categories.sort',
             // Attributes
             'attributes.view', 'attributes.create', 'attributes.edit', 'attributes.delete', 'attributes.sort',
             // Products
@@ -58,6 +60,19 @@ class RoleSeeder extends Seeder
             'hrm.payroll.view', 'hrm.payroll.manage',
             // Roles & Permissions
             'roles.view', 'roles.manage',
+            // Staff Management
+            'staff.view', 'staff.create', 'staff.edit', 'staff.delete',
+            
+            // SUPER ADMIN / PLATFORM MANAGEMENT
+            'admin.dashboard.view',
+            'admin.users.view', 'admin.users.manage',
+            'admin.plans.view', 'admin.plans.manage',
+            'admin.vendors.view', 'admin.vendors.manage',
+            'admin.payments.view', 'admin.payments.manage',
+            'admin.subscriptions.view', 'admin.subscriptions.manage',
+            'admin.transactions.view', 'admin.transactions.manage',
+            'admin.settings.view', 'admin.settings.manage',
+            'admin.settings.general', 'admin.settings.payments', 'admin.settings.mail',
         ];
 
         foreach ($permissions as $permission) {
@@ -68,14 +83,31 @@ class RoleSeeder extends Seeder
         $roleSuperAdmin = Role::firstOrCreate(['name' => 'super-admin']);
         $roleAdmin      = Role::firstOrCreate(['name' => 'admin']);
         $roleVendor     = Role::firstOrCreate(['name' => 'vendor']);
+        $roleStaff      = Role::firstOrCreate(['name' => 'staff']);
         $roleCustomer   = Role::firstOrCreate(['name' => 'customer']);
 
         // Super-admin gets everything
         $roleSuperAdmin->syncPermissions(Permission::all());
 
-        // Vendor gets all vendor-level permissions by default
-        $roleSuperAdmin->syncPermissions(Permission::all());
-        $roleVendor->syncPermissions(Permission::all());
+        // Vendor gets all vendor-level permissions (no admin.* permissions)
+        $vendorPermissions = Permission::where('name', 'not like', 'admin.%')->pluck('name')->toArray();
+        $roleVendor->syncPermissions($vendorPermissions);
+
+        // Staff role gets a sensible default subset (can be adjusted per vendor via role management)
+        $roleStaff->syncPermissions([
+            'brands.view', 'units.view', 'categories.view', 'attributes.view',
+            'products.view', 'products.create', 'products.edit',
+            'customers.view', 'customers.create', 'customers.edit',
+            'coupons.view',
+            'orders.view', 'orders.edit',
+            'reports.view',
+            'pos.view', 'pos.manage',
+            'delivery.view',
+            'hrm.dashboard.view',
+            'hrm.employees.view',
+            'hrm.attendance.view',
+            'hrm.leaves.view',
+        ]);
 
         // Admin gets a read-heavy subset
         $roleAdmin->syncPermissions([
@@ -84,7 +116,9 @@ class RoleSeeder extends Seeder
         ]);
 
         // ─── Default Packages ────────────────────────────────────────────────────
-        $starter = Package::firstOrCreate(
+        // Features are used by CheckPackageFeature middleware to gate controller access
+        // Feature names match what's checked in the middleware (case-insensitive partial match)
+        $starter = Package::updateOrCreate(
             ['slug' => 'starter'],
             [
                 'name'           => 'Starter',
@@ -97,11 +131,16 @@ class RoleSeeder extends Seeder
                 'pos_access'     => false,
                 'hrm_access'     => false,
                 'is_active'      => true,
-                'features'       => ['Products', 'Orders', 'Customers', 'Basic Reports'],
+                'features'       => [
+                    'Products',
+                    'Orders',
+                    'Customers',
+                    'Basic Reports',
+                ],
             ]
         );
 
-        $professional = Package::firstOrCreate(
+        $professional = Package::updateOrCreate(
             ['slug' => 'professional'],
             [
                 'name'           => 'Professional',
@@ -114,11 +153,20 @@ class RoleSeeder extends Seeder
                 'pos_access'     => true,
                 'hrm_access'     => false,
                 'is_active'      => true,
-                'features'       => ['Unlimited Products', 'POS System', 'Promotions', 'Fraud Check', 'Advanced Reports'],
+                'features'       => [
+                    'Products',
+                    'Orders',
+                    'Customers',
+                    'Promotions',
+                    'Fraud Check',
+                    'Advanced Reports',
+                    'POS System',
+                    'Delivery',
+                ],
             ]
         );
 
-        $enterprise = Package::firstOrCreate(
+        $enterprise = Package::updateOrCreate(
             ['slug' => 'enterprise'],
             [
                 'name'           => 'Enterprise',
@@ -131,7 +179,19 @@ class RoleSeeder extends Seeder
                 'pos_access'     => true,
                 'hrm_access'     => true,
                 'is_active'      => true,
-                'features'       => ['Everything in Professional', 'HRM Suite', 'Unlimited Employees', 'Priority Support', 'Landing Pages'],
+                'features'       => [
+                    'Products',
+                    'Orders',
+                    'Customers',
+                    'Promotions',
+                    'Fraud Check',
+                    'Advanced Reports',
+                    'POS System',
+                    'Delivery',
+                    'HRM Suite',
+                    'Landing Pages',
+                    'Priority Support',
+                ],
             ]
         );
 
@@ -165,7 +225,7 @@ class RoleSeeder extends Seeder
         );
         $vendor->syncRoles($roleVendor);
 
-        VendorProfile::firstOrCreate(
+        VendorProfile::updateOrCreate(
             ['user_id' => $vendor->id],
             [
                 'store_name'           => 'Demo Store',
@@ -189,7 +249,7 @@ class RoleSeeder extends Seeder
         );
         $vendor2->syncRoles($roleVendor);
 
-        VendorProfile::firstOrCreate(
+        VendorProfile::updateOrCreate(
             ['user_id' => $vendor2->id],
             [
                 'store_name'           => 'Pro Shop',
@@ -213,7 +273,7 @@ class RoleSeeder extends Seeder
         );
         $vendor3->syncRoles($roleVendor);
 
-        VendorProfile::firstOrCreate(
+        VendorProfile::updateOrCreate(
             ['user_id' => $vendor3->id],
             [
                 'store_name'           => 'Enterprise Hub',
@@ -227,6 +287,17 @@ class RoleSeeder extends Seeder
             ]
         );
 
+        // ─── Demo Staff User (belongs to Enterprise Vendor) ─────────────────────
+        $staffUser = User::firstOrCreate(
+            ['email' => 'staff@example.com'],
+            [
+                'name'      => 'Demo Staff',
+                'password'  => Hash::make('password'),
+                'vendor_id' => $vendor3->id,
+            ]
+        );
+        $staffUser->syncRoles($roleStaff);
+
         $this->command->info('✅ Roles, permissions, packages, and users seeded successfully.');
         $this->command->table(
             ['Role', 'Email', 'Password', 'Package'],
@@ -236,6 +307,7 @@ class RoleSeeder extends Seeder
                 ['vendor',      'vendor@example.com',     'password', 'Starter (Free)'],
                 ['vendor',      'vendor2@example.com',    'password', 'Professional'],
                 ['vendor',      'vendor3@example.com',    'password', 'Enterprise'],
+                ['staff',       'staff@example.com',      'password', 'Enterprise (via owner)'],
             ]
         );
     }

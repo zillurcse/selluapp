@@ -18,6 +18,7 @@ class PayrollController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
+            new Middleware('package.feature:hrm'),
             new Middleware('permission:hrm.payroll.view', only: ['index', 'summary']),
             new Middleware('permission:hrm.payroll.manage', only: ['generate', 'update', 'markPaid']),
         ];

@@ -19,6 +19,7 @@
     "quill-better-table": "^1.2.10",
     "quill-resize-module": "^2.1.2",
     "vue": "^3.5.28",
+    "vue-advanced-cropper": "^2.8.8",
     "vue-router": "^4.6.4",
     "vue-sonner": "^2.0.9"
   },

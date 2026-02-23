@@ -114,7 +114,9 @@ utilityStore.pageBackLink = '/vendor/landing-page/all'
 
 
 definePageMeta({
-  layout: 'default'
+  layout: 'default',
+  middleware: 'auth',
+  permissions: 'landing_pages.edit'
 })
 
 const settings = ref({

@@ -14,6 +14,7 @@ class VendorUnitController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
+            new Middleware('package.feature:products'),
             new Middleware('permission:units.view', only: ['index', 'show']),
             new Middleware('permission:units.create', only: ['store']),
             new Middleware('permission:units.edit', only: ['update']),

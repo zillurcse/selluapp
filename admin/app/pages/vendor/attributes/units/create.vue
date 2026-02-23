@@ -88,7 +88,8 @@ import {
 } from 'lucide-vue-next'
 
 definePageMeta({
-  middleware: 'auth'
+  middleware: 'auth',
+  permissions: 'units.create'
 })
 
 const auth = useAuthStore()

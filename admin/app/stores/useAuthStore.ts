@@ -65,10 +65,17 @@ export const useAuthStore = defineStore("auth", () => {
         }
       });
       if (data) {
-        user.value = data;
-        user_cookie.value = data;
+        const userData = data.data || data;
+        user.value = userData;
+        // Strip large data (permissions, profiles) from cookie to avoid exceeding 4KB browser limit
+        user_cookie.value = {
+          id: userData.id,
+          name: userData.name,
+          email: userData.email,
+          roles: userData.roles?.map((r: any) => ({ name: r.name }))
+        };
         isAuthenticated.value = true;
-        return data;
+        return userData;
       }
     } catch (error: any) {
       console.error("Fetch user error:", error);
@@ -95,7 +102,12 @@ export const useAuthStore = defineStore("auth", () => {
         tokenStore.setToken(token);
         isAuthenticated.value = true;
         user.value = res.user;
-        user_cookie.value = res.user;
+        user_cookie.value = {
+          id: res.user.id,
+          name: res.user.name,
+          email: res.user.email,
+          roles: res.user.roles?.map((r: any) => ({ name: r.name }))
+        };
         return true;
       }
       return false;

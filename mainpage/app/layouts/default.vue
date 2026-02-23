@@ -1,6 +1,7 @@
 <template>
   <div class="site-wrapper">
     <TheNavbar />
+    <CartDrawer />
     <main class="main-content">
       <slot />
     </main>
@@ -17,5 +18,6 @@
 
 .main-content {
   flex: 1;
+  padding-top: 80px; /* Offset for fixed navbar */
 }
 </style>

@@ -110,7 +110,9 @@ import {
 import { toast } from 'vue-sonner'
 
 definePageMeta({
-  layout: 'default'
+  layout: 'default',
+  middleware: 'auth',
+  permissions: 'landing_pages.view'
 })
 
 const { getAll, deleteItem } = useCrud()

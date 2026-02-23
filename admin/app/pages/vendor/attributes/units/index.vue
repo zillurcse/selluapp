@@ -100,7 +100,8 @@ import {
 } from 'lucide-vue-next'
 
 definePageMeta({
-  middleware: 'auth'
+  middleware: 'auth',
+  permissions: 'units.view'
 })
 
 const config = useRuntimeConfig()

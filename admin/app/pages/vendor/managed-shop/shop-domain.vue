@@ -209,6 +209,10 @@
 </template>
 
 <script setup>
+definePageMeta({
+  middleware: 'auth',
+  permissions: 'settings.view'
+})
 import { 
   ChevronLeft, 
   Layers, 

@@ -197,7 +197,8 @@ import AppProductFilter from '~/components/AppProductFilter.vue'
 import AppConfirmationModal from '~/components/AppConfirmationModal.vue'
 
 definePageMeta({
-  middleware: 'auth'
+  middleware: 'auth',
+  permissions: 'products.view'
 })
 const route = useRoute()
 const { deleteItem, getAll } = useCrud()

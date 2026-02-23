@@ -143,6 +143,11 @@
 <script setup>
 import { Plus, X, CalendarCheck2 } from 'lucide-vue-next'
 
+definePageMeta({
+  middleware: 'auth',
+  permissions: 'hrm.attendance.view'
+})
+
 const { fetchAttendance, fetchAttendanceSummary, saveAttendance, fetchEmployees } = useHrm()
 
 const today = new Date().toISOString().split('T')[0]

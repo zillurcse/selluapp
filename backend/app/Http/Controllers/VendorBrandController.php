@@ -15,6 +15,7 @@ class VendorBrandController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
+            new Middleware('package.feature:products'),
             new Middleware('permission:brands.view', only: ['index', 'show']),
             new Middleware('permission:brands.create', only: ['store']),
             new Middleware('permission:brands.edit', only: ['update']),

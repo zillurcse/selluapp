@@ -142,6 +142,11 @@ import {
   ShieldAlert
 } from 'lucide-vue-next'
 
+definePageMeta({
+  middleware: 'auth',
+  permissions: 'staff.create'
+})
+
 const { getAll, createItem } = useCrud()
 const router = useRouter()
 const { $toast } = useNuxtApp()
@@ -174,8 +179,8 @@ const fetchRoles = async () => {
 const handleSubmit = async () => {
   submitting.value = true
   try {
-    await createItem(form.value, '/vendor/staff')
-    $toast.success('Staff member registered successfully')
+    await createItem('/vendor/staff',form.value)
+    
     router.push('/vendor/staff')
   } catch (error) {
     console.error('Error creating staff:', error)

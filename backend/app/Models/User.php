@@ -53,4 +53,14 @@ class User extends Authenticatable
     {
         return $this->hasOne(VendorProfile::class);
     }
+
+    public function owner()
+    {
+        return $this->belongsTo(User::class, 'vendor_id');
+    }
+
+    public function getShopProfileAttribute()
+    {
+        return $this->vendor_id ? $this->owner?->vendorProfile : $this->vendorProfile;
+    }
 }

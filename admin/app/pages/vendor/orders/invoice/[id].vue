@@ -144,7 +144,8 @@ const orderType = ref('')
 
 definePageMeta({
   layout: 'empty', // use empty layout for printable pages ideally
-  middleware: 'auth'
+  middleware: 'auth',
+  permissions: 'orders.view'
 })
 
 onMounted(async () => {

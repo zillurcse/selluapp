@@ -294,6 +294,11 @@ import {
 } from 'lucide-vue-next'
 import { reactive, ref, onMounted } from 'vue'
 
+definePageMeta({
+  middleware: 'auth',
+  permissions: 'settings.view'
+})
+
 const { $toast } = useNuxtApp()
 const { getAll, createItem } = useCrud()
 

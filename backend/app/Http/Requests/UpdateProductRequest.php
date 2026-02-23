@@ -53,6 +53,7 @@ class UpdateProductRequest extends FormRequest
             'seo_description' => 'nullable|string',
             'seo_keywords' => 'nullable|string',
             'faqs' => 'nullable|string', // JSON string from frontend
+            'specifications' => 'nullable|string', // JSON string from frontend
             'is_active' => 'boolean',
             'image' => 'nullable|file|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'thumbnail' => 'nullable|file|mimes:jpeg,png,jpg,gif,webp|max:2048',

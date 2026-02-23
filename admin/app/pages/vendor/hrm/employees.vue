@@ -230,6 +230,11 @@
 <script setup>
 import { Plus, Search, Pencil, Trash2, X, Download, Users } from 'lucide-vue-next'
 
+definePageMeta({
+  middleware: 'auth',
+  permissions: 'hrm.employees.view'
+})
+
 const { fetchEmployees, fetchDepartments, fetchDesignations, createEmployee, updateEmployee, deleteEmployee: apiDeleteEmployee } = useHrm()
 
 const employees = ref([])
@@ -348,6 +353,7 @@ onMounted(async () => {
     fetchDesignations().then(d => designations.value = d),
   ])
 })
+
 </script>
 
 <style scoped>

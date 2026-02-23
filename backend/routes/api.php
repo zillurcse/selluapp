@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\API\StorefrontController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
@@ -8,14 +9,36 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
 
+// Public Storefront Routes
+Route::get('/storefront', [StorefrontController::class, 'index']);
+Route::get('/storefront/products', [StorefrontController::class, 'products']);
+Route::get('/storefront/products/{product}', [StorefrontController::class, 'show']);
+Route::get('/storefront/vendors/{slug}', [StorefrontController::class, 'vendor']);
+Route::get('/storefront/categories', function() {
+    return \App\Models\Category::where('is_active', true)->whereNull('parent_id')->get();
+});
+
 Route::middleware('auth:sanctum')->group(function () {
+
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
+
+    // Cart Routes
+    Route::get('/cart', [\App\Http\Controllers\CartController::class, 'index']);
+    Route::post('/cart', [\App\Http\Controllers\CartController::class, 'store']);
+    Route::put('/cart/{product}', [\App\Http\Controllers\CartController::class, 'update']);
+    Route::delete('/cart/{product}', [\App\Http\Controllers\CartController::class, 'destroy']);
+
+    // Checkout Routes
+    Route::post('/storefront/checkout', [\App\Http\Controllers\API\CheckoutController::class, 'placeOrder']);
+
 
     // Admin Routes
     Route::prefix('admin')->group(function () {
         Route::get('/users', [App\Http\Controllers\AdminUserController::class, 'index']);
+        Route::post('/users', [App\Http\Controllers\AdminUserController::class, 'store']);
         Route::get('/users/{user}', [App\Http\Controllers\AdminUserController::class, 'show']);
+        Route::put('/users/{user}', [App\Http\Controllers\AdminUserController::class, 'update']);
         Route::post('/users/{user}/role', [App\Http\Controllers\AdminUserController::class, 'updateRole']);
         Route::delete('/users/{user}', [App\Http\Controllers\AdminUserController::class, 'destroy']);
 
@@ -42,6 +65,30 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('vendors/{user}', [App\Http\Controllers\SuperAdmin\VendorManagementController::class, 'update']);
         Route::delete('vendors/{user}', [App\Http\Controllers\SuperAdmin\VendorManagementController::class, 'destroy']);
         Route::post('vendors/{user}/assign-package', [App\Http\Controllers\SuperAdmin\VendorManagementController::class, 'assignPackage']);
+        Route::post('vendors/{user}/login-as', [App\Http\Controllers\SuperAdmin\VendorManagementController::class, 'loginAsVendor']);
+
+        // Finance — Payments
+        Route::get('finance/payments/stats', [App\Http\Controllers\SuperAdmin\FinanceController::class, 'paymentsStats']);
+        Route::get('finance/payments', [App\Http\Controllers\SuperAdmin\FinanceController::class, 'paymentsIndex']);
+        Route::post('finance/payments', [App\Http\Controllers\SuperAdmin\FinanceController::class, 'paymentsStore']);
+        Route::put('finance/payments/{payment}', [App\Http\Controllers\SuperAdmin\FinanceController::class, 'paymentsUpdate']);
+        Route::delete('finance/payments/{payment}', [App\Http\Controllers\SuperAdmin\FinanceController::class, 'paymentsDestroy']);
+
+        // Finance — Subscriptions
+        Route::get('finance/subscriptions/stats', [App\Http\Controllers\SuperAdmin\FinanceController::class, 'subscriptionsStats']);
+        Route::get('finance/subscriptions', [App\Http\Controllers\SuperAdmin\FinanceController::class, 'subscriptionsIndex']);
+        Route::post('finance/subscriptions', [App\Http\Controllers\SuperAdmin\FinanceController::class, 'subscriptionsStore']);
+        Route::put('finance/subscriptions/{subscription}', [App\Http\Controllers\SuperAdmin\FinanceController::class, 'subscriptionsUpdate']);
+        Route::delete('finance/subscriptions/{subscription}', [App\Http\Controllers\SuperAdmin\FinanceController::class, 'subscriptionsDestroy']);
+
+        // Finance — Transactions
+        Route::get('finance/transactions/stats', [App\Http\Controllers\SuperAdmin\FinanceController::class, 'transactionsStats']);
+        Route::get('finance/transactions', [App\Http\Controllers\SuperAdmin\FinanceController::class, 'transactionsIndex']);
+
+        // Global Settings
+        Route::get('settings', [App\Http\Controllers\SuperAdmin\GlobalSettingController::class, 'index']);
+        Route::post('settings', [App\Http\Controllers\SuperAdmin\GlobalSettingController::class, 'update']);
+        Route::post('settings/upload', [App\Http\Controllers\SuperAdmin\GlobalSettingController::class, 'uploadFile']);
     });
 
 
@@ -157,5 +204,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Staff Management
         Route::apiResource('staff', App\Http\Controllers\Vendor\VendorStaffController::class);
+
+        // Packages
+        Route::get('packages', [App\Http\Controllers\Vendor\PackageController::class, 'index']);
+        Route::post('packages/{package}/purchase', [App\Http\Controllers\Vendor\PackageController::class, 'purchase']);
     });
 });

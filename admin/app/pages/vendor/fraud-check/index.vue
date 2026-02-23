@@ -356,7 +356,8 @@ import {
 } from 'lucide-vue-next'
 
 definePageMeta({
-  middleware: 'auth'
+  middleware: 'auth',
+  permissions: 'fraud_check.view'
 })
 
 const { getAll, createItem } = useCrud()

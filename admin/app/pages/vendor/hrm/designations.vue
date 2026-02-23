@@ -120,6 +120,11 @@
 <script setup>
 import { UserSquare2, Users, Plus, Pencil, Trash2, X } from 'lucide-vue-next'
 
+definePageMeta({
+  middleware: 'auth',
+  permissions: 'hrm.designations.view'
+})
+
 const { fetchDesignations, fetchDepartments, createDesignation, updateDesignation, deleteDesignation } = useHrm()
 
 const designations = ref([])

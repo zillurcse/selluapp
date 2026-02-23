@@ -148,6 +148,11 @@ import {
   Search 
 } from 'lucide-vue-next'
 
+definePageMeta({
+  middleware: 'auth',
+  permissions: 'staff.view'
+})
+
 const { getAll, deleteItem } = useCrud()
 const { $toast } = useNuxtApp()
 

@@ -153,6 +153,10 @@ const actionCards = [
     to: '/vendor/managed-website/reviews'
   }
 ]
+definePageMeta({
+  middleware: 'auth',
+  permissions: 'settings.view'
+})
 </script>
 
 <style scoped>

@@ -15,6 +15,8 @@ class ProductController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
+            new Middleware('package.feature:products'),
+            new Middleware('package.limit:products', only: ['store']),
             new Middleware('permission:products.view', only: ['index', 'show', 'slugByStatusProducts']),
             new Middleware('permission:products.create', only: ['store']),
             new Middleware('permission:products.edit', only: ['update']),
@@ -83,6 +85,9 @@ class ProductController extends Controller implements HasMiddleware
         if (isset($validated['faqs'])) {
             $validated['faqs'] = json_decode($validated['faqs'], true);
         }
+        if (isset($validated['specifications'])) {
+            $validated['specifications'] = json_decode($validated['specifications'], true);
+        }
 
         $validated['vendor_id'] = auth()->id();
         $validated['slug'] = Str::slug($validated['name']) . '-' . Str::random(6);
@@ -100,8 +105,20 @@ class ProductController extends Controller implements HasMiddleware
             $validated['video'] = $request->file('video')->store('products/videos', 'public');
         }
 
-        // Handle Gallery Uploads
-        if ($request->hasFile('gallery')) {
+        // Handle Gallery Uploads with ordering support
+        if ($request->has('gallery_items')) {
+            $galleryItems = json_decode($request->gallery_items, true);
+            $newGalleryFiles = $request->file('gallery', []);
+            $galleryPaths = [];
+
+            foreach ($galleryItems as $item) {
+                if ($item['source'] === 'upload' && isset($newGalleryFiles[$item['index']])) {
+                    $file = $newGalleryFiles[$item['index']];
+                    $galleryPaths[] = $file->store('products/gallery', 'public');
+                }
+            }
+            $validated['gallery'] = $galleryPaths;
+        } elseif ($request->hasFile('gallery')) {
             $galleryPaths = [];
             foreach ($request->file('gallery') as $file) {
                 $galleryPaths[] = $file->store('products/gallery', 'public');
@@ -121,12 +138,18 @@ class ProductController extends Controller implements HasMiddleware
 
     public function show(Product $product)
     {
-        $product->image = Storage::disk('public')->url($product->image);
-        $product->thumbnail = Storage::disk('public')->url($product->thumbnail);
-        $product->video = Storage::disk('public')->url($product->video);
-        $product->gallery = array_map(function ($path) {
-            return Storage::disk('public')->url($path);
-        }, $product->gallery);
+        $product->image = $product->image ? Storage::disk('public')->url($product->image) : null;
+        $product->thumbnail = $product->thumbnail ? Storage::disk('public')->url($product->thumbnail) : null;
+        $product->video = $product->video ? Storage::disk('public')->url($product->video) : null;
+        
+        if ($product->gallery) {
+            $product->gallery = array_map(function ($path) {
+                return Storage::disk('public')->url($path);
+            }, $product->gallery);
+        } else {
+            $product->gallery = [];
+        }
+
         return $product->load(['categories', 'brand', 'unit']);
     }
 
@@ -142,6 +165,12 @@ class ProductController extends Controller implements HasMiddleware
         // Handle JSON fields
         if (isset($validated['faqs'])) {
             $validated['faqs'] = json_decode($validated['faqs'], true);
+        }
+        if (isset($validated['key_features'])) {
+            $validated['key_features'] = json_decode($validated['key_features'], true);
+        }
+        if (isset($validated['specifications'])) {
+            $validated['specifications'] = json_decode($validated['specifications'], true);
         }
 
         if (isset($validated['name'])) {
@@ -164,10 +193,40 @@ class ProductController extends Controller implements HasMiddleware
             $validated['video'] = $request->file('video')->store('products/videos', 'public');
         }
 
-        // Handle Gallery Uploads
-        if ($request->hasFile('gallery')) {
-            // Delete old gallery images if needed (depends on UI logic - replacing or adding)
-            // For now, let's assume replacement if 'gallery' is sent
+        // Handle Gallery Uploads with ordering support
+        if ($request->has('gallery_items')) {
+            $galleryItems = json_decode($request->gallery_items, true);
+            $newGalleryFiles = $request->file('gallery', []);
+            $finalGallery = [];
+            $oldGallery = $product->gallery ?? [];
+            $currentlyUsedPaths = [];
+
+            foreach ($galleryItems as $item) {
+                if ($item['source'] === 'existing') {
+                    // Extract path from URL if it's a full URL
+                    $path = $item['value'];
+                    if (str_contains($path, '/storage/')) {
+                        $path = Str::after($path, '/storage/');
+                    }
+                    $finalGallery[] = $path;
+                    $currentlyUsedPaths[] = $path;
+                } elseif ($item['source'] === 'upload' && isset($newGalleryFiles[$item['index']])) {
+                    $file = $newGalleryFiles[$item['index']];
+                    $path = $file->store('products/gallery', 'public');
+                    $finalGallery[] = $path;
+                }
+            }
+
+            // Cleanup: Delete old files that are no longer in the gallery
+            foreach ($oldGallery as $oldPath) {
+                if (!in_array($oldPath, $currentlyUsedPaths)) {
+                    Storage::disk('public')->delete($oldPath);
+                }
+            }
+
+            $validated['gallery'] = $finalGallery;
+        } elseif ($request->hasFile('gallery')) {
+            // Fallback for simple uploads without ordering
             if ($product->gallery) {
                 foreach ($product->gallery as $path) {
                     Storage::disk('public')->delete($path);

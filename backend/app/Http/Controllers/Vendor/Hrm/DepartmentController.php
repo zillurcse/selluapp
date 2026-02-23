@@ -17,6 +17,7 @@ class DepartmentController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
+            new Middleware('package.feature:hrm'),
             new Middleware('permission:hrm.departments.view', only: ['index', 'show']),
             new Middleware('permission:hrm.departments.create', only: ['store']),
             new Middleware('permission:hrm.departments.edit', only: ['update']),

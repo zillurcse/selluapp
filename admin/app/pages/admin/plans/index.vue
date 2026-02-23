@@ -7,15 +7,15 @@
           <Shield class="w-3.5 h-3.5" />
           <NuxtLink to="/admin" class="hover:text-indigo-500 transition-colors">Super Admin</NuxtLink>
           <ChevronRight class="w-3 h-3" />
-          <span class="text-slate-600 dark:text-slate-300">Packages</span>
+          <span class="text-slate-600 dark:text-slate-300">Plans</span>
         </div>
-        <h1 class="text-3xl font-[1000] text-slate-900 dark:text-white tracking-tight">Subscription Packages</h1>
+        <h1 class="text-3xl font-[1000] text-slate-900 dark:text-white tracking-tight">Subscription Plans</h1>
         <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Create and manage plans you offer to vendors.</p>
       </div>
       <button @click="openCreateModal"
         class="flex items-center gap-2 px-5 py-2.5 bg-slate-900 dark:bg-indigo-600 text-white rounded-xl text-sm font-bold hover:scale-105 transition-all shadow-lg shadow-slate-900/20 dark:shadow-indigo-600/30">
         <Plus class="w-4 h-4" />
-        New Package
+        New Plan
       </button>
     </div>
 
@@ -287,7 +287,11 @@ import {
 } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 
-definePageMeta({ middleware: 'auth', layout: 'default' })
+definePageMeta({
+  middleware: 'auth',
+  layout: 'default',
+  permissions: 'admin.plans.view'
+})
 
 const { getAll, getHeaders } = useCrud()
 const config = useRuntimeConfig()

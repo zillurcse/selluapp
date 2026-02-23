@@ -16,6 +16,7 @@ class VendorAttributeController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
+            new Middleware('package.feature:products'),
             new Middleware('permission:attributes.view', only: ['index', 'show']),
             new Middleware('permission:attributes.create', only: ['store']),
             new Middleware('permission:attributes.edit', only: ['update']),

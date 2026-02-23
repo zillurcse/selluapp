@@ -13,6 +13,7 @@ class CouponController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
+            new Middleware('package.feature:products'),
             new Middleware('permission:coupons.view', only: ['index', 'show']),
             new Middleware('permission:coupons.create', only: ['store']),
             new Middleware('permission:coupons.edit', only: ['update']),

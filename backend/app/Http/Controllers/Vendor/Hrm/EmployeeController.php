@@ -18,6 +18,8 @@ class EmployeeController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
+            new Middleware('package.feature:hrm'),
+            new Middleware('package.limit:employees', only: ['store']),
             new Middleware('permission:hrm.employees.view', only: ['index', 'show']),
             new Middleware('permission:hrm.employees.create', only: ['store']),
             new Middleware('permission:hrm.employees.edit', only: ['update']),

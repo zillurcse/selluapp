@@ -17,6 +17,7 @@ class LeaveController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
+            new Middleware('package.feature:hrm'),
             new Middleware('permission:hrm.leaves.view', only: ['index']),
             new Middleware('permission:hrm.leaves.manage', only: ['store', 'action', 'destroy']),
         ];

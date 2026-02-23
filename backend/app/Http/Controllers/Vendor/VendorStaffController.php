@@ -16,10 +16,11 @@ class VendorStaffController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:hrm.employees.view', only: ['index', 'show']),
-            new Middleware('permission:hrm.employees.create', only: ['store']),
-            new Middleware('permission:hrm.employees.edit', only: ['update']),
-            new Middleware('permission:hrm.employees.delete', only: ['destroy']),
+            new Middleware('package.limit:employees', only: ['store']),
+            new Middleware('permission:staff.view', only: ['index', 'show']),
+            new Middleware('permission:staff.create', only: ['store']),
+            new Middleware('permission:staff.edit', only: ['update']),
+            new Middleware('permission:staff.delete', only: ['destroy']),
         ];
     }
 

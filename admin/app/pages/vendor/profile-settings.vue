@@ -221,7 +221,8 @@ import {
 import { toast } from 'vue-sonner'
 
 definePageMeta({
-  middleware: 'auth'
+  middleware: 'auth',
+  permissions: 'settings.view'
 })
 
 const config = useRuntimeConfig()

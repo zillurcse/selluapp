@@ -7,8 +7,8 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return navigateTo('/login')
   }
 
-  // ── 2. Token exists but user not yet hydrated (e.g. after hard reload) ─────
-  if (!authStore.user) {
+  // ── 2. Token exists but user not yet hydrated or is partial (e.g. after hard reload) ─────
+  if (!authStore.user || !authStore.user.permissions) {
     try {
       await authStore.fetchUser()
     } catch (e) {

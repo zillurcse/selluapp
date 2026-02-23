@@ -17,6 +17,7 @@ class DesignationController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
+            new Middleware('package.feature:hrm'),
             new Middleware('permission:hrm.designations.view', only: ['index', 'show']),
             new Middleware('permission:hrm.designations.create', only: ['store']),
             new Middleware('permission:hrm.designations.edit', only: ['update']),

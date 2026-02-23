@@ -4,8 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+use App\Traits\BelongsToVendor;
+
 class FraudCheck extends Model
 {
+    use BelongsToVendor;
+
+    protected $vendorIdColumn = 'user_id';
     protected $fillable = [
         'user_id',
         'order_id',

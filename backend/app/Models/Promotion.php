@@ -4,8 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+use App\Traits\BelongsToVendor;
+
 class Promotion extends Model
 {
+    use BelongsToVendor;
     protected $fillable = [
         'vendor_id',
         'title',

@@ -86,6 +86,7 @@ import {
 } from 'lucide-vue-next'
 
 definePageMeta({
-  layout: 'default'
+  middleware: 'auth',
+  permissions: 'landing_pages.view'
 })
 </script>

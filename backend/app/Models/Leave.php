@@ -5,9 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+use App\Traits\BelongsToVendor;
+
 class Leave extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToVendor;
 
     protected $table = 'hrm_leaves';
 

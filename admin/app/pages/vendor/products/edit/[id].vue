@@ -369,12 +369,26 @@
                               <span class="text-xs text-slate-500 dark:text-slate-400">You can select up to 10 images</span>
                            </div>
                         </div>
-                        <div v-if="galleryPreviews.length > 0" class="mt-6 flex flex-wrap gap-4">
-                           <div v-for="(img, idx) in galleryPreviews" :key="idx" class="w-20 h-20 border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden relative group shadow-sm ring-1 ring-black/5 dark:ring-white/5">
-                              <img :src="img" class="w-full h-full object-cover" />
-                              <button @click="removeGalleryImage(idx)" type="button" class="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-red-600 shadow-sm z-20">
+                        <div v-if="galleryItems.length > 0" class="mt-6 flex flex-wrap gap-4">
+                           <div 
+                             v-for="(item, idx) in galleryItems" 
+                             :key="item.id"
+                             draggable="true"
+                             @dragstart="onDragStart(idx)"
+                             @dragover.prevent="onDragOver($event, idx)"
+                             @drop="onDrop(idx)"
+                             class="w-24 h-24 border-2 border-transparent hover:border-primary-500 dark:hover:border-primary-400 rounded-xl overflow-hidden relative group shadow-sm ring-1 ring-black/5 dark:ring-white/5 cursor-move transition-all active:scale-95 bg-white dark:bg-slate-800"
+                           >
+                              <img :src="item.preview" class="w-full h-full object-cover pointer-events-none" />
+                              <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                                 <GripVertical class="w-6 h-6 text-white" />
+                              </div>
+                              <button @click.stop="removeGalleryImage(idx)" type="button" class="absolute -top-1 -right-1 bg-red-500 text-white p-1 rounded-full opacity-100 sm:opacity-0 group-hover:opacity-100 transition-all hover:bg-red-600 shadow-sm z-20">
                                  <X class="w-3.5 h-3.5" />
                               </button>
+                              <div class="absolute bottom-1 left-1 bg-black/50 text-[8px] text-white px-1.5 py-0.5 rounded font-bold uppercase transition-opacity opacity-0 group-hover:opacity-100">
+                                 #{{ idx + 1 }}
+                              </div>
                            </div>
                         </div>
                      </div>
@@ -456,6 +470,61 @@
                      <Plus class="w-4 h-4 mr-2" /> Add New FAQ
                   </button>
                </div>
+           </div>
+
+           <!-- Specifications -->
+           <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm ring-1 ring-gray-200/50 dark:ring-slate-800 overflow-hidden transition-colors border border-gray-100 dark:border-slate-800">
+               <button type="button" @click="toggleAccordion('specifications')" class="w-full px-8 py-5 flex items-center justify-between hover:bg-gray-50/50 dark:hover:bg-slate-800/50 bg-white dark:bg-slate-900 transition-colors">
+                  <div class="flex items-center font-medium text-gray-900 dark:text-white group">
+                     <span class="mr-3 p-1 rounded-md bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/30 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                        <ListChecks class="w-4 h-4" />
+                     </span>
+                     Specifications & Key Features
+                  </div>
+                  <ChevronDown class="w-5 h-5 text-gray-400 dark:text-slate-500 transition-transform duration-300" :class="{'rotate-180': sections.specifications}" />
+               </button>
+                <div v-show="sections.specifications" class="p-8 border-t border-gray-100 dark:border-slate-800 space-y-8">
+                   <!-- Grouped Dynamic Specifications -->
+                   <div v-for="(group, groupIndex) in localSpecificationGroups" :key="groupIndex" class="p-6 bg-gray-50/50 dark:bg-slate-800/30 rounded-2xl border border-gray-100 dark:border-slate-800/50 relative group/section">
+                      <div class="flex items-center justify-between mb-6">
+                         <div class="flex-grow max-w-md">
+                            <label class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Section Title</label>
+                            <input v-model="group.title" type="text" placeholder="e.g. Key Features, Power Source, Dimensions" class="w-full px-4 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none text-sm font-bold text-gray-900 dark:text-white transition-all shadow-sm" />
+                         </div>
+                         <button @click="removeSpecGroup(groupIndex)" type="button" class="mt-4 p-2 text-red-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all opacity-0 group-hover/section:opacity-100">
+                            <Trash2 class="w-4 h-4" />
+                         </button>
+                      </div>
+
+                      <div class="space-y-3">
+                         <div v-for="(item, itemIndex) in group.items" :key="itemIndex" class="grid grid-cols-12 gap-3 items-start group/item">
+                            <div class="col-span-12 sm:col-span-5">
+                               <input v-model="item.label" type="text" placeholder="Label (e.g. Battery)" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-white text-sm transition-all" />
+                            </div>
+                            <div class="col-span-12 sm:col-span-6">
+                               <input v-model="item.value" type="text" placeholder="Value (e.g. 5000mAh)" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-white text-sm transition-all shadow-sm" />
+                            </div>
+                            <div class="col-span-12 sm:col-span-1 flex justify-end">
+                               <button @click="removeSpecItem(groupIndex, itemIndex)" type="button" class="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors">
+                                  <X class="w-4 h-4" />
+                               </button>
+                            </div>
+                         </div>
+                      </div>
+
+                      <button @click="addSpecItem(groupIndex)" type="button" class="mt-4 px-3 py-1.5 text-xs font-bold text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-all flex items-center">
+                         <Plus class="w-3.5 h-3.5 mr-1" /> Add Item
+                      </button>
+                   </div>
+
+                   <button @click="addSpecGroup" type="button" class="w-full py-4 bg-white dark:bg-slate-900 border-2 border-dashed border-gray-200 dark:border-slate-800 text-gray-500 dark:text-slate-400 font-bold rounded-2xl hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400 transition-all flex items-center justify-center gap-2 group">
+                      <div class="p-1 px-2.5 bg-gray-50 dark:bg-slate-800 rounded-lg group-hover:bg-primary-50 dark:group-hover:bg-primary-900/30 transition-colors">
+                        <Plus class="w-4 h-4" />
+                      </div>
+                      Add New Specification Section
+                   </button>
+                </div>
+
            </div>
 
            <!-- Dropshipping -->
@@ -577,13 +646,16 @@ import {
   RefreshCw,
   Image,
   Pencil,
-  ExternalLink
+  ExternalLink,
+  ListChecks,
+  GripVertical
 } from 'lucide-vue-next'
 import AppRichEditor from '~/components/AppRichEditor.vue'
 import AppSearchSelect from '~/components/AppSearchSelect.vue'
 
 definePageMeta({
   middleware: 'auth',
+  permissions: 'products.edit',
   validate: async (route) => {
     // Check if id is numeric OR one of the allowed statuses
     return /^\d+$/.test(route.params.id) || ['published', 'draft', 'pending'].includes(route.params.id)
@@ -685,6 +757,7 @@ const sections = reactive({
   images: true,
   seo: false,
   faq: false,
+  specifications: false,
   dropshipping: false
 })
 
@@ -725,17 +798,19 @@ const form = ref({
   seo_description: '',
   seo_keywords: '',
   faqs: [],
+  key_features: [],
+  specifications: [],
   is_active: false
 })
 
 // File state
 const thumbnailFile = ref(null)
-const galleryFiles = ref([])
 
 // Local state for image previews and FAQ UI
 const thumbnailPreview = ref(null)
-const galleryPreviews = ref([])
+const galleryItems = ref([]) // array of { id, source, value/file, preview }
 const localFaqs = ref([])
+const localSpecificationGroups = ref([])
 const isLoading = ref(true)
 
 // Lookups for Edit Form
@@ -799,14 +874,72 @@ const fetchData = async () => {
               localFaqs.value = productRes.faqs
            }
            
-           if (!localFaqs.value.length) {
-              localFaqs.value = [{ question: '', answer: '' }]
-           }
+            if (!localFaqs.value.length) {
+               localFaqs.value = [{ question: '', answer: '' }]
+            }
+
+            // Key Features Logic (Migrate to groups if exists)
+            let migratedFeatures = []
+            if (typeof productRes.key_features === 'string' && productRes.key_features !== 'null' && productRes.key_features !== '') {
+               try {
+                  const parsed = JSON.parse(productRes.key_features)
+                  migratedFeatures = Array.isArray(parsed) ? parsed.map(item => {
+                     return typeof item === 'string' ? { label: '', value: item } : item
+                  }) : []
+               } catch (e) {}
+            } else if (Array.isArray(productRes.key_features)) {
+               migratedFeatures = productRes.key_features.map(item => {
+                  return typeof item === 'string' ? { label: '', value: item } : item
+               })
+            }
+
+            // Specifications Logic (Grouped Structure)
+            let specGroups = []
+            if (typeof productRes.specifications === 'string' && productRes.specifications !== 'null' && productRes.specifications !== '') {
+               try {
+                  specGroups = JSON.parse(productRes.specifications)
+               } catch (e) {}
+            } else if (Array.isArray(productRes.specifications)) {
+               specGroups = productRes.specifications
+            }
+
+            // Migration / Normalization
+            if (specGroups.length > 0) {
+               // Check if it's old flat format: [{label, value}]
+               if (specGroups[0] && !specGroups[0].items) {
+                  localSpecificationGroups.value = [{ 
+                     title: 'Specifications', 
+                     items: specGroups.map(s => ({ label: s.label || '', value: s.value || '' }))
+                  }]
+               } else {
+                  localSpecificationGroups.value = specGroups
+               }
+            } else {
+               localSpecificationGroups.value = []
+            }
+
+            // Add migrated key features as a group if they exist
+            if (migratedFeatures.length > 0) {
+               localSpecificationGroups.value.unshift({
+                  title: 'Key Features',
+                  items: migratedFeatures
+               })
+            }
+            
+            if (!localSpecificationGroups.value.length) {
+               localSpecificationGroups.value = [{ title: 'Key Features', items: [{ label: '', value: '' }] }]
+            }
 
            // Previews
            if (productRes.image) thumbnailPreview.value = productRes.image
            if (productRes.gallery) {
-              galleryPreviews.value = Array.isArray(productRes.gallery) ? productRes.gallery : []
+              const gallery = Array.isArray(productRes.gallery) ? productRes.gallery : []
+              galleryItems.value = gallery.map(url => ({
+                 id: Math.random().toString(36).substr(2, 9),
+                 source: 'existing',
+                 value: url,
+                 preview: url
+              }))
            }
         }
     } catch (e) {
@@ -834,22 +967,34 @@ const handleThumbnailUpload = (event) => {
 
 const handleGalleryUpload = (event) => {
    const files = Array.from(event.target.files)
-   const newFiles = files.slice(0, 10 - galleryFiles.value.length) 
+   const newFiles = files.slice(0, 10 - galleryItems.value.length) 
    
    newFiles.forEach(file => {
-      galleryFiles.value.push(file)
-      galleryPreviews.value.push(URL.createObjectURL(file))
+      galleryItems.value.push({
+         id: Math.random().toString(36).substr(2, 9),
+         source: 'upload',
+         file: file,
+         preview: URL.createObjectURL(file)
+      })
    })
 }
 
 const removeGalleryImage = (index) => {
-   // If it's a new file
-   if (index >= galleryPreviews.value.length - galleryFiles.value.length) {
-      const fileIdx = index - (galleryPreviews.value.length - galleryFiles.value.length)
-      galleryFiles.value.splice(fileIdx, 1)
-   }
-   // Also remove from preview (works for both existing and new)
-   galleryPreviews.value.splice(index, 1)
+   galleryItems.value.splice(index, 1)
+}
+
+// Drag and Drop Handlers
+const dragIndex = ref(null)
+const onDragStart = (index) => {
+   dragIndex.value = index
+}
+const onDragOver = (event, index) => {
+   // preventDefault is enough
+}
+const onDrop = (index) => {
+   const item = galleryItems.value.splice(dragIndex.value, 1)[0]
+   galleryItems.value.splice(index, 0, item)
+   dragIndex.value = null
 }
 
 const addFaq = () => {
@@ -858,6 +1003,28 @@ const addFaq = () => {
 
 const removeFaq = (index) => {
    localFaqs.value.splice(index, 1)
+}
+
+// Specification Group Handlers
+const addSpecGroup = () => {
+   localSpecificationGroups.value.push({ 
+      title: '', 
+      items: [{ label: '', value: '' }] 
+   })
+}
+
+const removeSpecGroup = (index) => {
+   localSpecificationGroups.value.splice(index, 1)
+}
+
+const addSpecItem = (groupIndex) => {
+   localSpecificationGroups.value[groupIndex].items.push({ label: '', value: '' })
+}
+
+const removeSpecItem = (groupIndex, itemIndex) => {
+   if (localSpecificationGroups.value[groupIndex].items.length > 1) {
+      localSpecificationGroups.value[groupIndex].items.splice(itemIndex, 1)
+   }
 }
 
 // Hierarchical Category Logic
@@ -971,14 +1138,36 @@ const updateProduct = async () => {
   // Append Files
   if (thumbnailFile.value) formData.append('image', thumbnailFile.value)
   
-  // Append New Gallery Files
-  galleryFiles.value.forEach((file, index) => {
-      formData.append(`gallery[${index}]`, file)
+  // Handle Gallery Uploads and Ordering
+  const galleryMetadata = []
+  let uploadIndex = 0
+  galleryItems.value.forEach((item) => {
+      if (item.source === 'existing') {
+          galleryMetadata.push({ source: 'existing', value: item.value })
+      } else {
+          formData.append(`gallery[${uploadIndex}]`, item.file)
+          galleryMetadata.push({ source: 'upload', index: uploadIndex })
+          uploadIndex++
+      }
   })
+  formData.append('gallery_items', JSON.stringify(galleryMetadata))
 
   // FAQs
   const validFaqs = localFaqs.value.filter(f => f.question && f.answer)
   formData.append('faqs', JSON.stringify(validFaqs))
+
+  // Specifications (Nested Grouped Structure)
+  const validGroups = localSpecificationGroups.value
+     .map(group => ({
+        ...group,
+        items: group.items.filter(i => i.label || i.value)
+     }))
+     .filter(group => group.title || group.items.length > 0)
+     
+  formData.append('specifications', JSON.stringify(validGroups))
+
+  // Clear key_features since we moved them to specifications
+  formData.append('key_features', JSON.stringify([]))
 
   try {
      await createItem('/vendor/products', formData, form)

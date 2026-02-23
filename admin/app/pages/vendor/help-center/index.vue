@@ -142,6 +142,10 @@ import {
   Zap
 } from 'lucide-vue-next'
 
+definePageMeta({
+  middleware: 'auth'
+})
+
 const categories = [
   {
     title: 'Getting Started',

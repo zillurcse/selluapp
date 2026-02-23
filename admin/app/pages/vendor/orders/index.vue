@@ -444,7 +444,8 @@ import VendorOrderDetailsDrawer from '~/components/vendor/VendorOrderDetailsDraw
 import AppConfirmationModal from '~/components/AppConfirmationModal.vue'
 
 definePageMeta({
-  middleware: 'auth'
+  middleware: 'auth',
+  permissions: 'orders.view'
 })
 
 const activeTab = ref('latest')

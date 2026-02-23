@@ -17,6 +17,7 @@ class FraudCheckController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
+            new Middleware('package.feature:fraud check'),
             new Middleware('permission:fraud_check.view', only: ['index', 'stats']),
             new Middleware('permission:fraud_check.manage', only: ['updateSetting', 'action']),
         ];

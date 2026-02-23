@@ -159,7 +159,8 @@ import {
 } from 'lucide-vue-next'
 
 definePageMeta({
-  middleware: 'auth'
+  middleware: 'auth',
+  permissions: 'categories.edit'
 })
 
 const route = useRoute()

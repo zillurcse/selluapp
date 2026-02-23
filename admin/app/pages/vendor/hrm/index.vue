@@ -144,4 +144,6 @@ const navItems = [
   { title: 'Payroll', description: 'Process salaries, bonuses and manage tax records.', icon: Banknote, link: '/vendor/hrm/payroll', bg: 'bg-emerald-50', color: 'text-emerald-600', isPro: true },
   { title: 'Leaves', description: 'Manage leave requests, balances and holidays.', icon: FileClock, link: '/vendor/hrm/leaves', bg: 'bg-orange-50', color: 'text-orange-600', isPro: true },
 ]
+
+
 </script>

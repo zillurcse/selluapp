@@ -17,6 +17,7 @@ class CustomerController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
+            new Middleware('package.feature:customers'),
             new Middleware('permission:customers.view', only: ['index', 'show']),
             new Middleware('permission:customers.create', only: ['store']),
             new Middleware('permission:customers.edit', only: ['update']),

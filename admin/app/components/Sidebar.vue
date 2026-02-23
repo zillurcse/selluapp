@@ -23,7 +23,7 @@
               :class="isSuperAdmin ? 'bg-violet-500' : 'bg-emerald-500'"></span>
             <span class="text-[9px] font-black uppercase tracking-[0.15em]"
               :class="isSuperAdmin ? 'text-violet-600 dark:text-violet-400' : 'text-emerald-600 dark:text-emerald-400'">
-              {{ roleBadge }}
+              {{ vendorPackageName || roleBadge }}
             </span>
           </div>
         </div>
@@ -34,188 +34,262 @@
     <div class="flex-1 overflow-y-auto custom-scrollbar px-6 pb-10">
 
       <!-- SUPER ADMIN NAVIGATION -->
-      <!-- Control Center -->
-      <div class="space-y-1 mb-6">
-        <div v-if="isSuperAdmin" class="nav-section-label">
-          <div class="w-4 h-[2px] bg-gradient-to-r from-violet-500 to-indigo-500 rounded-full"></div>
-          <span class="text-[10px] font-black text-violet-500 dark:text-violet-400 uppercase tracking-[0.25em]">Super Admin</span>
-        </div>
-        <NuxtLink v-if="isSuperAdmin" to="/admin" class="nav-link group" :class="{ 'nav-link-active': $route.path === '/admin' }">
-          <div class="nav-link-icon-bg !bg-violet-50 dark:!bg-violet-500/10 !border-violet-100 dark:!border-violet-500/20 group-hover:!bg-violet-600 group-hover:border-transparent">
-            <Shield class="w-5 h-5 !text-violet-600 dark:!text-violet-400 group-hover:!text-white" />
+      <template v-if="isSuperAdmin">
+        <!-- Dashboard & Users -->
+        <div class="space-y-1 mb-6">
+          <div class="nav-section-label">
+            <div class="w-4 h-[2px] bg-gradient-to-r from-violet-500 to-indigo-500 rounded-full"></div>
+            <span class="text-[10px] font-black text-violet-500 dark:text-violet-400 uppercase tracking-[0.25em]">Super Admin</span>
           </div>
-          <span class="nav-link-text">Control Center</span>
-          <div v-if="$route.path === '/admin'" class="nav-link-active-indicator"></div>
-        </NuxtLink>
-      </div>
+          
+          <NuxtLink to="/admin" class="nav-link group" :class="{ 'nav-link-active': $route.path === '/admin' }">
+            <div class="nav-link-icon-bg !bg-violet-50 dark:!bg-violet-500/10 !border-violet-100 dark:!border-violet-500/20 group-hover:!bg-violet-600 group-hover:border-transparent">
+              <Shield class="w-5 h-5 !text-violet-600 dark:!text-violet-400 group-hover:!text-white" />
+            </div>
+            <span class="nav-link-text">Dashboard</span>
+            <div v-if="$route.path === '/admin'" class="nav-link-active-indicator"></div>
+          </NuxtLink>
 
-      <!-- Packages & Vendors -->
-      <div v-if="isSuperAdmin" class="space-y-1 mb-6">
-        <div class="nav-section-label">
-          <div class="w-4 h-[2px] bg-slate-200 dark:bg-slate-800 rounded-full"></div>
-          <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.25em]">Management</span>
-        </div>
-        <NuxtLink to="/admin/packages" class="nav-link group" active-class="nav-link-active">
-          <div class="nav-link-icon-bg group-hover:bg-slate-950 dark:group-hover:bg-indigo-500/20 group-hover:border-transparent">
-            <PackagePlus class="w-5 h-5 nav-link-icon" />
-          </div>
-          <span class="nav-link-text">Packages</span>
-        </NuxtLink>
-        <NuxtLink to="/admin/vendors" class="nav-link group" active-class="nav-link-active">
-          <div class="nav-link-icon-bg group-hover:bg-slate-950 dark:group-hover:bg-indigo-500/20 group-hover:border-transparent">
-            <Building2 class="w-5 h-5 nav-link-icon" />
-          </div>
-          <span class="nav-link-text">Vendors</span>
-        </NuxtLink>
-        <NuxtLink to="/admin/users" class="nav-link group" active-class="nav-link-active">
-          <div class="nav-link-icon-bg group-hover:bg-slate-950 dark:group-hover:bg-indigo-500/20 group-hover:border-transparent">
-            <Users class="w-5 h-5 nav-link-icon" />
-          </div>
-          <span class="nav-link-text">All Users</span>
-        </NuxtLink>
-      </div>
+          <NuxtLink to="/admin/users" class="nav-link group" active-class="nav-link-active">
+            <div class="nav-link-icon-bg group-hover:bg-slate-950 dark:group-hover:bg-indigo-500/20 group-hover:border-transparent">
+              <Users class="w-5 h-5 nav-link-icon" />
+            </div>
+            <span class="nav-link-text">Users</span>
+          </NuxtLink>
 
-      <!-- VENDOR / ADMIN NAVIGATION -->
-      <!-- Dashboard -->
-      <div class="space-y-1 mb-6">
-        <div class="nav-section-label">
-          <div class="w-4 h-[2px] bg-slate-200 dark:bg-slate-800 rounded-full"></div>
-          <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.25em]">Dashboard</span>
-        </div>
-        <NuxtLink to="/vendor" class="nav-link group" :class="{ 'nav-link-active': $route.path === '/vendor' }">
-          <div class="nav-link-icon-bg group-hover:bg-slate-950 dark:group-hover:bg-indigo-500/20 group-hover:border-transparent">
-            <LayoutDashboard class="w-5 h-5 nav-link-icon" />
-          </div>
-          <span class="nav-link-text">Overview</span>
-          <div v-if="$route.path === '/vendor'" class="nav-link-active-indicator"></div>
-        </NuxtLink>
-      </div>
+          <NuxtLink to="/admin/plans" class="nav-link group" active-class="nav-link-active">
+            <div class="nav-link-icon-bg group-hover:bg-slate-950 dark:group-hover:bg-indigo-500/20 group-hover:border-transparent">
+              <PackagePlus class="w-5 h-5 nav-link-icon" />
+            </div>
+            <span class="nav-link-text">Plans</span>
+          </NuxtLink>
 
-      <!-- Assets Management -->
-      <div class="space-y-1 mb-6">
-        <div class="nav-section-label">
-          <div class="w-4 h-[2px] bg-slate-200 dark:bg-slate-800 rounded-full"></div>
-          <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.25em]">Assets</span>
+          <NuxtLink to="/admin/vendors" class="nav-link group" active-class="nav-link-active">
+            <div class="nav-link-icon-bg group-hover:bg-slate-950 dark:group-hover:bg-indigo-500/20 group-hover:border-transparent">
+              <Building2 class="w-5 h-5 nav-link-icon" />
+            </div>
+            <span class="nav-link-text">Vendors</span>
+          </NuxtLink>
         </div>
 
-        <!-- Attributes Accordion -->
-        <div class="space-y-1 mb-1">
-          <button @click="toggleAttributesMenu" class="nav-dropdown-trigger group" :class="{ 'nav-dropdown-active': isAttributesOpen || isAttributesActive }">
-            <div class="flex items-center">
-              <div class="nav-link-icon-bg group-hover:bg-slate-950 dark:group-hover:bg-indigo-500/20 group-hover:border-transparent">
-                <Grid class="w-5 h-5 nav-link-icon" />
+        <!-- Finance -->
+        <div class="space-y-1 mb-6">
+          <div class="nav-section-label">
+            <div class="w-4 h-[2px] bg-slate-200 dark:bg-slate-800 rounded-full"></div>
+            <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.25em]">Finance</span>
+          </div>
+          
+          <NuxtLink to="/admin/payments" class="nav-link group" active-class="nav-link-active">
+            <div class="nav-link-icon-bg group-hover:bg-slate-950 dark:group-hover:bg-indigo-500/20 group-hover:border-transparent">
+              <CreditCard class="w-5 h-5 nav-link-icon" />
+            </div>
+            <span class="nav-link-text">Payments</span>
+          </NuxtLink>
+
+          <NuxtLink to="/admin/subscriptions" class="nav-link group" active-class="nav-link-active">
+            <div class="nav-link-icon-bg group-hover:bg-slate-950 dark:group-hover:bg-indigo-500/20 group-hover:border-transparent">
+              <Zap class="w-5 h-5 nav-link-icon" />
+            </div>
+            <span class="nav-link-text">Subscriptions</span>
+          </NuxtLink>
+
+          <NuxtLink to="/admin/transactions" class="nav-link group" active-class="nav-link-active">
+            <div class="nav-link-icon-bg group-hover:bg-slate-950 dark:group-hover:bg-indigo-500/20 group-hover:border-transparent">
+              <ArrowUpDown class="w-5 h-5 nav-link-icon" />
+            </div>
+            <span class="nav-link-text">Transactions</span>
+          </NuxtLink>
+        </div>
+
+        <!-- System Settings -->
+        <div class="space-y-1 mb-6">
+          <div class="nav-section-label">
+            <div class="w-4 h-[2px] bg-slate-200 dark:bg-slate-800 rounded-full"></div>
+            <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.25em]">System</span>
+          </div>
+
+          <div class="space-y-1 mb-1">
+            <button @click="toggleAdminSettingsMenu" class="nav-dropdown-trigger group" :class="{ 'nav-dropdown-active': isAdminSettingsOpen || isAdminSettingsActive }">
+              <div class="flex items-center">
+                <div class="nav-link-icon-bg group-hover:bg-slate-950 dark:group-hover:bg-indigo-500/20 group-hover:border-transparent">
+                  <Settings class="w-5 h-5 nav-link-icon" />
+                </div>
+                <span class="nav-link-text">Settings</span>
               </div>
-              <span class="nav-link-text">Attributes</span>
-            </div>
-            <ChevronDown class="w-4 h-4 transition-transform duration-500" :class="{ 'rotate-180': isAttributesOpen }" />
-          </button>
-          <div class="grid transition-all duration-500 ease-in-out overflow-hidden" :class="isAttributesOpen ? 'grid-rows-[1fr] opacity-100 mt-2' : 'grid-rows-[0fr] opacity-0 pointer-events-none'">
-            <div class="min-h-0 space-y-1 pl-10 pr-2">
-              <NuxtLink v-for="link in visibleAttributeLinks" :key="link.to" :to="link.to" class="sub-nav-link group/sub" active-class="sub-nav-link-active">
-                <div class="w-1.5 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 indicator transition-all group-hover/sub:bg-indigo-500"></div>
-                <span class="flex-1">{{ link.label }}</span>
-              </NuxtLink>
-            </div>
-          </div>
-        </div>
-
-        <!-- Products Accordion -->
-        <div class="space-y-1 mb-1">
-          <button @click="toggleProductsMenu" class="nav-dropdown-trigger group" :class="{ 'nav-dropdown-active': isProductsOpen || isProductsActive }">
-            <div class="flex items-center">
-              <div class="nav-link-icon-bg group-hover:bg-slate-950 dark:group-hover:bg-indigo-500/20 group-hover:border-transparent">
-                <ShoppingBag class="w-5 h-5 nav-link-icon" />
+              <ChevronDown class="w-4 h-4 transition-transform duration-500" :class="{ 'rotate-180': isAdminSettingsOpen }" />
+            </button>
+            <div class="grid transition-all duration-500 ease-in-out overflow-hidden" :class="isAdminSettingsOpen ? 'grid-rows-[1fr] opacity-100 mt-2' : 'grid-rows-[0fr] opacity-0 pointer-events-none'">
+              <div class="min-h-0 space-y-1 pl-10 pr-2">
+                <NuxtLink to="/admin/settings/general" class="sub-nav-link group/sub" active-class="sub-nav-link-active">
+                  <div class="indicator w-1.5 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 transition-all group-hover/sub:bg-indigo-500"></div>
+                  <span class="flex-1">General</span>
+                </NuxtLink>
+                <NuxtLink to="/admin/settings/appearance" class="sub-nav-link group/sub" active-class="sub-nav-link-active">
+                  <div class="indicator w-1.5 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 transition-all group-hover/sub:bg-indigo-500"></div>
+                  <span class="flex-1">Appearance</span>
+                </NuxtLink>
+                <NuxtLink to="/admin/settings/payments" class="sub-nav-link group/sub" active-class="sub-nav-link-active">
+                  <div class="indicator w-1.5 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 transition-all group-hover/sub:bg-indigo-500"></div>
+                  <span class="flex-1">Payments</span>
+                </NuxtLink>
+                <NuxtLink to="/admin/settings/mail" class="sub-nav-link group/sub" active-class="sub-nav-link-active">
+                  <div class="indicator w-1.5 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 transition-all group-hover/sub:bg-indigo-500"></div>
+                  <span class="flex-1">Mail Config</span>
+                </NuxtLink>
+                <NuxtLink to="/admin/settings/advanced" class="sub-nav-link group/sub" active-class="sub-nav-link-active">
+                  <div class="indicator w-1.5 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 transition-all group-hover/sub:bg-indigo-500"></div>
+                  <span class="flex-1">Advanced</span>
+                </NuxtLink>
               </div>
-              <span class="nav-link-text">Products</span>
-            </div>
-            <ChevronDown class="w-4 h-4 transition-transform duration-500" :class="{ 'rotate-180': isProductsOpen }" />
-          </button>
-          <div class="grid transition-all duration-500 ease-in-out overflow-hidden" :class="isProductsOpen ? 'grid-rows-[1fr] opacity-100 mt-2' : 'grid-rows-[0fr] opacity-0 pointer-events-none'">
-            <div class="min-h-0 space-y-1 pl-10 pr-2 relative">
-              <div class="absolute left-[20px] top-0 bottom-4 w-[1px] bg-slate-100 dark:bg-slate-800/60 rounded-full"></div>
-              <NuxtLink v-for="link in productLinks" :key="link.to" :to="link.to" class="sub-nav-link group/sub" active-class="sub-nav-link-active">
-                <div class="w-1.5 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 indicator transition-all group-hover/sub:bg-indigo-500"></div>
-                <span class="flex-1">{{ link.label }}</span>
-                <component :is="link.icon" class="w-3 h-3 opacity-0 group-hover/sub:opacity-100 transition-opacity" />
-              </NuxtLink>
             </div>
           </div>
         </div>
-      </div>
+      </template>
 
-      <!-- Operations -->
-      <div class="space-y-1 mb-6">
-        <div class="nav-section-label">
-          <div class="w-4 h-[2px] bg-slate-200 dark:bg-slate-800 rounded-full"></div>
-          <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.25em]">Operations</span>
+      <!-- VENDOR NAVIGATION -->
+      <template v-if="isVendor">
+        <div class="nav-section-label mt-8">
+           <div class="w-4 h-[2px] bg-indigo-500 rounded-full"></div>
+           <span class="text-[10px] font-black text-indigo-500 uppercase tracking-[0.25em]">Vendor Panel</span>
         </div>
-        <template v-for="item in operationsItems" :key="item.to">
-          <NuxtLink :to="item.to" class="nav-link group" active-class="nav-link-active">
+
+        <!-- Dashboard -->
+        <div class="space-y-1 mb-6">
+          <NuxtLink to="/vendor" class="nav-link group" :class="{ 'nav-link-active': $route.path === '/vendor' }">
             <div class="nav-link-icon-bg group-hover:bg-slate-950 dark:group-hover:bg-indigo-500/20 group-hover:border-transparent">
-              <component :is="item.icon" class="w-5 h-5 nav-link-icon transition-transform duration-300" />
+              <LayoutDashboard class="w-5 h-5 nav-link-icon" />
             </div>
-            <span class="nav-link-text">{{ item.label }}</span>
-            <div v-if="item.isPro" class="pro-badge">Pro</div>
-            <div v-if="isActive(item.to)" class="nav-link-active-indicator"></div>
+            <span class="nav-link-text">Overview</span>
+            <div v-if="$route.path === '/vendor'" class="nav-link-active-indicator"></div>
           </NuxtLink>
-        </template>
-      </div>
-
-      <!-- Analytics & Tools -->
-      <div class="space-y-1 mb-6">
-        <div class="nav-section-label">
-          <div class="w-4 h-[2px] bg-slate-200 dark:bg-slate-800 rounded-full"></div>
-          <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.25em]">Tools</span>
         </div>
-        <template v-for="item in toolItems" :key="item.to">
-          <NuxtLink :to="item.to" class="nav-link group" active-class="nav-link-active">
-            <div class="nav-link-icon-bg group-hover:bg-slate-950 dark:group-hover:bg-indigo-500/20 group-hover:border-transparent">
-              <component :is="item.icon" class="w-5 h-5 nav-link-icon" />
-            </div>
-            <span class="nav-link-text">{{ item.label }}</span>
-            <div v-if="item.isPro" class="pro-badge">Pro</div>
-            <div v-if="isActive(item.to)" class="nav-link-active-indicator"></div>
-          </NuxtLink>
-        </template>
-      </div>
 
-      <!-- Settings & Admin -->
-      <div class="space-y-1 mb-6">
-        <div class="nav-section-label">
-          <div class="w-4 h-[2px] bg-slate-200 dark:bg-slate-800 rounded-full"></div>
-          <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.25em]">Settings</span>
-        </div>
-        <template v-for="item in settingsItems" :key="item.to">
-          <NuxtLink :to="item.to" class="nav-link group" active-class="nav-link-active">
-            <div class="nav-link-icon-bg group-hover:bg-slate-950 dark:group-hover:bg-indigo-500/20 group-hover:border-transparent">
-              <component :is="item.icon" class="w-5 h-5 nav-link-icon" />
-            </div>
-            <span class="nav-link-text">{{ item.label }}</span>
-            <div v-if="item.isPro" class="pro-badge">Pro</div>
-            <div v-if="isActive(item.to)" class="nav-link-active-indicator"></div>
-          </NuxtLink>
-        </template>
-      </div>
-
-      <!-- Support -->
-      <div class="space-y-1">
-        <div class="nav-section-label">
-          <div class="w-4 h-[2px] bg-slate-200 dark:bg-slate-800 rounded-full"></div>
-          <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.25em]">Support</span>
-        </div>
-        <NuxtLink to="/vendor/upgrade-package" class="nav-link support-link-upgrade group" active-class="nav-link-active">
-          <div class="nav-link-icon-bg bg-emerald-50 dark:bg-emerald-500/10 group-hover:bg-emerald-500/20">
-            <Sparkles class="w-5 h-5 text-emerald-500" />
+        <!-- Assets Management -->
+        <div class="space-y-1 mb-6">
+          <div class="nav-section-label">
+            <div class="w-4 h-[2px] bg-slate-200 dark:bg-slate-800 rounded-full"></div>
+            <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.25em]">Assets</span>
           </div>
-          <span class="nav-link-text">Upgrade Plan</span>
-        </NuxtLink>
-        <NuxtLink to="/vendor/help-center" class="nav-link group" active-class="nav-link-active">
-          <div class="nav-link-icon-bg group-hover:bg-slate-950 dark:group-hover:bg-indigo-500/20 group-hover:border-transparent">
-            <Headphones class="w-5 h-5 nav-link-icon" />
+
+          <!-- Attributes Accordion -->
+          <div class="space-y-1 mb-1">
+            <button @click="toggleAttributesMenu" class="nav-dropdown-trigger group" :class="{ 'nav-dropdown-active': isAttributesOpen || isAttributesActive }">
+              <div class="flex items-center">
+                <div class="nav-link-icon-bg group-hover:bg-slate-950 dark:group-hover:bg-indigo-500/20 group-hover:border-transparent">
+                  <Grid class="w-5 h-5 nav-link-icon" />
+                </div>
+                <span class="nav-link-text">Attributes</span>
+              </div>
+              <ChevronDown class="w-4 h-4 transition-transform duration-500" :class="{ 'rotate-180': isAttributesOpen }" />
+            </button>
+            <div class="grid transition-all duration-500 ease-in-out overflow-hidden" :class="isAttributesOpen ? 'grid-rows-[1fr] opacity-100 mt-2' : 'grid-rows-[0fr] opacity-0 pointer-events-none'">
+              <div class="min-h-0 space-y-1 pl-10 pr-2">
+                <NuxtLink v-for="link in visibleAttributeLinks" :key="link.to" :to="link.to" class="sub-nav-link group/sub" active-class="sub-nav-link-active">
+                  <div class="w-1.5 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 indicator transition-all group-hover/sub:bg-indigo-500"></div>
+                  <span class="flex-1">{{ link.label }}</span>
+                </NuxtLink>
+              </div>
+            </div>
           </div>
-          <span class="nav-link-text">Help Center</span>
-        </NuxtLink>
-      </div>
+
+          <!-- Products Accordion -->
+          <div class="space-y-1 mb-1">
+            <button @click="toggleProductsMenu" class="nav-dropdown-trigger group" :class="{ 'nav-dropdown-active': isProductsOpen || isProductsActive }">
+              <div class="flex items-center">
+                <div class="nav-link-icon-bg group-hover:bg-slate-950 dark:group-hover:bg-indigo-500/20 group-hover:border-transparent">
+                  <ShoppingBag class="w-5 h-5 nav-link-icon" />
+                </div>
+                <span class="nav-link-text">Products</span>
+              </div>
+              <ChevronDown class="w-4 h-4 transition-transform duration-500" :class="{ 'rotate-180': isProductsOpen }" />
+            </button>
+            <div class="grid transition-all duration-500 ease-in-out overflow-hidden" :class="isProductsOpen ? 'grid-rows-[1fr] opacity-100 mt-2' : 'grid-rows-[0fr] opacity-0 pointer-events-none'">
+              <div class="min-h-0 space-y-1 pl-10 pr-2 relative">
+                <div class="absolute left-[20px] top-0 bottom-4 w-[1px] bg-slate-100 dark:bg-slate-800/60 rounded-full"></div>
+                <NuxtLink v-for="link in productLinks" :key="link.to" :to="link.to" class="sub-nav-link group/sub" active-class="sub-nav-link-active">
+                  <div class="w-1.5 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 indicator transition-all group-hover/sub:bg-indigo-500"></div>
+                  <span class="flex-1">{{ link.label }}</span>
+                  <component :is="link.icon" class="w-3 h-3 opacity-0 group-hover/sub:opacity-100 transition-opacity" />
+                </NuxtLink>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Operations -->
+        <div class="space-y-1 mb-6">
+          <div class="nav-section-label">
+            <div class="w-4 h-[2px] bg-slate-200 dark:bg-slate-800 rounded-full"></div>
+            <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.25em]">Operations</span>
+          </div>
+          <template v-for="item in operationsItems" :key="item.to">
+            <NuxtLink :to="item.to" class="nav-link group" active-class="nav-link-active">
+              <div class="nav-link-icon-bg group-hover:bg-slate-950 dark:group-hover:bg-indigo-500/20 group-hover:border-transparent">
+                <component :is="item.icon" class="w-5 h-5 nav-link-icon transition-transform duration-300" />
+              </div>
+              <span class="nav-link-text">{{ item.label }}</span>
+              <div v-if="item.isPro && !hasFeature(item.feature)" class="pro-badge">Pro</div>
+              <div v-if="isActive(item.to)" class="nav-link-active-indicator"></div>
+            </NuxtLink>
+          </template>
+        </div>
+
+        <!-- Analytics & Tools -->
+        <div class="space-y-1 mb-6">
+          <div class="nav-section-label">
+            <div class="w-4 h-[2px] bg-slate-200 dark:bg-slate-800 rounded-full"></div>
+            <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.25em]">Tools</span>
+          </div>
+          <template v-for="item in toolItems" :key="item.to">
+            <NuxtLink :to="item.to" class="nav-link group" active-class="nav-link-active">
+              <div class="nav-link-icon-bg group-hover:bg-slate-950 dark:group-hover:bg-indigo-500/20 group-hover:border-transparent">
+                <component :is="item.icon" class="w-5 h-5 nav-link-icon" />
+              </div>
+              <span class="nav-link-text">{{ item.label }}</span>
+              <div v-if="item.isPro && !hasFeature(item.feature)" class="pro-badge">Pro</div>
+              <div v-if="isActive(item.to)" class="nav-link-active-indicator"></div>
+            </NuxtLink>
+          </template>
+        </div>
+
+        <!-- Settings & Admin -->
+        <div class="space-y-1 mb-6">
+          <div class="nav-section-label">
+            <div class="w-4 h-[2px] bg-slate-200 dark:bg-slate-800 rounded-full"></div>
+            <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.25em]">Settings</span>
+          </div>
+          <template v-for="item in settingsItems" :key="item.to">
+            <NuxtLink :to="item.to" class="nav-link group" active-class="nav-link-active">
+              <div class="nav-link-icon-bg group-hover:bg-slate-950 dark:group-hover:bg-indigo-500/20 group-hover:border-transparent">
+                <component :is="item.icon" class="w-5 h-5 nav-link-icon" />
+              </div>
+              <span class="nav-link-text">{{ item.label }}</span>
+              <div v-if="item.isPro" class="pro-badge">Pro</div>
+              <div v-if="isActive(item.to)" class="nav-link-active-indicator"></div>
+            </NuxtLink>
+          </template>
+        </div>
+
+        <!-- Support -->
+        <div class="space-y-1">
+          <div class="nav-section-label">
+            <div class="w-4 h-[2px] bg-slate-200 dark:bg-slate-800 rounded-full"></div>
+            <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.25em]">Support</span>
+          </div>
+          <NuxtLink to="/vendor/upgrade-package" class="nav-link support-link-upgrade group" active-class="nav-link-active">
+            <div class="nav-link-icon-bg bg-emerald-50 dark:bg-emerald-500/10 group-hover:bg-emerald-500/20">
+              <Sparkles class="w-5 h-5 text-emerald-500" />
+            </div>
+            <span class="nav-link-text">Upgrade Plan</span>
+          </NuxtLink>
+          <NuxtLink to="/vendor/help-center" class="nav-link group" active-class="nav-link-active">
+            <div class="nav-link-icon-bg group-hover:bg-slate-950 dark:group-hover:bg-indigo-500/20 group-hover:border-transparent">
+              <Headphones class="w-5 h-5 nav-link-icon" />
+            </div>
+            <span class="nav-link-text">Help Center</span>
+          </NuxtLink>
+        </div>
+      </template>
 
     </div>
 
@@ -285,9 +359,12 @@ import {
   LogOut,
   Monitor,
   Truck,
+  CreditCard,
+  Zap,
+  Settings,
 } from 'lucide-vue-next'
 
-const { can, hasRole } = usePermissions()
+const { can, hasRole, hasFeature } = usePermissions()
 
 const route = useRoute()
 const sidebar = useSidebar()
@@ -296,19 +373,27 @@ const auth = useAuthStore()
 
 // ─── Role helpers ─────────────────────────────────────────────────────────────
 const isSuperAdmin = computed(() => auth.user?.roles?.some(r => r.name === 'super-admin') ?? false)
-const isVendor     = computed(() => auth.user?.roles?.some(r => r.name === 'vendor') ?? false)
-const isAdmin      = computed(() => auth.user?.roles?.some(r => r.name === 'admin') ?? false)
+const isVendor      = computed(() => (auth.user?.roles?.some(r => r.name === 'vendor') || !!auth.user?.vendor_profile || !!auth.user?.vendor_id) ?? false)
+const isVendorOwner = computed(() => !!auth.user?.vendor_profile && !auth.user?.vendor_id)
+const isVendorStaff = computed(() => !!auth.user?.vendor_id)
+const isAdmin       = computed(() => auth.user?.roles?.some(r => r.name === 'admin') ?? false)
 
 const roleBadge = computed(() => {
   if (isSuperAdmin.value) return 'Super Admin'
-  if (isVendor.value) return 'Vendor'
+  if (isVendorOwner.value) return 'Vendor'
+  if (isVendorStaff.value) return auth.user?.roles?.[0]?.name || 'Staff'
   if (isAdmin.value) return 'Admin'
   return 'User'
 })
 
 const currentRoleName = computed(() => {
+  if (isVendorOwner.value && auth.user?.vendor_profile?.package) {
+    return `${auth.user.vendor_profile.package.name} Plan`
+  }
   const roles = auth.user?.roles
-  if (!roles?.length) return 'No role'
+  if (!roles?.length) {
+    return isVendorOwner.value ? 'Vendor' : (isVendorStaff.value ? 'Staff' : 'No role')
+  }
   return roles.map((r) => r.name).join(', ')
 })
 
@@ -317,13 +402,20 @@ const homeRoute = computed(() => {
   return '/vendor'
 })
 
+const vendorPackageName = computed(() => {
+  const pkg = auth.user?.vendor_profile?.package || auth.user?.owner?.vendor_profile?.package
+  return pkg?.name || null
+})
+
 
 // ─── Accordion state ──────────────────────────────────────────────────────────
-const isProductsOpen   = ref(false)
-const isAttributesOpen = ref(false)
+const isProductsOpen      = ref(false)
+const isAttributesOpen    = ref(false)
+const isAdminSettingsOpen = ref(false)
 
-const isAttributesActive = computed(() => route.path.includes('/vendor/attributes'))
-const isProductsActive   = computed(() => route.path.includes('/vendor/products'))
+const isAttributesActive    = computed(() => route.path.includes('/vendor/attributes'))
+const isProductsActive      = computed(() => route.path.includes('/vendor/products'))
+const isAdminSettingsActive = computed(() => route.path.includes('/admin/settings'))
 
 const isDark = computed(() => colorMode.value === 'dark')
 
@@ -335,6 +427,7 @@ const isActive = (path) => route.path === path
 onMounted(() => {
   if (route.path.includes('/vendor/attributes')) isAttributesOpen.value = true
   if (route.path.includes('/vendor/products'))   isProductsOpen.value   = true
+  if (route.path.includes('/admin/settings'))    isAdminSettingsOpen.value = true
 })
 
 watch(() => route.path, () => {
@@ -342,14 +435,20 @@ watch(() => route.path, () => {
   // also auto-open on navigate
   if (route.path.includes('/vendor/attributes')) isAttributesOpen.value = true
   if (route.path.includes('/vendor/products'))   isProductsOpen.value   = true
+  if (route.path.includes('/admin/settings'))    isAdminSettingsOpen.value = true
 })
 
-const toggleProductsMenu   = () => { isProductsOpen.value   = !isProductsOpen.value }
-const toggleAttributesMenu = () => { isAttributesOpen.value = !isAttributesOpen.value }
+const toggleProductsMenu      = () => { isProductsOpen.value   = !isProductsOpen.value }
+const toggleAttributesMenu    = () => { isAttributesOpen.value = !isAttributesOpen.value }
+const toggleAdminSettingsMenu = () => { isAdminSettingsOpen.value = !isAdminSettingsOpen.value }
 
 // ─── Filter Helpers ──────────────────────────────────────────────────────────
 const filterItems = (items) => {
   return items.filter(item => {
+    // 1. Check feature first if it exists (SaaS package logic)
+    if (item.feature && !hasFeature(item.feature)) return false
+    
+    // 2. Check individual permissions
     if (!item.permission) return true
     return can(item.permission)
   })
@@ -357,39 +456,39 @@ const filterItems = (items) => {
 
 // ─── Nav item definitions ─────────────────────────────────────────────────────
 const attributeLinks = [
-  { to: '/vendor/attributes/categories', label: 'Categories', permission: 'attributes.view' },
-  { to: '/vendor/attributes/brands',     label: 'Brands',     permission: 'brands.view' },
-  { to: '/vendor/attributes/units',      label: 'Units',      permission: 'units.view' },
-  { to: '/vendor/attributes/sorting',    label: 'Sorting',    permission: 'attributes.sort' },
+  { to: '/vendor/attributes/categories', label: 'Categories', permission: 'attributes.view', feature: 'Products' },
+  { to: '/vendor/attributes/brands',     label: 'Brands',     permission: 'brands.view',     feature: 'Products' },
+  { to: '/vendor/attributes/units',      label: 'Units',      permission: 'units.view',      feature: 'Products' },
+  { to: '/vendor/attributes/sorting',    label: 'Sorting',    permission: 'attributes.sort', feature: 'Products' },
 ]
 
 const visibleAttributeLinks = computed(() => filterItems(attributeLinks))
 
 const rawProductLinks = [
-  { to: '/vendor/products/create',   label: 'Add Product',  icon: Plus,     permission: 'products.create' },
-  { to: '/vendor/products',          label: 'All Products', icon: Box,      permission: 'products.view' },
-  { to: '/vendor/products/published',label: 'Published',    icon: FileText, permission: 'products.view' },
-  { to: '/vendor/products/pending',  label: 'Pending',      icon: FileText, permission: 'products.view' },
-  { to: '/vendor/products/draft',    label: 'Drafts',       icon: FileText, permission: 'products.view' },
+  { to: '/vendor/products/create',   label: 'Add Product',  icon: Plus,     permission: 'products.create', feature: 'Products' },
+  { to: '/vendor/products',          label: 'All Products', icon: Box,      permission: 'products.view',   feature: 'Products' },
+  { to: '/vendor/products/published',label: 'Published',    icon: FileText, permission: 'products.view',   feature: 'Products' },
+  { to: '/vendor/products/pending',  label: 'Pending',      icon: FileText, permission: 'products.view',   feature: 'Products' },
+  { to: '/vendor/products/draft',    label: 'Drafts',       icon: FileText, permission: 'products.view',   feature: 'Products' },
 ]
 
 const productLinks = computed(() => filterItems(rawProductLinks))
 
 const rawOperationsItems = [
-  { to: '/vendor/orders',        label: 'Orders',          icon: ClipboardList, permission: 'orders.view' },
-  { to: '/vendor/customers',     label: 'Customers',       icon: Users,         permission: 'customers.view' },
-  { to: '/vendor/pos',           label: 'Point of Sale',   icon: Monitor,       permission: 'pos.view' },
-  { to: '/vendor/coupon-code',   label: 'Coupon Code',     icon: Tag,           permission: 'coupons.view' },
-  { to: '/vendor/promotions',    label: 'Promotions',      icon: Gift,           isPro: true, permission: 'promotions.view' },
-  { to: '/vendor/fraud-check',   label: 'AI Fraud Check',  icon: SearchCheck,    isPro: true, permission: 'fraud_check.view' },
-  { to: '/vendor/landing-page',  label: 'Landing Page',    icon: LayoutTemplate, permission: 'landing_pages.view' },
+  { to: '/vendor/orders',        label: 'Orders',          icon: ClipboardList, permission: 'orders.view',   feature: 'Orders' },
+  { to: '/vendor/customers',     label: 'Customers',       icon: Users,         permission: 'customers.view', feature: 'Customers' },
+  { to: '/vendor/pos',           label: 'Point of Sale',   icon: Monitor,       permission: 'pos.view',       feature: 'pos',          isPro: true },
+  { to: '/vendor/coupon-code',   label: 'Coupon Code',     icon: Tag,           permission: 'coupons.view',   feature: 'Products' },
+  { to: '/vendor/promotions',    label: 'Promotions',      icon: Gift,          permission: 'promotions.view',feature: 'Promotions',   isPro: true },
+  { to: '/vendor/fraud-check',   label: 'AI Fraud Check',  icon: SearchCheck,   permission: 'fraud_check.view',feature: 'Fraud Check', isPro: true },
+  { to: '/vendor/landing-page',  label: 'Landing Page',    icon: LayoutTemplate,permission: 'landing_pages.view',feature: 'Landing Pages', isPro: true },
 ]
 
 const operationsItems = computed(() => filterItems(rawOperationsItems))
 
 const rawToolItems = [
-  { to: '/vendor/hrm',             label: 'HRM Suite',         icon: Briefcase, permission: 'hrm.dashboard.view' },
-  { to: '/vendor/reports',         label: 'Analytics',         icon: BarChart3, permission: 'reports.view' },
+  { to: '/vendor/hrm',             label: 'HRM Suite',         icon: Briefcase, permission: 'hrm.dashboard.view', feature: 'hrm', isPro: true },
+  { to: '/vendor/reports',         label: 'Analytics',         icon: BarChart3, permission: 'reports.view',       feature: 'Reports' },
   { to: '/vendor/managed-shop',    label: 'Manage Shop',       icon: Store,     permission: 'settings.view' },
   { to: '/vendor/managed-website', label: 'Website Settings',  icon: Globe,     permission: 'settings.view' },
 ]

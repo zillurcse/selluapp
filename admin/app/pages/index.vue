@@ -32,11 +32,29 @@ const isSuperAdmin = roles.some((r) => r.name === 'super-admin')
 const isVendor     = roles.some((r) => r.name === 'vendor')
 const isAdmin      = roles.some((r) => r.name === 'admin')
 
+// Resolve destination based on roles & permissions
+const { can } = usePermissions()
+
 if (isSuperAdmin || isAdmin) {
   await navigateTo('/admin', { replace: true })
 } else if (auth.user) {
-  // Default to vendor for all other authenticated users (e.g. if isVendor is false or not defined)
-  await navigateTo('/vendor', { replace: true })
+  // Check if user has access to reports (dashboard)
+  if (can('reports.view')) {
+    await navigateTo('/vendor', { replace: true })
+  } else {
+    // Redirect to the first available module
+    const fallbackRoutes = [
+      { perm: 'orders.view', path: '/vendor/orders' },
+      { perm: 'products.view', path: '/vendor/products' },
+      { perm: 'customers.view', path: '/vendor/customers' },
+      { perm: 'pos.view', path: '/vendor/pos' },
+      { perm: 'hrm.dashboard.view', path: '/vendor/hrm' },
+      { perm: 'settings.view', path: '/vendor/managed-shop' }
+    ]
+
+    const target = fallbackRoutes.find(r => can(r.perm))?.path || '/vendor'
+    await navigateTo(target, { replace: true })
+  }
 } else {
   await navigateTo('/login', { replace: true })
 }

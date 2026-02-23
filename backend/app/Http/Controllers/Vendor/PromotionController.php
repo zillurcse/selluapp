@@ -13,6 +13,7 @@ class PromotionController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
+            new Middleware('package.feature:promotions'),
             new Middleware('permission:promotions.view', only: ['index', 'show']),
             new Middleware('permission:promotions.create', only: ['store']),
             new Middleware('permission:promotions.edit', only: ['update']),

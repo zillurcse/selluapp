@@ -159,6 +159,11 @@
 <script setup>
 import { Plus, X, FileClock } from 'lucide-vue-next'
 
+definePageMeta({
+  middleware: 'auth',
+  permissions: 'hrm.leaves.view'
+})
+
 const { fetchLeaves, fetchEmployees, createLeave, leaveAction } = useHrm()
 
 const leaves = ref([])

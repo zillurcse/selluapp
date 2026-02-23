@@ -169,6 +169,27 @@ class VendorManagementController extends Controller
     }
 
     /**
+     * Quick-login as a vendor (impersonation by super-admin)
+     */
+    public function loginAsVendor(User $user)
+    {
+        if (!$user->hasRole('vendor')) {
+            return response()->json(['message' => 'User is not a vendor'], 403);
+        }
+
+        // Revoke old impersonation tokens to keep things clean
+        $user->tokens()->where('name', 'impersonate')->delete();
+
+        $token = $user->createToken('impersonate')->plainTextToken;
+
+        return response()->json([
+            'access_token' => $token,
+            'token_type'   => 'Bearer',
+            'user'         => $user->load(['roles.permissions', 'vendorProfile.package']),
+        ]);
+    }
+
+    /**
      * Delete a vendor
      */
     public function destroy(User $user)

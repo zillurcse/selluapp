@@ -82,19 +82,62 @@
             </div>
             
             <div class="space-y-4 pt-2">
-              <div class="space-y-2">
-                <label class="text-xs font-black text-slate-400 uppercase tracking-wider ml-1">Redirect Link (Optional)</label>
-                <div class="relative">
-                  <LinkIcon class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-2">
+                  <label class="text-xs font-black text-slate-400 uppercase tracking-wider ml-1">Slider Title</label>
                   <input 
-                    v-model="slider.link" 
+                    v-model="slider.title" 
                     type="text" 
-                    placeholder="https://..."
-                    class="w-full h-12 pl-12 pr-4 bg-slate-50 border border-slate-100 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-semibold text-slate-700"
+                    placeholder="e.g. Modern Elevation"
+                    class="w-full h-12 px-4 bg-slate-50 border border-slate-100 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-semibold text-slate-700"
+                  >
+                </div>
+                <div class="space-y-2">
+                  <label class="text-xs font-black text-slate-400 uppercase tracking-wider ml-1">Offer Type / Badge</label>
+                  <input 
+                    v-model="slider.badge" 
+                    type="text" 
+                    placeholder="e.g. SPECIAL OFFER"
+                    class="w-full h-12 px-4 bg-slate-50 border border-slate-100 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-semibold text-slate-700"
                   >
                 </div>
               </div>
+
               <div class="space-y-2">
+                <label class="text-xs font-black text-slate-400 uppercase tracking-wider ml-1">Sub-title / Description</label>
+                <textarea 
+                  v-model="slider.description" 
+                  rows="2"
+                  placeholder="Experience the fusion of minimalist design..."
+                  class="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-semibold text-slate-700"
+                ></textarea>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-2">
+                  <label class="text-xs font-black text-slate-400 uppercase tracking-wider ml-1">Redirect Link (Optional)</label>
+                  <div class="relative">
+                    <LinkIcon class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <input 
+                      v-model="slider.link" 
+                      type="text" 
+                      placeholder="https://..."
+                      class="w-full h-12 pl-12 pr-4 bg-slate-50 border border-slate-100 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-semibold text-slate-700"
+                    >
+                  </div>
+                </div>
+                <div class="space-y-2">
+                  <label class="text-xs font-black text-slate-400 uppercase tracking-wider ml-1">Button Text</label>
+                  <input 
+                    v-model="slider.buttonText" 
+                    type="text" 
+                    placeholder="e.g. Shop Now"
+                    class="w-full h-12 px-4 bg-slate-50 border border-slate-100 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-semibold text-slate-700"
+                  >
+                </div>
+              </div>
+
+              <div class="space-y-2 pt-2">
                 <label class="text-xs font-black text-slate-400 uppercase tracking-wider ml-1">Status</label>
                 <div class="flex items-center gap-3">
                   <span :class="['text-sm font-bold', slider.active ? 'text-emerald-600' : 'text-slate-400']">
@@ -119,12 +162,58 @@
         </button>
       </div>
     </div>
+
+    <!-- Cropper Modal -->
+    <div v-if="showCropperModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm z-[100]">
+      <div class="bg-white rounded-2xl md:rounded-[32px] w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+        <div class="p-4 md:p-6 border-b border-slate-100 flex justify-between items-center">
+          <h3 class="text-xl font-black text-slate-800">Crop Image (1920x800)</h3>
+          <button @click="cancelCrop" class="p-2 hover:bg-slate-100 rounded-full transition-colors">
+            <XIcon class="w-6 h-6 text-slate-500" />
+          </button>
+        </div>
+        
+        <div class="flex-1 bg-slate-900 overflow-hidden relative min-h-[400px]">
+          <cropper
+            ref="cropperRef"
+            class="h-full w-full"
+            :src="cropImage"
+            :stencil-props="{
+              aspectRatio: 1920 / 800
+            }"
+            image-restriction="stencil"
+          />
+        </div>
+        
+        <div class="p-4 md:p-6 border-t border-slate-100 flex justify-end gap-3 bg-slate-50">
+          <button 
+            @click="cancelCrop"
+            class="px-6 py-2.5 rounded-xl font-bold text-slate-600 hover:bg-slate-200 transition-colors"
+          >
+            Cancel
+          </button>
+          <button 
+            @click="applyCrop"
+            class="px-8 py-2.5 rounded-xl font-black text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200"
+          >
+            Crop & Save
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ChevronLeft, Sliders, Trash2, Plus, Image as ImageIcon, Link as LinkIcon, Save } from 'lucide-vue-next'
+import { ChevronLeft, Sliders, Trash2, Plus, Image as ImageIcon, Link as LinkIcon, Save, X as XIcon } from 'lucide-vue-next'
 import { ref, onMounted } from 'vue'
+import { Cropper } from 'vue-advanced-cropper'
+import 'vue-advanced-cropper/dist/style.css'
+
+definePageMeta({
+  middleware: 'auth',
+  permissions: 'settings.view'
+})
 
 const { $toast } = useNuxtApp()
 const { getAll, createItem } = useCrud()
@@ -135,11 +224,20 @@ const saving = ref(false)
 const sliders = ref([])
 let newFiles = new FormData()
 
+const cropperRef = ref(null)
+const cropImage = ref(null)
+const cropSliderIndex = ref(null)
+const showCropperModal = ref(false)
+
 const generateId = () => Math.random().toString(36).substr(2, 9)
 
 const addSlider = () => {
   sliders.value.push({
     id: 'slider_' + generateId(),
+    title: '',
+    description: '',
+    badge: '',
+    buttonText: 'Discover Now',
     link: '',
     active: true,
     previewUrl: null,
@@ -156,9 +254,35 @@ const handleImageUpload = (event, index) => {
   const file = event.target.files[0]
   if (!file) return
   
-  // Create preview
-  sliders.value[index].previewUrl = URL.createObjectURL(file)
-  sliders.value[index].file = file
+  cropImage.value = URL.createObjectURL(file)
+  cropSliderIndex.value = index
+  showCropperModal.value = true
+  
+  // reset file input so the same file can be selected again
+  event.target.value = ''
+}
+
+const cancelCrop = () => {
+  showCropperModal.value = false
+  cropImage.value = null
+  cropSliderIndex.value = null
+}
+
+const applyCrop = () => {
+  if (cropperRef.value) {
+    const { canvas } = cropperRef.value.getResult()
+    if (canvas) {
+      canvas.toBlob((blob) => {
+        const file = new File([blob], "cropped_image.jpg", { type: "image/jpeg" })
+        const previewUrl = URL.createObjectURL(file)
+        
+        sliders.value[cropSliderIndex.value].previewUrl = previewUrl
+        sliders.value[cropSliderIndex.value].file = file
+        
+        cancelCrop()
+      }, 'image/jpeg', 0.9)
+    }
+  }
 }
 
 const loadSettings = async () => {
@@ -171,6 +295,10 @@ const loadSettings = async () => {
         const parsedMeta = typeof data.sliders_meta === 'string' ? JSON.parse(data.sliders_meta) : data.sliders_meta
         sliders.value = parsedMeta.map(meta => ({
           ...meta,
+          title: meta.title || '',
+          description: meta.description || '',
+          badge: meta.badge || '',
+          buttonText: meta.buttonText || 'Discover Now',
           uploadedUrl: data[meta.id] || null,
           previewUrl: null,
           file: null
@@ -195,6 +323,10 @@ const saveSettings = async () => {
     // Save metadata
     const slidersMeta = sliders.value.map(s => ({
       id: s.id,
+      title: s.title,
+      description: s.description,
+      badge: s.badge,
+      buttonText: s.buttonText,
       link: s.link,
       active: s.active
     }))
@@ -212,9 +344,11 @@ const saveSettings = async () => {
     })
 
     await createItem('/vendor/settings', formData, null, false)
+    $toast.success('Sliders updated successfully')
     await loadSettings() // Reload to get updated URLs
   } catch (error) {
     console.error(error)
+    $toast.error('Failed to update sliders')
   } finally {
     saving.value = false
   }
@@ -224,3 +358,4 @@ onMounted(() => {
   loadSettings()
 })
 </script>
+

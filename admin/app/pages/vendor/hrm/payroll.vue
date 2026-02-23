@@ -116,6 +116,11 @@
 <script setup>
 import { RefreshCw, Pencil, Banknote } from 'lucide-vue-next'
 
+definePageMeta({
+  middleware: 'auth',
+  permissions: 'hrm.payroll.view'
+})
+
 const { fetchPayroll, fetchPayrollSummary, generatePayroll, updatePayroll, markPayrollPaid } = useHrm()
 
 const now = new Date()

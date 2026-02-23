@@ -569,7 +569,8 @@ const handleConfirmDelete = async () => {
 }
 
 definePageMeta({
-  middleware: 'auth'
+  middleware: 'auth',
+  permissions: 'promotions.view'
 })
 </script>
 

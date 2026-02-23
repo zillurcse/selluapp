@@ -162,6 +162,10 @@ const managementCards = [
     to: '/vendor/managed-shop/spider-intelligence'
   }
 ]
+definePageMeta({
+  middleware: 'auth',
+  permissions: 'settings.view'
+})
 </script>
 
 <style scoped>

@@ -156,7 +156,9 @@ import {
 } from 'lucide-vue-next'
 
 definePageMeta({
-  layout: 'default'
+  layout: 'default',
+  middleware: 'auth',
+  permissions: 'landing_pages.create'
 })
 
 const { getAll, createItem } = useCrud()

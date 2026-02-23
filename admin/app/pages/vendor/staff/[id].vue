@@ -148,6 +148,11 @@ import {
   ShieldAlert
 } from 'lucide-vue-next'
 
+definePageMeta({
+  middleware: 'auth',
+  permissions: 'staff.edit'
+})
+
 const route = useRoute()
 const router = useRouter()
 const { getById, getAll, createItem } = useCrud()

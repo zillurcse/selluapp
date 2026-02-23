@@ -6,9 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+use App\Traits\BelongsToVendor;
+
 class Customer extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToVendor;
 
     protected $fillable = [
         'vendor_id',

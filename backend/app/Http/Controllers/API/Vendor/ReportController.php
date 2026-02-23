@@ -19,7 +19,7 @@ class ReportController extends Controller implements HasMiddleware
 
     public function overview(Request $request)
     {
-        $vendorId = $request->user()->id;
+        $vendorId = $request->user()->vendor_id ?? $request->user()->id;
 
         // Total Online Sales
         $onlineSales = \App\Models\Order::where('user_id', $vendorId)
@@ -100,7 +100,7 @@ class ReportController extends Controller implements HasMiddleware
 
     public function sales(Request $request)
     {
-        $vendorId = $request->user()->id;
+        $vendorId = $request->user()->vendor_id ?? $request->user()->id;
         
         $onlineRevenue = \App\Models\Order::where('user_id', $vendorId)
             ->whereNotIn('status', ['cancelled', 'returned'])
@@ -136,7 +136,7 @@ class ReportController extends Controller implements HasMiddleware
 
     public function returns(Request $request)
     {
-        $vendorId = $request->user()->id;
+        $vendorId = $request->user()->vendor_id ?? $request->user()->id;
         $returns = \App\Models\Order::with('customer')
             ->where('user_id', $vendorId)
             ->where('status', 'returned')
@@ -148,7 +148,7 @@ class ReportController extends Controller implements HasMiddleware
 
     public function cancels(Request $request)
     {
-        $vendorId = $request->user()->id;
+        $vendorId = $request->user()->vendor_id ?? $request->user()->id;
         $cancels = \App\Models\Order::with('customer')
             ->where('user_id', $vendorId)
             ->where('status', 'cancelled')
@@ -160,7 +160,7 @@ class ReportController extends Controller implements HasMiddleware
 
     public function expenses(Request $request)
     {
-        $vendorId = $request->user()->id;
+        $vendorId = $request->user()->vendor_id ?? $request->user()->id;
         $expenses = \App\Models\VendorExpense::where('user_id', $vendorId)
             ->latest()
             ->paginate(10);
@@ -173,7 +173,7 @@ class ReportController extends Controller implements HasMiddleware
 
     public function coupons(Request $request)
     {
-        $vendorId = $request->user()->id;
+        $vendorId = $request->user()->vendor_id ?? $request->user()->id;
         // Assuming we look at discount amount in orders as coupon usage
         $couponsImpact = \App\Models\Order::where('user_id', $vendorId)
             ->sum('discount_amount');
@@ -190,7 +190,7 @@ class ReportController extends Controller implements HasMiddleware
 
     public function productPerformance(Request $request)
     {
-        $vendorId = $request->user()->id;
+        $vendorId = $request->user()->vendor_id ?? $request->user()->id;
         $products = \App\Models\Product::where('user_id', $vendorId)
             ->orderBy('sales', 'desc')
             ->take(10)
@@ -201,7 +201,7 @@ class ReportController extends Controller implements HasMiddleware
 
     public function stock(Request $request)
     {
-        $vendorId = $request->user()->id;
+        $vendorId = $request->user()->vendor_id ?? $request->user()->id;
         $products = \App\Models\Product::where('user_id', $vendorId)
             ->get(['id', 'name', 'stock_qty', 'sale_price', 'thumbnail']);
             
@@ -224,7 +224,7 @@ class ReportController extends Controller implements HasMiddleware
             'quantity' => 'required|integer|min:1',
         ]);
 
-        $vendorId = $request->user()->id;
+        $vendorId = $request->user()->vendor_id ?? $request->user()->id;
         $product = \App\Models\Product::where('user_id', $vendorId)
             ->where('id', $request->product_id)
             ->firstOrFail();
@@ -246,7 +246,7 @@ class ReportController extends Controller implements HasMiddleware
 
     public function customers(Request $request)
     {
-        $vendorId = $request->user()->id;
+        $vendorId = $request->user()->vendor_id ?? $request->user()->id;
         $totalCustomers = \App\Models\Customer::where('user_id', $vendorId)->count();
         
         $topCustomers = \App\Models\Customer::where('user_id', $vendorId)
@@ -263,7 +263,7 @@ class ReportController extends Controller implements HasMiddleware
 
     public function earnings(Request $request)
     {
-        $vendorId = $request->user()->id;
+        $vendorId = $request->user()->vendor_id ?? $request->user()->id;
         
         $onlineSales = \App\Models\Order::where('user_id', $vendorId)
             ->whereNotIn('status', ['cancelled', 'returned'])
@@ -291,7 +291,7 @@ class ReportController extends Controller implements HasMiddleware
 
     public function tax(Request $request)
     {
-        $vendorId = $request->user()->id;
+        $vendorId = $request->user()->vendor_id ?? $request->user()->id;
         
         $onlineSubtotal = \App\Models\Order::where('user_id', $vendorId)
             ->whereNotIn('status', ['cancelled', 'returned'])
@@ -313,7 +313,7 @@ class ReportController extends Controller implements HasMiddleware
 
     public function salesAnalytics(Request $request)
     {
-        $vendorId = $request->user()->id;
+        $vendorId = $request->user()->vendor_id ?? $request->user()->id;
         
         // Online Analytics
         $onlineAnalytics = \App\Models\Order::where('user_id', $vendorId)

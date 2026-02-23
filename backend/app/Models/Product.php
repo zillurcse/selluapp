@@ -6,9 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+use App\Traits\BelongsToVendor;
+
 class Product extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, BelongsToVendor;
 
     protected $fillable = [
         'vendor_id',
@@ -45,12 +47,14 @@ class Product extends Model
         'seo_keywords',
         'seo_image',
         'faqs',
+        'specifications',
         'is_active',
     ];
 
     protected $casts = [
         'gallery' => 'array',
         'faqs' => 'array',
+        'specifications' => 'array',
         'has_variants' => 'boolean',
         'is_featured' => 'boolean',
         'is_special' => 'boolean',

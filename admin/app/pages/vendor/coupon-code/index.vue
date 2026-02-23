@@ -446,7 +446,8 @@ const handleConfirmDelete = async () => {
 }
 
 definePageMeta({
-  middleware: 'auth'
+  middleware: 'auth',
+  permissions: 'coupons.view'
 })
 </script>
 

@@ -4,9 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+use App\Traits\BelongsToVendor;
+
 class Order extends Model
 {
-    use \Illuminate\Database\Eloquent\SoftDeletes;
+    use \Illuminate\Database\Eloquent\SoftDeletes, BelongsToVendor;
+
+    protected $vendorIdColumn = 'user_id';
 
     protected $fillable = [
         'user_id',

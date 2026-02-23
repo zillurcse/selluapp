@@ -24,8 +24,14 @@ class VendorProfileController extends Controller implements HasMiddleware
 
     public function index()
     {
-        $user = auth()->user()->load('vendorProfile');
-        return response()->json($user);
+        $user = auth()->user();
+        
+        if ($user->vendor_id) {
+            $owner = User::with('vendorProfile')->find($user->vendor_id);
+            return response()->json($owner);
+        }
+
+        return response()->json($user->load('vendorProfile'));
     }
 
     public function update(Request $request)

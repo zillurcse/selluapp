@@ -118,11 +118,14 @@
 import { PlusIcon, PencilIcon, TrashIcon, ShieldCheckIcon, ShieldIcon, LockIcon } from 'lucide-vue-next'
 
 definePageMeta({
-  middleware: 'auth'
+  middleware: 'auth',
+  permissions: 'roles.view'
 })
 
 const roles = ref([])
 const loading = ref(false)
+
+
 const { getAll, deleteItem } = useCrud()
 const { $toast } = useNuxtApp()
 

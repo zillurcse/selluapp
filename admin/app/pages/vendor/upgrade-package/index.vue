@@ -35,6 +35,34 @@
       </div>
     </div>
 
+    <!-- Current Plan Banner -->
+    <div v-if="currentPackage.id" class="max-w-[1400px] mx-auto mb-12">
+      <div class="bg-indigo-600 rounded-3xl p-8 text-white shadow-xl shadow-indigo-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
+        <!-- Background Decoration -->
+        <div class="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-white opacity-10 blur-3xl"></div>
+        <div class="relative z-10">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="px-3 py-1 bg-white/20 rounded-full text-xs font-bold uppercase tracking-wider">Current Plan</span>
+          </div>
+          <h2 class="text-3xl font-black mb-1">{{ currentPackage.name }}</h2>
+          <p class="text-indigo-100 font-medium">
+            You have access to {{ currentPackage.product_limit === -1 ? 'unlimited' : currentPackage.product_limit }} products.
+            <span v-if="currentPackageExpiry">Expires on: {{ new Date(currentPackageExpiry).toLocaleDateString() }}</span>
+          </p>
+        </div>
+        <div class="relative z-10 flex gap-4">
+          <div class="bg-white/10 p-4 rounded-2xl backdrop-blur-sm border border-white/20 text-center">
+            <div class="text-2xl font-black">{{ currentPackage.product_limit === -1 ? '∞' : currentPackage.product_limit }}</div>
+            <div class="text-indigo-200 text-xs font-bold uppercase tracking-wider">Product Limit</div>
+          </div>
+           <div class="bg-white/10 p-4 rounded-2xl backdrop-blur-sm border border-white/20 text-center">
+            <div class="text-2xl font-black">{{ currentPackage.employee_limit === -1 ? '∞' : currentPackage.employee_limit }}</div>
+            <div class="text-indigo-200 text-xs font-bold uppercase tracking-wider">Staff Limit</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Pricing Grid -->
     <div class="max-w-[1400px] mx-auto">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -90,10 +118,11 @@
 
             <!-- Action Button -->
             <button 
-              :disabled="plan.isCurrent"
+              @click="purchasePlan(plan.id)"
+              :disabled="plan.isCurrent || isProcessing"
               :class="[
                 'w-full py-5 rounded-2xl font-black text-lg transition-all active:scale-[0.98] shadow-lg flex items-center justify-center gap-3 group/btn',
-                plan.isCurrent 
+                (plan.isCurrent || isProcessing)
                   ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none' 
                   : (plan.featured 
                     ? 'bg-slate-900 text-white hover:bg-black shadow-slate-900/20' 
@@ -101,6 +130,7 @@
               ]"
             >
               <span v-if="plan.isCurrent">Active Plan</span>
+              <span v-else-if="isProcessing">Processing...</span>
               <template v-else>
                 {{ plan.cta }}
                 <ArrowRight class="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
@@ -142,66 +172,84 @@ import {
   HeartHandshake
 } from 'lucide-vue-next'
 
-const isYearly = ref(false)
+import { toast } from 'vue-sonner'
 
-const plans = [
-  {
-    name: 'Starter',
-    description: 'Perfect for new merchants starting their online journey.',
-    monthlyPrice: 0,
-    yearlyPrice: 0,
-    icon: Zap,
-    iconBg: 'bg-amber-500',
-    isCurrent: true,
-    cta: 'Select Starter',
-    features: [
+definePageMeta({
+  middleware: 'auth'
+})
+
+const isYearly = ref(false)
+const isProcessing = ref(false)
+
+const authStore = useAuthStore()
+const utilityStore = useUtilityStore()
+const tokenStore = useTokenStore()
+const config = useRuntimeConfig()
+
+const route = useRoute()
+const { deleteItem, getAll } = useCrud()
+
+const packages = await getAll('/vendor/packages')
+
+const currentPackageId = computed(() => authStore.user?.vendor_profile?.package_id || authStore.user?.owner?.vendor_profile?.package_id)
+const currentPackage = computed(() => authStore.user?.vendor_profile?.package || authStore.user?.owner?.vendor_profile?.package || {})
+const currentPackageExpiry = computed(() => authStore.user?.vendor_profile?.package_expiry_date || authStore.user?.owner?.vendor_profile?.package_expiry_date || null)
+
+
+const plans = computed(() => {
+  if (!packages || !Array.isArray(packages)) return []
+  return packages.map((pkg, index) => {
+    const icons = [Zap, Rocket, Crown]
+    const iconBgs = ['bg-amber-500', 'bg-indigo-600', 'bg-slate-900']
+    const icon = icons[index % icons.length]
+    const iconBg = iconBgs[index % iconBgs.length]
+
+    const monthlyPrice = parseFloat(pkg.price)
+    // If the database has a yearly price we could use it, but here we calculate a 20% discount.
+    const yearlyPrice = monthlyPrice * 12 * 0.8 
+
+    const pkgFeatures = pkg.features || []
+    
+    const featureList = [
       { label: 'Basic Shop Management', included: true },
-      { label: 'Up to 50 Products', included: true },
-      { label: 'Standard Delivery Setup', included: true },
-      { label: 'Basic Reports', included: true },
-      { label: 'Promotions Builder', included: false },
-      { label: 'Role & Permission', included: false },
-      { label: 'Fraud Check Security', included: false },
+      { label: pkg.product_limit === -1 ? 'Unlimited Products' : `Up to ${pkg.product_limit} Products`, included: true },
+      { label: 'Orders Management', included: true },
+      { label: 'Customers', included: pkgFeatures.includes('Customers') },
+      { label: 'Basic Reports', included: pkgFeatures.includes('Basic Reports') || pkgFeatures.includes('Advanced Reports') },
+      { label: 'Advanced Promotions', included: pkgFeatures.includes('Promotions') },
+      { label: 'POS System', included: pkg.pos_access },
+      { label: 'HRM Suite', included: pkg.hrm_access },
+      { label: 'Fraud Check Security', included: pkgFeatures.includes('Fraud Check') || pkgFeatures.includes('Fraud Check Security') },
+      { label: 'Delivery Setup', included: pkgFeatures.includes('Delivery') || pkgFeatures.includes('Delivery Setup') },
+      { label: 'Landing Pages', included: pkgFeatures.includes('Landing Pages') },
     ]
-  },
-  {
-    name: 'Growth',
-    description: 'Advanced tools to scale your business and automate.',
-    monthlyPrice: 29,
-    yearlyPrice: 280,
-    icon: Rocket,
-    iconBg: 'bg-indigo-600',
-    featured: true,
-    cta: 'Upgrade to Growth',
-    features: [
-      { label: 'Everything in Starter', included: true },
-      { label: 'Unlimited Products', included: true },
-      { label: 'Advanced Promotions', included: true },
-      { label: 'Role & Permission', included: true },
-      { label: 'Custom Domain', included: true },
-      { label: 'Multi-Currency Support', included: true },
-      { label: 'Fraud Check (Standard)', included: false },
-    ]
-  },
-  {
-    name: 'Enterprise',
-    description: 'The ultimate power-house for large scale operations.',
-    monthlyPrice: 99,
-    yearlyPrice: 950,
-    icon: Crown,
-    iconBg: 'bg-slate-900',
-    cta: 'Contact Sales',
-    features: [
-      { label: 'Everything in Growth', included: true },
-      { label: 'Full Fraud Check Security', included: true },
-      { label: 'Priority 24/7 Support', included: true },
-      { label: 'Wholesale Management', included: true },
-      { label: 'Dedicated Account Manager', included: true },
-      { label: 'Custom API Access', included: true },
-      { label: 'Uncapped Growth', included: true },
-    ]
-  }
-]
+
+    return {
+      id: pkg.id,
+      name: pkg.name,
+      description: pkg.description || 'Elevate your business to the next level.',
+      monthlyPrice: monthlyPrice,
+      yearlyPrice: yearlyPrice,
+      icon,
+      iconBg,
+      isCurrent: currentPackageId.value === pkg.id,
+      featured: index === 1, // Make the 2nd plan featured
+      cta: `Request ${pkg.name}`,
+      features: featureList
+    }
+  })
+})
+
+const purchasePlan = (packageId) => {
+  const router = useRouter();
+  router.push({
+    path: '/vendor/upgrade-package/payment',
+    query: {
+      package_id: packageId,
+      billing_cycle: isYearly.value ? 'yearly' : 'monthly'
+    }
+  });
+}
 
 const faqs = [
   {

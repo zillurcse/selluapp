@@ -121,6 +121,11 @@
 <script setup>
 import { Building2, Users, Plus, Pencil, Trash2, X } from 'lucide-vue-next'
 
+definePageMeta({
+  middleware: 'auth',
+  permissions: 'hrm.departments.view'
+})
+
 const { fetchDepartments, createDepartment, updateDepartment, deleteDepartment } = useHrm()
 
 const departments = ref([])

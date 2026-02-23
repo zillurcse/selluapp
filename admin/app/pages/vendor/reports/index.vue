@@ -224,6 +224,11 @@ import {
   Briefcase
 } from 'lucide-vue-next'
 
+definePageMeta({
+  middleware: 'auth',
+  permissions: 'reports.view'
+})
+
 const { data: overview, pending } = useFetch('/api/vendor/reports/overview', {
   headers: {
     Authorization: `Bearer ${useCookie('auth_token').value}`

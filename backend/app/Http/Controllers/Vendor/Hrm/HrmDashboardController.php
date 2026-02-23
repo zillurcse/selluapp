@@ -19,6 +19,7 @@ class HrmDashboardController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
+            new Middleware('package.feature:hrm'),
             new Middleware('permission:hrm.dashboard.view'),
         ];
     }

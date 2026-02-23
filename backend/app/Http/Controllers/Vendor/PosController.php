@@ -23,6 +23,7 @@ class PosController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
+            new Middleware('package.feature:pos'),
             new Middleware('permission:pos.view', only: ['products', 'customers', 'categories', 'brands', 'sales', 'stats']),
             new Middleware('permission:pos.manage', only: ['placeOrder']),
         ];
@@ -34,7 +35,7 @@ class PosController extends Controller implements HasMiddleware
     public function products(Request $request): JsonResponse
     {
         $query = Product::with(['categories', 'brand', 'unit'])
-            ->where('vendor_id', $request->user()->id)
+            ->where('vendor_id', $request->user()->vendor_id ?? $request->user()->id)
             ->where('status', 'published')
             ->where('is_active', true);
 
@@ -78,7 +79,7 @@ class PosController extends Controller implements HasMiddleware
      */
     public function customers(Request $request): JsonResponse
     {
-        $customers = Customer::where('vendor_id', $request->user()->id)
+        $customers = Customer::where('vendor_id', $request->user()->vendor_id ?? $request->user()->id)
             ->select('id', 'first_name', 'last_name', 'email', 'phone')
             ->latest()
             ->get()
@@ -108,7 +109,7 @@ class PosController extends Controller implements HasMiddleware
     public function categories(Request $request): JsonResponse
     {
         // Get only categories that have products for this vendor
-        $vendorId = $request->user()->id;
+        $vendorId = $request->user()->vendor_id ?? $request->user()->id;
 
         $categories = Category::whereHas('products', function ($q) use ($vendorId) {
             $q->where('vendor_id', $vendorId)->where('status', 'published')->where('is_active', true);
@@ -122,7 +123,7 @@ class PosController extends Controller implements HasMiddleware
      */
     public function brands(Request $request): JsonResponse
     {
-        $vendorId = $request->user()->id;
+        $vendorId = $request->user()->vendor_id ?? $request->user()->id;
 
         $brands = Brand::whereHas('products', function ($q) use ($vendorId) {
             $q->where('vendor_id', $vendorId)->where('status', 'published')->where('is_active', true);
@@ -173,7 +174,7 @@ class PosController extends Controller implements HasMiddleware
             }
 
             $sale = PosSale::create([
-                'vendor_id'       => $request->user()->id,
+                'vendor_id'       => $request->user()->vendor_id ?? $request->user()->id,
                 'customer_id'     => $customerId,
                 'reference'       => 'SA_' . strtoupper(Str::random(8)),
                 'subtotal'        => $subtotal,
@@ -225,7 +226,7 @@ class PosController extends Controller implements HasMiddleware
     public function sales(Request $request): JsonResponse
     {
         $sales = PosSale::with(['customer', 'items'])
-            ->where('vendor_id', $request->user()->id)
+            ->where('vendor_id', $request->user()->vendor_id ?? $request->user()->id)
             ->latest()
             ->limit(50)
             ->get()
@@ -257,7 +258,7 @@ class PosController extends Controller implements HasMiddleware
      */
     public function stats(Request $request): JsonResponse
     {
-        $vendorId = $request->user()->id;
+        $vendorId = $request->user()->vendor_id ?? $request->user()->id;
         $today = now()->toDateString();
 
         $todaySales = PosSale::where('vendor_id', $vendorId)

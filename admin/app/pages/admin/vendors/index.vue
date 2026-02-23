@@ -10,7 +10,7 @@
           <span class="text-slate-600 dark:text-slate-300">Vendors</span>
         </div>
         <h1 class="text-3xl font-[1000] text-slate-900 dark:text-white tracking-tight">Vendor Management</h1>
-        <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Create, manage and assign packages to vendors.</p>
+        <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Create, manage and assign plans to vendors.</p>
       </div>
       <button @click="openCreateModal"
         class="flex items-center gap-2 px-5 py-2.5 bg-slate-900 dark:bg-indigo-600 text-white rounded-xl text-sm font-bold hover:scale-105 transition-all shadow-lg shadow-slate-900/20 dark:shadow-indigo-600/30">
@@ -29,8 +29,8 @@
       <select v-model="statusFilter" @change="fetchVendors"
         class="px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all">
         <option value="">All Vendors</option>
-        <option value="active">With Package</option>
-        <option value="inactive">No Package</option>
+        <option value="active">With Plan</option>
+        <option value="inactive">No Plan</option>
       </select>
     </div>
 
@@ -40,7 +40,7 @@
       <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 hidden md:grid grid-cols-12 gap-4">
         <div class="col-span-4 text-xs font-black text-slate-400 uppercase tracking-widest">Vendor</div>
         <div class="col-span-3 text-xs font-black text-slate-400 uppercase tracking-widest">Store</div>
-        <div class="col-span-3 text-xs font-black text-slate-400 uppercase tracking-widest">Package</div>
+        <div class="col-span-3 text-xs font-black text-slate-400 uppercase tracking-widest">Plan</div>
         <div class="col-span-2 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Actions</div>
       </div>
 
@@ -94,7 +94,13 @@
 
           <!-- Actions -->
           <div class="col-span-2 flex items-center justify-end gap-2">
-            <button @click="openAssignModal(vendor)" title="Assign Package"
+            <!-- Login as Vendor -->
+            <button @click="loginAsVendor(vendor)" :disabled="loggingInAs === vendor.id" title="Login as Vendor"
+              class="w-8 h-8 flex items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-all disabled:opacity-50">
+              <Loader2 v-if="loggingInAs === vendor.id" class="w-4 h-4 animate-spin" />
+              <LogIn v-else class="w-4 h-4" />
+            </button>
+            <button @click="openAssignModal(vendor)" title="Assign Plan"
               class="w-8 h-8 flex items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-all">
               <PackagePlus class="w-4 h-4" />
             </button>
@@ -275,11 +281,15 @@
 <script setup>
 import {
   Shield, ChevronRight, Plus, Search, Users, PackagePlus, Pencil, Trash2,
-  X, Loader2, UserPlus
+  X, Loader2, UserPlus, LogIn
 } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 
-definePageMeta({ middleware: 'auth', layout: 'default' })
+definePageMeta({
+  middleware: 'auth',
+  layout: 'default',
+  permissions: 'admin.vendors.view'
+})
 
 const { getAll, getHeaders } = useCrud()
 const config = useRuntimeConfig()
@@ -289,6 +299,7 @@ const vendors = ref([])
 const pagination = ref(null)
 const loading = ref(true)
 const saving = ref(false)
+const loggingInAs = ref(null)
 const searchQuery = ref('')
 const statusFilter = ref('')
 const currentPage = ref(1)
@@ -418,6 +429,32 @@ const assignPackage = async () => {
     toast.error(e.data?.message || 'Failed to assign package')
   } finally {
     saving.value = false
+  }
+}
+
+// Login as Vendor (impersonation)
+const loginAsVendor = async (vendor) => {
+  loggingInAs.value = vendor.id
+  try {
+    const res = await $fetch(`${baseURL}/admin/vendors/${vendor.id}/login-as`, {
+      method: 'POST',
+      headers: getHeaders()
+    })
+    const tokenStore = useTokenStore()
+    const authStore = useAuthStore()
+    const userCookie = useCookie('auth_user', { maxAge: 60 * 60 * 24 * 2, path: '/' })
+
+    tokenStore.setToken(res.access_token)
+    userCookie.value = res.user
+    authStore.user = res.user
+    authStore.isAuthenticated = true
+
+    toast.success(`Logged in as ${vendor.name}`)
+    await navigateTo('/vendor')
+  } catch (e) {
+    toast.error(e.data?.message || 'Failed to login as vendor')
+  } finally {
+    loggingInAs.value = null
   }
 }
 

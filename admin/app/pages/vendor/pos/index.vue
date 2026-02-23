@@ -369,7 +369,11 @@ import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import useCrud from '~/composables/useCrud'
 
-definePageMeta({ layout: false })
+definePageMeta({ 
+  layout: false,
+  middleware: 'auth',
+  permissions: 'pos.view'
+})
 
 const { getAll, getHeaders } = useCrud()
 const config = useRuntimeConfig()

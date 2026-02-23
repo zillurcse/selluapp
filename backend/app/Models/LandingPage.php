@@ -6,8 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+use App\Traits\BelongsToVendor;
+
 class LandingPage extends Model
 {
+    use BelongsToVendor;
     use HasFactory, SoftDeletes;
 
     protected $fillable = [

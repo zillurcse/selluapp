@@ -110,6 +110,11 @@
 import { ChevronLeft, Image, Image as ImageIcon, Link as LinkIcon, Save } from 'lucide-vue-next'
 import { ref, onMounted } from 'vue'
 
+definePageMeta({
+  middleware: 'auth',
+  permissions: 'settings.view'
+})
+
 const { $toast } = useNuxtApp()
 const { getAll, createItem } = useCrud()
 

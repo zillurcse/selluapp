@@ -15,6 +15,7 @@ class LandingPageController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
+            new Middleware('package.feature:landing pages'),
             new Middleware('permission:landing_pages.view', only: ['index', 'show']),
             new Middleware('permission:landing_pages.create', only: ['store']),
             new Middleware('permission:landing_pages.edit', only: ['update']),
