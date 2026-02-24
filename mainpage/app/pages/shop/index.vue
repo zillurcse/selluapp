@@ -64,7 +64,7 @@
                   </label>
                   
                   <!-- Subcategories -->
-                  <div v-if="cat.children && cat.children.length > 0" class="pl-8 space-y-2">
+                  <div v-if="cat.children?.length" class="pl-8 space-y-2">
                     <label v-for="child in cat.children" :key="child.id" class="flex items-center gap-3 cursor-pointer group">
                       <div class="relative w-4 h-4 flex items-center justify-center">
                         <input 
@@ -175,7 +175,7 @@
         <main class="lg:col-span-9 animate-fade-in" style="animation-delay: 0.2s">
           <div class="flex flex-col sm:flex-row justify-between items-center mb-10 gap-6 border-b border-gray-50 pb-8">
             <div class="text-sm font-bold text-gray-400 uppercase tracking-widest">
-              Showing <span class="text-gray-900">{{ pagination?.total || 0 }}</span> items found
+              Showing <span class="text-gray-900">{{ totalFound }}</span> items found
             </div>
             <div class="flex items-center gap-4">
               <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">Sort By:</span>
@@ -207,9 +207,9 @@
           </div>
 
           <!-- Products Grid -->
-          <div v-else-if="products.length > 0" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8 md:gap-10">
+          <div v-else-if="allProducts?.length > 0" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8 md:gap-10">
             <ProductCard 
-              v-for="(product, idx) in products" 
+              v-for="(product, idx) in allProducts" 
               :key="product.id" 
               :product="product"
               :style="{ animationDelay: `${0.1 + (idx * 0.05)}s` }"
@@ -233,33 +233,26 @@
             </button>
           </div>
 
-          <!-- Pagination -->
-          <div v-if="pagination && pagination.last_page > 1" class="mt-20 flex justify-center items-center gap-4">
-            <button 
-              @click="changePage(filters.page - 1)"
-              :disabled="filters.page === 1"
-              class="w-12 h-12 rounded-full border border-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-900 transition-all disabled:opacity-30 disabled:pointer-events-none"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-            </button>
-            <div class="flex gap-2">
+          <!-- Scroll Trigger & Loading More -->
+          <div ref="scrollTrigger" class="h-20 flex items-center justify-center mt-10">
+            <div v-if="isLoadingMore" class="flex items-center gap-3">
+              <div class="w-6 h-6 border-4 border-gray-200 border-t-indigo-600 rounded-full animate-spin"></div>
+              <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">Loading more...</span>
+            </div>
+            <div v-else-if="!hasMore && allProducts?.length > 0" class="text-xs font-bold text-gray-300 uppercase tracking-widest text-center">
+              You've reached the end
+            </div>
+            
+            <!-- Manual Load More after 5 pages -->
+            <div v-else-if="hasMore && loadedPages >= maxAutoPages && !isLoadingMore" class="flex flex-col items-center gap-4">
+              <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">More products are available</p>
               <button 
-                v-for="page in pagination.last_page" 
-                :key="page"
-                @click="changePage(page)"
-                class="w-12 h-12 rounded-full font-bold text-sm transition-all" 
-                :class="filters.page === page ? 'bg-gray-900 text-white shadow-lg' : 'text-gray-400 hover:text-gray-900 hover:bg-gray-50'"
+                @click="loadMore(true)"
+                class="px-10 py-3 bg-white border-2 border-gray-900 text-gray-900 rounded-full font-bold text-xs uppercase tracking-widest hover:bg-gray-900 hover:text-white transition-all shadow-sm"
               >
-                {{ page }}
+                Load More Products
               </button>
             </div>
-            <button 
-              @click="changePage(filters.page + 1)"
-              :disabled="filters.page === pagination.last_page"
-              class="w-12 h-12 rounded-full border border-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-900 transition-all disabled:opacity-30 disabled:pointer-events-none"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-            </button>
           </div>
         </main>
       </div>
@@ -268,7 +261,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import lampImg from '~/assets/img/lamp.png'
 
@@ -287,9 +280,13 @@ const filters = reactive({
   min_price: null,
   max_price: null,
   sort: 'newest',
-  page: 1,
-  search: ''
+  search: '',
+  offset: 0,
+  limit: 10
 })
+
+const loadedPages = ref(1)
+const maxAutoPages = 5
 
 // Initialize filters from query params
 const initFiltersFromQuery = () => {
@@ -303,7 +300,6 @@ const initFiltersFromQuery = () => {
   if (route.query.sort) filters.sort = route.query.sort
   if (route.query.min_price) filters.min_price = Number(route.query.min_price)
   if (route.query.max_price) filters.max_price = Number(route.query.max_price)
-  if (route.query.page) filters.page = Number(route.query.page)
 }
 
 initFiltersFromQuery()
@@ -319,8 +315,13 @@ const availableCategories = computed(() => storefrontData.value?.categories || [
 const availableBrands = computed(() => storefrontData.value?.brands || [])
 const availableUnits = computed(() => storefrontData.value?.units || [])
 
+const allProducts = ref([])
+const hasMore = ref(true)
+const totalFound = ref(0)
+const isLoadingMore = ref(false)
+
 // Fetch Products
-const { data: productsData, pending, refresh } = await useAsyncData('products', () => 
+const { data: productsData, pending } = await useAsyncData('products', () => 
   $fetch(`${apiBase}/storefront/products`, {
     headers: { 'X-Tenant-Domain': domain },
     params: {
@@ -331,13 +332,15 @@ const { data: productsData, pending, refresh } = await useAsyncData('products', 
       specs: filters.specs
     }
   }), {
-    watch: [filters]
+    watch: [() => filters.categories, () => filters.brands, () => filters.units, () => filters.sort, () => filters.search, () => filters.specs, () => filters.min_price, () => filters.max_price]
   }
 )
 
-const products = computed(() => {
-  if (!productsData.value) return []
-  return productsData.value.data.map(p => ({
+// Handle data updates
+watch(productsData, (newData) => {
+  if (!newData || !newData.data || !Array.isArray(newData.data)) return
+  
+  const mapped = newData.data.map(p => ({
     id: p.id,
     name: p.name,
     slug: p.slug,
@@ -345,21 +348,103 @@ const products = computed(() => {
     image: p.image_url || lampImg,
     category: p.categories?.[0]?.name || 'Uncategorized',
     brand: p.brand?.name || null,
-    vendor: p.vendor?.vendor_profile ? {
-      name: p.vendor.vendor_profile.store_name,
-      slug: p.vendor.vendor_profile.store_slug
+    vendor: p.vendor?.vendorProfile ? {
+      name: p.vendor.vendorProfile.store_name,
+      slug: p.vendor.vendorProfile.store_slug
     } : null
   }))
+
+  if (filters.offset === 0) {
+    allProducts.value = mapped
+  } else {
+    // Avoid duplicates if any
+    const existingIds = new Set((allProducts.value || []).map(p => p.id))
+    const uniqueNew = mapped.filter(p => !existingIds.has(p.id))
+    allProducts.value = [...(allProducts.value || []), ...uniqueNew]
+  }
+  
+  if (newData.total !== undefined) {
+    totalFound.value = newData.total
+  }
+  
+  if (allProducts.value) {
+    hasMore.value = allProducts.value.length < totalFound.value
+  }
+  
+  isLoadingMore.value = false
+}, { immediate: true })
+
+// Reset offset when filters change
+watch([() => filters.categories, () => filters.brands, () => filters.units, () => filters.sort, () => filters.search, () => filters.specs, () => filters.min_price, () => filters.max_price], () => {
+  filters.offset = 0
+  filters.limit = 10
+  hasMore.value = true
+  loadedPages.value = 1
 })
 
-const pagination = computed(() => {
-  if (!productsData.value) return null
-  return {
-    current_page: productsData.value.current_page,
-    last_page: productsData.value.last_page,
-    total: productsData.value.total,
-    from: productsData.value.from,
-    to: productsData.value.to
+const loadMore = async (isManual = false) => {
+  if (!hasMore.value || isLoadingMore.value || pending.value) return
+  if (!isManual && loadedPages.value >= maxAutoPages) return
+  
+  isLoadingMore.value = true
+  filters.limit = 6
+  filters.offset = (allProducts.value?.length || 0)
+  
+  try {
+    const newData = await $fetch(`${apiBase}/storefront/products`, {
+      headers: { 'X-Tenant-Domain': domain },
+      params: {
+        ...filters,
+        categories: filters.categories.join(','),
+        brands: filters.brands.join(','),
+        units: filters.units.join(','),
+        specs: filters.specs
+      }
+    })
+    
+    productsData.value = newData // This will trigger the watch(productsData)
+    loadedPages.value++
+  } catch (error) {
+    console.error('Error loading more products:', error)
+    isLoadingMore.value = false
+  }
+}
+
+// Infinite scroll observer
+const observer = ref(null)
+const scrollTrigger = ref(null)
+
+const handleScroll = () => {
+  if (!hasMore.value || isLoadingMore.value || pending.value) return
+  
+  const scrollTop = window.scrollY || document.documentElement.scrollTop
+  const windowHeight = window.innerHeight
+  const scrollHeight = document.documentElement.scrollHeight
+  const scrollPercentage = ((scrollTop + windowHeight) / scrollHeight) * 100
+
+  if (scrollPercentage >= 80) {
+    loadMore()
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('scroll', handleScroll)
+  
+  observer.value = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting) {
+      loadMore()
+    }
+  }, { threshold: 0.1 })
+  
+  if (scrollTrigger.value) {
+    observer.value.observe(scrollTrigger.value)
+  }
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
+  if (observer.value) {
+    observer.value.disconnect()
   }
 })
 
@@ -373,7 +458,8 @@ const clearFilters = () => {
   filters.min_price = null
   filters.max_price = null
   filters.sort = 'newest'
-  filters.page = 1
+  filters.offset = 0
+  filters.limit = 10
   filters.search = ''
 }
 
@@ -384,7 +470,6 @@ const toggleFilter = (type, slug) => {
   } else {
     filters[type].push(slug)
   }
-  filters.page = 1
 }
 
 const toggleCategory = (slug) => toggleFilter('categories', slug)
@@ -392,6 +477,7 @@ const toggleBrand = (slug) => toggleFilter('brands', slug)
 const toggleUnit = (slug) => toggleFilter('units', slug)
 
 const toggleSpec = (key, value) => {
+  if (!filters.specs) filters.specs = {}
   if (!filters.specs[key]) {
     filters.specs[key] = []
   }
@@ -404,43 +490,32 @@ const toggleSpec = (key, value) => {
   } else {
     filters.specs[key].push(value)
   }
-  filters.page = 1
 }
 
 const applyPriceFilter = () => {
-  filters.page = 1
+  filters.offset = 0
 }
 
-const changePage = (page) => {
-  filters.page = page
-  window.scrollTo({ top: 0, behavior: 'smooth' })
-}
-
-watch(() => filters.sort, () => {
-  filters.page = 1
-})
-
-watch(() => filters.search, () => {
-  filters.page = 1
-})
-
-// Watch for external route changes (like from Navbar)
+// Watch for external route changes
 watch(() => route.query.category, (newVal) => {
   if (newVal) {
+    if (!filters.categories) filters.categories = []
     filters.categories = [newVal]
-    filters.page = 1
+    filters.offset = 0
   }
 })
 
-// Update query string when filters change (optional but good for UX)
+// Update query string
 watch(filters, (newFilters) => {
+  if (!newFilters) return
   const query = {}
-  if (newFilters.categories.length) query.categories = newFilters.categories.join(',')
+  if (newFilters.categories && newFilters.categories.length) {
+    query.categories = newFilters.categories.join(',')
+  }
   if (newFilters.search) query.search = newFilters.search
-  if (newFilters.sort !== 'newest') query.sort = newFilters.sort
+  if (newFilters.sort && newFilters.sort !== 'newest') query.sort = newFilters.sort
   if (newFilters.min_price) query.min_price = newFilters.min_price
   if (newFilters.max_price) query.max_price = newFilters.max_price
-  if (newFilters.page > 1) query.page = newFilters.page
   
   router.push({ query, replace: true })
 }, { deep: true })

@@ -290,7 +290,26 @@ class StorefrontController extends Controller
             $query->latest();
         }
 
-        $products = $query->paginate(12);
+        if ($request->has('offset')) {
+            $limit = $request->get('limit', 10);
+            $offset = $request->get('offset', 0);
+            
+            $total = (clone $query)->count();
+            $items = $query->offset($offset)->limit($limit)->get();
+            
+            $this->formatProducts($items);
+            
+            return response()->json([
+                'data' => $items,
+                'total' => $total,
+                'per_page' => $limit,
+                'current_page' => floor($offset / $limit) + 1,
+                'last_page' => ceil($total / $limit)
+            ]);
+        }
+
+        $perPage = $request->get('per_page', 10);
+        $products = $query->paginate($perPage);
 
         $this->formatProducts($products->getCollection());
 
