@@ -22,8 +22,10 @@ class AuthController extends Controller
             'password' => 'required|string|min:8|confirmed',
         ]);
 
+        $vendorId = $request->header('X-Vendor-Id') ?? 5; // Use header or fallback
+
         $customer = Customer::create([
-            'vendor_id' => 5,
+            'vendor_id' => $vendorId,
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
             'email' => $request->email,

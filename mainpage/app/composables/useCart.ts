@@ -30,14 +30,16 @@ export const useCart = () => {
         }
     }
 
-    const addToCart = async (product: any, quantity: number = 1) => {
+    const addToCart = async (product: any, quantity: number = 1, openCart: boolean = true) => {
         const existingItem = cart.value.find(item => item.id === product.id)
         if (existingItem) {
             existingItem.quantity += quantity
         } else {
             cart.value.push({ ...product, quantity })
         }
-        isCartOpen.value = true
+        if (openCart) {
+            isCartOpen.value = true
+        }
 
         if (authStore.isAuthenticated) {
             try {

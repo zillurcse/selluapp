@@ -118,6 +118,105 @@
                <span class="ml-3 text-sm font-medium text-gray-700 dark:text-slate-300">Enable Product Variants</span>
              </label>
            </div>
+
+           <!-- Variant Config UI -->
+           <div v-if="form.has_variants" class="mt-6 border-t border-gray-100 dark:border-slate-800 pt-6 animate-in fade-in slide-in-from-top-4 duration-500">
+              <h3 class="text-md font-semibold text-gray-900 dark:text-white mb-4">Product Variants Manager</h3>
+              
+              <div class="space-y-4 mb-6">
+                 <div v-for="(config, bgIndex) in selectedAttributesConfig" :key="bgIndex" class="p-4 bg-gray-50/50 dark:bg-slate-800/50 rounded-xl border border-gray-200 dark:border-slate-700 relative">
+                    <button @click="removeAttributeLine(bgIndex)" type="button" class="absolute top-4 right-4 text-red-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-1.5 rounded-lg transition-all">
+                        <X class="w-4 h-4" />
+                    </button>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                       <div>
+                           <div class="flex items-center justify-between mb-1.5 border-b border-transparent">
+                               <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">Select Attribute</label>
+                               <button @click="showQuickAddAttributeModal = true" type="button" class="text-xs text-primary-600 dark:text-primary-400 font-bold hover:text-primary-700 dark:hover:text-primary-300 transition-colors flex items-center pr-1">
+                                    <Plus class="w-3.5 h-3.5 mr-0.5" />
+                                    New
+                               </button>
+                           </div>
+                           <select v-model="config.attribute_id" @change="generateCombinations" class="w-full px-4 py-2 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-white">
+                               <option value="" disabled>Select Attribute</option>
+                               <option v-for="attr in productAttributesList" :key="attr.id" :value="attr.id">{{ attr.name }}</option>
+                           </select>
+                       </div>
+                       <div v-if="config.attribute_id">
+                           <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Select Values</label>
+                           <div class="flex flex-wrap gap-2">
+                               <label v-for="val in productAttributesList.find(a => a.id === config.attribute_id)?.values" :key="val.id" class="inline-flex items-center p-2 rounded-lg border border-gray-100 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer ring-1 ring-transparent peer-checked:ring-primary-500">
+                                   <input type="checkbox" :value="val.id" v-model="config.value_ids" @change="generateCombinations" class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 dark:border-slate-600 peer">
+                                   <div v-if="productAttributesList.find(a => a.id === config.attribute_id)?.type === 'color'" 
+                                        class="w-4 h-4 rounded-full ml-2 shadow-sm border border-gray-200" 
+                                        :style="{ backgroundColor: val.meta }"></div>
+                                   <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">{{ val.value }}</span>
+                               </label>
+                           </div>
+                       </div>
+                    </div>
+                 </div>
+                 <button @click="addAttributeLine" type="button" class="w-full py-3 bg-white dark:bg-slate-900 border border-dashed border-gray-300 dark:border-slate-700 text-gray-600 dark:text-slate-400 font-medium rounded-xl hover:border-primary-500 hover:text-primary-600 transition-all flex items-center justify-center gap-2">
+                    <Plus class="w-4 h-4" />
+                    Add Another Attribute
+                 </button>
+              </div>
+
+              <!-- Matrix UI -->
+              <div v-if="generatedVariants.length > 0" class="overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700">
+                  <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                      <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-slate-800 dark:text-gray-400">
+                          <tr>
+                              <th scope="col" class="px-4 py-3 border-b dark:border-slate-700">Variant</th>
+                              <th scope="col" class="px-4 py-3 border-b dark:border-slate-700 w-32">Price</th>
+                              <th scope="col" class="px-4 py-3 border-b dark:border-slate-700 w-24">Stock</th>
+                              <th scope="col" class="px-4 py-3 border-b dark:border-slate-700 w-32">SKU</th>
+                              <th scope="col" class="px-4 py-3 border-b dark:border-slate-700 w-24">Image</th>
+                              <th scope="col" class="px-4 py-3 border-b dark:border-slate-700 w-16 text-center">Active</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                          <tr v-for="(variant, idx) in generatedVariants" :key="variant._key" class="bg-white border-b dark:bg-slate-900 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+                              <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">
+                                  <div class="flex items-center gap-2 flex-wrap">
+                                      <template v-for="(attr, aIdx) in variant.attributes" :key="aIdx">
+                                           <div class="flex items-center gap-1.5 bg-gray-50 dark:bg-slate-800 px-2 py-0.5 rounded border border-gray-100 dark:border-slate-700">
+                                               <div v-if="productAttributesList.find(pa => pa.id === attr.attribute_id)?.type === 'color'"
+                                                    class="w-3 h-3 rounded-full border border-gray-200"
+                                                    :style="{ backgroundColor: attr.meta }"></div>
+                                               <span class="text-xs">{{ attr.value }}</span>
+                                           </div>
+                                      </template>
+                                  </div>
+                              </td>
+                              <td class="px-4 py-3">
+                                  <input type="number" v-model="variant.price" class="w-full px-2 py-1.5 border border-gray-200 dark:border-slate-600 rounded bg-transparent focus:ring-1 focus:ring-primary-500 outline-none" min="0" step="0.01">
+                              </td>
+                              <td class="px-4 py-3">
+                                  <input type="number" v-model="variant.stock_qty" class="w-full px-2 py-1.5 border border-gray-200 dark:border-slate-600 rounded bg-transparent focus:ring-1 focus:ring-primary-500 outline-none" min="0">
+                              </td>
+                              <td class="px-4 py-3">
+                                  <input type="text" v-model="variant.sku" class="w-full px-2 py-1.5 border border-gray-200 dark:border-slate-600 rounded bg-transparent focus:ring-1 focus:ring-primary-500 outline-none" placeholder="SKU">
+                              </td>
+                              <td class="px-4 py-3">
+                                  <div class="flex items-center space-x-2">
+                                     <div v-if="variant.imagePreview" class="relative group w-8 h-8 rounded border border-gray-200 dark:border-slate-600 overflow-hidden">
+                                         <img :src="variant.imagePreview" class="w-full h-full object-cover">
+                                     </div>
+                                     <label class="cursor-pointer text-gray-400 hover:text-primary-500 transition-colors">
+                                         <UploadCloud class="w-5 h-5"/>
+                                         <input type="file" @change="handleVariantImage($event, idx)" class="hidden" accept="image/*">
+                                     </label>
+                                  </div>
+                              </td>
+                              <td class="px-4 py-3 text-center">
+                                  <input type="checkbox" v-model="variant.is_active" class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600">
+                              </td>
+                          </tr>
+                      </tbody>
+                  </table>
+              </div>
+           </div>
         </div>
 
         <!-- Accordions -->
@@ -441,6 +540,76 @@
 
       </div>
     </form>
+
+    <!-- Quick Add Attribute Modal -->
+    <div v-if="showQuickAddAttributeModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 transition-opacity">
+       <div class="bg-white dark:bg-slate-900 rounded-xl max-w-md w-full p-6 shadow-xl animate-in zoom-in-95 duration-200">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Add Quick Attribute</h3>
+          <div class="space-y-4">
+             <div>
+                 <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Attribute Name</label>
+                 <input type="text" v-model="quickAttributeForm.name" placeholder="e.g. Color" class="w-full px-4 py-2 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-primary-500 outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-white">
+             </div>
+             
+             <div>
+                 <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Attribute Type</label>
+                 <select v-model="quickAttributeForm.type" class="w-full px-4 py-2 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-primary-500 outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-white">
+                     <option value="button">Standard Button / Label</option>
+                     <option value="color">Color Swatch</option>
+                 </select>
+             </div>
+
+             <div v-if="quickAttributeForm.type !== 'color'">
+                 <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Values (Comma separated)</label>
+                 <input type="text" v-model="quickAttributeForm.values" placeholder="e.g. Cotton, Polyester, Silk" class="w-full px-4 py-2 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-primary-500 outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-white">
+             </div>
+
+             <div v-if="quickAttributeForm.type === 'color'" class="space-y-3">
+                 <div class="flex items-center justify-between">
+                     <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">Add Colors</label>
+                     <button @click="addColorToQuickForm" type="button" class="text-xs flex items-center text-primary-600 hover:text-primary-700 dark:text-primary-400 font-medium">
+                         <Plus class="w-3 h-3 mr-1" /> Add Color
+                     </button>
+                 </div>
+                 <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                     <div v-for="(colItem, idx) in quickAttributeForm.colorValues" :key="idx" class="flex gap-2 items-center">
+                         <input type="text" v-model="colItem.value" placeholder="Color Name (e.g. Red)" class="flex-1 px-3 py-1.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-primary-500 outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-white text-sm">
+                         <input type="color" v-model="colItem.meta" class="w-10 h-8 rounded shrink-0 cursor-pointer border border-gray-200 dark:border-slate-700">
+                         <button @click="quickAttributeForm.colorValues.splice(idx, 1)" type="button" class="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors shrink-0">
+                             <X class="w-4 h-4"/>
+                         </button>
+                     </div>
+                 </div>
+             </div>
+
+             <div class="pt-4 border-t border-gray-100 dark:border-slate-800 space-y-4">
+                 <div>
+                     <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Guide Description (Optional)</label>
+                     <textarea v-model="quickAttributeForm.description" rows="2" placeholder="e.g. Size guide for international shirts" class="w-full px-4 py-2 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-primary-500 outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-white text-sm"></textarea>
+                 </div>
+                 <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Guide Image (Optional)</label>
+                    <div class="flex items-center gap-4">
+                        <div v-if="quickAttributeForm.guidePreview" class="w-16 h-16 rounded border overflow-hidden shrink-0 bg-gray-50">
+                            <img :src="quickAttributeForm.guidePreview" class="w-full h-full object-cover">
+                        </div>
+                        <label class="flex-1 border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-lg px-4 py-3 text-center cursor-pointer hover:border-primary-500 transition-all">
+                            <input type="file" @change="handleGuideImageUpload" class="hidden" accept="image/*">
+                            <span class="text-xs text-gray-500 dark:text-slate-400">Apply Guide Image / Size Chart</span>
+                        </label>
+                    </div>
+                 </div>
+             </div>
+          </div>
+          <div class="mt-6 flex justify-end gap-3">
+             <button @click="showQuickAddAttributeModal = false" type="button" class="px-4 py-2 text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-lg transition-colors text-sm font-medium">Cancel</button>
+             <button @click="submitQuickAttribute" type="button" :disabled="isSubmittingAttribute" class="px-4 py-2 text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors text-sm font-medium flex items-center disabled:opacity-50">
+                <span v-if="isSubmittingAttribute" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></span>
+                Save Attribute
+             </button>
+          </div>
+       </div>
+    </div>
   </div>
 </template>
 
@@ -470,6 +639,7 @@ const config = useRuntimeConfig()
 const auth = useAuthStore()
 const { getAll, createItem } = useCrud()
 const router = useRoute()
+import { toast } from 'vue-sonner';
 
 // Accordion State
 const sections = reactive({
@@ -639,10 +809,11 @@ const getCategoryPath = (category, allCategories) => {
 // Fetch Data
 const fetchOptions = async () => {
     try {
-        const [categoriesRes, brandsRes, unitsRes] = await Promise.all([
+        const [categoriesRes, brandsRes, unitsRes, attributesRes] = await Promise.all([
              getAll('/vendor/attributes/categories'),
              getAll('/vendor/attributes/brands'),
-             getAll('/vendor/attributes/units')
+             getAll('/vendor/attributes/units'),
+             getAll('/vendor/product-attributes')
         ])
         if (categoriesRes && categoriesRes.data) {
           // Format categories with breadcrumbs
@@ -654,9 +825,170 @@ const fetchOptions = async () => {
         }
         if (brandsRes && brandsRes.data) brands.value = brandsRes.data
         if (unitsRes && unitsRes.data) units.value = unitsRes.data
+        if (attributesRes && attributesRes.data) productAttributesList.value = attributesRes.data
     } catch (e) {
         console.error('Failed to fetch options')
     }
+}
+
+// Variant Logic
+const productAttributesList = ref([])
+const selectedAttributesConfig = ref([]) // [{ attr_index: 0, selected_values: []}]
+const generatedVariants = ref([])
+
+// Quick Attribute Modal State
+const showQuickAddAttributeModal = ref(false)
+const isSubmittingAttribute = ref(false)
+const quickAttributeForm = ref({
+   name: '',
+   type: 'button',
+   values: '',
+   colorValues: [],
+   description: '',
+   guideImage: null,
+   guidePreview: null
+})
+
+const handleGuideImageUpload = (event) => {
+    const file = event.target.files[0]
+    if (file) {
+        quickAttributeForm.value.guideImage = file
+        quickAttributeForm.value.guidePreview = URL.createObjectURL(file)
+    }
+}
+
+const addColorToQuickForm = () => {
+    quickAttributeForm.value.colorValues.push({ value: '', meta: '#000000' })
+}
+
+const submitQuickAttribute = async () => {
+    if (!quickAttributeForm.value.name) {
+        toast.error('Please provide an attribute name.')
+        return
+    }
+
+    let finalValues = []
+    
+    if (quickAttributeForm.value.type === 'color') {
+        finalValues = quickAttributeForm.value.colorValues
+            .filter(v => v.value)
+            .map(v => ({ value: v.value, meta: v.meta }))
+        
+        if (finalValues.length === 0) {
+            toast.error('Please provide at least one color value.')
+            return
+        }
+    } else {
+        const valueArray = quickAttributeForm.value.values.split(',').map(v => v.trim()).filter(v => v)
+        if (valueArray.length === 0) {
+            toast.error('Please provide at least one value for the attribute.')
+            return
+        }
+        finalValues = valueArray.map(val => ({ value: val }))
+    }
+    
+    isSubmittingAttribute.value = true
+    try {
+        const formData = new FormData()
+        formData.append('name', quickAttributeForm.value.name)
+        formData.append('type', quickAttributeForm.value.type)
+        formData.append('values', JSON.stringify(finalValues))
+        
+        if (quickAttributeForm.value.description) {
+            formData.append('description', quickAttributeForm.value.description)
+        }
+        
+        if (quickAttributeForm.value.guideImage) {
+            formData.append('guide_image', quickAttributeForm.value.guideImage)
+        }
+
+        const res = await createItem('/vendor/product-attributes', formData);
+        
+        if (res) {
+            productAttributesList.value.push(res)
+            showQuickAddAttributeModal.value = false
+            quickAttributeForm.value = { name: '', type: 'button', values: '', colorValues: [], description: '', guideImage: null, guidePreview: null }
+            toast.success('Attribute created successfully')
+        }
+    } catch (e) {
+        toast.error('Failed to create attribute: ' + (e.response?._data?.message || e.message))
+    } finally {
+        isSubmittingAttribute.value = false
+    }
+}
+
+const addAttributeLine = () => {
+    selectedAttributesConfig.value.push({
+        attribute_id: '',
+        value_ids: []
+    })
+}
+
+const removeAttributeLine = (index) => {
+    selectedAttributesConfig.value.splice(index, 1)
+    generateCombinations()
+}
+
+const generateCombinations = () => {
+    // Get valid sets of values
+    const validGroupings = selectedAttributesConfig.value
+        .filter(conf => conf.attribute_id && conf.value_ids.length > 0)
+        .map(conf => {
+            const attrObj = productAttributesList.value.find(a => a.id === conf.attribute_id);
+            return conf.value_ids.map(valId => {
+                const valObj = attrObj.values.find(v => v.id === valId);
+                return {
+                    id: valId,
+                    value: valObj ? valObj.value : '',
+                    meta: valObj ? valObj.meta : '',
+                    attribute_name: attrObj.name,
+                    attribute_id: attrObj.id
+                };
+            });
+        });
+
+    if (validGroupings.length === 0) {
+        generatedVariants.value = [];
+        return;
+    }
+
+    const combinations = validGroupings.reduce((acc, current) => {
+        const temp = [];
+        acc.forEach(a => {
+            current.forEach(c => {
+                temp.push([...a, c]);
+            });
+        });
+        return temp;
+    }, [[]]);
+
+    // Map to variants keeping old data if possible
+    generatedVariants.value = combinations.map(combo => {
+        const comboKey = combo.map(c => c.id).sort().join('-');
+        const existing = generatedVariants.value.find(v => v._key === comboKey);
+        
+        return {
+            _key: comboKey,
+            attributes: combo,
+            sku: existing ? existing.sku : form.value.sku ? `${form.value.sku}-${combo.map(c => c.value).join('-')}` : '',
+            price: existing ? existing.price : form.value.sale_price,
+            stock_qty: existing ? existing.stock_qty : form.value.stock_qty || 0,
+            imageFile: existing ? existing.imageFile : null,
+            imagePreview: existing ? existing.imagePreview : null,
+            is_active: existing ? existing.is_active : true
+        };
+    });
+}
+
+// Watch config structure to regenerate smartly
+watch(() => selectedAttributesConfig.value, () => generateCombinations(), { deep: true })
+
+const handleVariantImage = (event, index) => {
+   const file = event.target.files[0]
+   if (file) {
+      generatedVariants.value[index].imageFile = file
+      generatedVariants.value[index].imagePreview = URL.createObjectURL(file)
+   }
 }
 
 fetchOptions()
@@ -829,6 +1161,23 @@ const submitProduct = async () => {
      .filter(group => group.title || group.items.length > 0)
      
   formData.append('specifications', JSON.stringify(validGroups))
+
+  // Append Variants Data
+  if (form.value.has_variants) {
+      const cleanVariants = generatedVariants.value.map((v, index) => {
+          if (v.imageFile) {
+              formData.append(`variants_image_${index}`, v.imageFile)
+          }
+          return {
+              sku: v.sku,
+              price: v.price,
+              stock_qty: v.stock_qty,
+              is_active: v.is_active,
+              attributes: v.attributes.map(attr => attr.id)
+          }
+      })
+      formData.append('variants', JSON.stringify(cleanVariants))
+  }
 
   await createItem('/vendor/products', formData, form)
   router.push('/vendor/products')

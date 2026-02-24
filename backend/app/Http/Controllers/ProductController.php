@@ -137,9 +137,38 @@ class ProductController extends Controller implements HasMiddleware
         $product = Product::create($validated);
         $product->categories()->sync($categoryIds);
 
+        // Handle variants processing
+        if ($request->has('variants') && isset($validated['has_variants']) && $validated['has_variants']) {
+            $variantsData = json_decode($request->variants, true);
+            if (is_array($variantsData)) {
+                foreach ($variantsData as $index => $variantData) {
+                    $variantImage = null;
+                    if ($request->hasFile("variants_image_{$index}")) {
+                        $variantImage = $request->file("variants_image_{$index}")->store('products/variants', 'public');
+                    }
+
+                    $variant = $product->variants()->create([
+                        'sku' => $variantData['sku'] ?? null,
+                        'price' => $variantData['price'] ?? $product->sale_price,
+                        'stock_qty' => $variantData['stock_qty'] ?? 0,
+                        'image' => $variantImage,
+                        'is_active' => $variantData['is_active'] ?? true,
+                    ]);
+
+                    if (isset($variantData['attributes']) && is_array($variantData['attributes'])) {
+                        $attributeIds = [];
+                        foreach ($variantData['attributes'] as $attr) {
+                            $attributeIds[] = is_array($attr) ? $attr['id'] : $attr;
+                        }
+                        $variant->attributes()->sync($attributeIds);
+                    }
+                }
+            }
+        }
+
         return response()->json([
             'message' => 'Product created successfully',
-            'data' => $product->load(['categories', 'brand', 'unit']),
+            'data' => $product->load(['categories', 'brand', 'unit', 'variants.attributes.attribute']),
             'status' => 201
         ], 201);
     }
@@ -158,7 +187,14 @@ class ProductController extends Controller implements HasMiddleware
             $product->gallery = [];
         }
 
-        return $product->load(['categories', 'brand', 'unit']);
+        // Load variants images
+        if ($product->variants) {
+            foreach ($product->variants as $variant) {
+                $variant->image = $variant->image ? Storage::disk('public')->url($variant->image) : null;
+            }
+        }
+
+        return $product->load(['categories', 'brand', 'unit', 'variants.attributes.attribute']);
     }
 
     public function update(\App\Http\Requests\UpdateProductRequest $request, Product $product)
@@ -250,9 +286,77 @@ class ProductController extends Controller implements HasMiddleware
 
         $product->update($validated);
 
+        // Handle variants processing
+        if ($request->has('variants') && isset($validated['has_variants']) && $validated['has_variants']) {
+            $variantsData = json_decode($request->variants, true);
+            if (is_array($variantsData)) {
+                $keptVariantIds = [];
+                foreach ($variantsData as $index => $variantData) {
+                    $variantImage = null;
+                    $hasNewImage = $request->hasFile("variants_image_{$index}");
+
+                    if ($hasNewImage) {
+                        $variantImage = $request->file("variants_image_{$index}")->store('products/variants', 'public');
+                    }
+
+                    if (isset($variantData['id'])) {
+                        $variant = $product->variants()->find($variantData['id']);
+                        if ($variant) {
+                            if ($hasNewImage && $variant->image) {
+                                \Illuminate\Support\Facades\Storage::disk('public')->delete($variant->image);
+                            }
+                            
+                            $variant->update([
+                                'sku' => $variantData['sku'] ?? $variant->sku,
+                                'price' => $variantData['price'] ?? $variant->price,
+                                'stock_qty' => $variantData['stock_qty'] ?? $variant->stock_qty,
+                                'image' => $hasNewImage ? $variantImage : ($variantData['image'] ?? $variant->image),
+                                'is_active' => $variantData['is_active'] ?? $variant->is_active,
+                            ]);
+                            $keptVariantIds[] = $variant->id;
+                        }
+                    } else {
+                        $variant = $product->variants()->create([
+                            'sku' => $variantData['sku'] ?? null,
+                            'price' => $variantData['price'] ?? $product->sale_price,
+                            'stock_qty' => $variantData['stock_qty'] ?? 0,
+                            'image' => $variantImage,
+                            'is_active' => $variantData['is_active'] ?? true,
+                        ]);
+                        $keptVariantIds[] = $variant->id;
+                    }
+
+                    if (isset($variant) && isset($variantData['attributes']) && is_array($variantData['attributes'])) {
+                        $attributeIds = [];
+                        foreach ($variantData['attributes'] as $attr) {
+                            $attributeIds[] = is_array($attr) ? $attr['id'] : $attr;
+                        }
+                        $variant->attributes()->sync($attributeIds);
+                    }
+                }
+
+                // Delete variants not in the kept list
+                $variantsToDelete = $product->variants()->whereNotIn('id', $keptVariantIds)->get();
+                foreach ($variantsToDelete as $vdel) {
+                    if ($vdel->image) {
+                        \Illuminate\Support\Facades\Storage::disk('public')->delete($vdel->image);
+                    }
+                    $vdel->delete();
+                }
+            }
+        } else if (isset($validated['has_variants']) && !$validated['has_variants']) {
+            // Delete all variants if turned off
+            foreach ($product->variants as $vdel) {
+                if ($vdel->image) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($vdel->image);
+                }
+                $vdel->delete();
+            }
+        }
+
         return response()->json([
             'message' => 'Product updated successfully',
-            'data' => $product->load(['categories', 'brand', 'unit']),
+            'data' => $product->load(['categories', 'brand', 'unit', 'variants.attributes.attribute']),
             'status' => 200
         ]);
     }
@@ -269,5 +373,14 @@ class ProductController extends Controller implements HasMiddleware
     {
         $products = Product::where('status', $slug)->get();
         return $products;
+    }
+    
+    public function variants(\App\Models\Product $product)
+    {
+        $variants = $product->variants()->with('attributes.attribute')->get();
+        foreach ($variants as $variant) {
+            $variant->image = $variant->image ? Storage::disk('public')->url($variant->image) : null;
+        }
+        return response()->json($variants);
     }
 }

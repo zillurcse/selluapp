@@ -104,6 +104,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('profile', [App\Http\Controllers\VendorProfileController::class, 'update']);
         //products routes
         Route::apiResource('products', App\Http\Controllers\ProductController::class);
+        Route::apiResource('product-attributes', \App\Http\Controllers\AttributeController::class);
         Route::get('products/{product}/variants', [App\Http\Controllers\ProductController::class, 'variants']);
         Route::get('products/{slug}', [App\Http\Controllers\ProductController::class, 'slugByStatusProducts']);
 
@@ -128,6 +129,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Orders
         Route::apiResource('orders', App\Http\Controllers\API\Vendor\OrderController::class);
+        Route::post('orders/{order}/sync', [App\Http\Controllers\API\Vendor\OrderController::class, 'syncCourier']);
 
         // Shop Settings
         Route::get('settings', [App\Http\Controllers\ShopSettingController::class, 'index']);

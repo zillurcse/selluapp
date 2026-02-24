@@ -113,4 +113,9 @@ class Product extends Model
     {
         return $this->belongsTo(Unit::class);
     }
+
+    public function variants()
+    {
+        return $this->hasMany(ProductVariant::class);
+    }
 }

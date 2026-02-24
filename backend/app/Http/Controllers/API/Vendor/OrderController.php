@@ -173,39 +173,49 @@ class OrderController extends Controller implements HasMiddleware
             // Risk Flags mapping
             $flags = is_array($order->risk_flags) ? $order->risk_flags : [];
 
-            return [
-                'id' => $order->id,
-                'customer' => [
-                    'name' => $customerName,
-                    'initials' => $initials,
-                    'phone' => optional($order->customer)->phone ?? 'N/A',
-                    'vip' => false, // Can be based on customer purchase history later
-                ],
-                'invoice' => $order->invoice_number,
-                'status' => ucfirst($order->status),
-                'date' => $order->created_at->format('d M, Y'),
-                'time' => $order->created_at->format('H:i'),
-                'risk' => [
-                    'score' => $order->risk_score ?? 0,
-                    'flags' => $flags,
-                ],
-                'products' => [
-                    'count' => $itemCount,
-                    'skus' => $skus,
-                    'images' => $images,
-                ],
-                'amount' => [
-                    'total' => '৳' . number_format($order->total_amount, 2),
-                    'method' => ucfirst(str_replace('_', ' ', $order->payment_method ?? 'N/A')),
-                    'paid' => $order->payment_status === 'paid',
-                ],
-                'type' => ucfirst(str_replace('_', ' ', $order->type)),
-                'zone' => $order->delivery_zone ?? 'N/A',
-                'courier' => [
-                    'name' => 'N/A', // Update when courier relation exists
-                    'tracking' => $order->tracking_number ?? '',
-                ]
-            ];
+                // Parse tracking number
+                $trackingParts = explode(':', $order->tracking_number ?? '', 2);
+                if (count($trackingParts) == 2) {
+                    $courierName = $trackingParts[0];
+                    $trackingCode = $trackingParts[1];
+                } else {
+                    $courierName = null;
+                    $trackingCode = $order->tracking_number ?? '';
+                }
+
+                return [
+                    'id' => $order->id,
+                    'customer' => [
+                        'name' => $customerName,
+                        'initials' => $initials,
+                        'phone' => optional($order->customer)->phone ?? 'N/A',
+                        'vip' => false, // Can be based on customer purchase history later
+                    ],
+                    'invoice' => $order->invoice_number,
+                    'status' => ucfirst($order->status),
+                    'date' => $order->created_at->format('d M, Y'),
+                    'time' => $order->created_at->format('H:i'),
+                    'risk' => [
+                        'score' => $order->risk_score ?? 0,
+                        'flags' => $flags,
+                    ],
+                    'products' => [
+                        'count' => $itemCount,
+                        'skus' => $skus,
+                        'images' => $images,
+                    ],
+                    'amount' => [
+                        'total' => '৳' . number_format($order->total_amount, 2),
+                        'method' => ucfirst(str_replace('_', ' ', $order->payment_method ?? 'N/A')),
+                        'paid' => $order->payment_status === 'paid',
+                    ],
+                    'type' => ucfirst(str_replace('_', ' ', $order->type)),
+                    'zone' => $order->delivery_zone ?? 'N/A',
+                    'courier' => [
+                        'name' => $courierName, 
+                        'tracking' => $trackingCode,
+                    ]
+                ];
         });
 
         return response()->json([
@@ -276,5 +286,75 @@ class OrderController extends Controller implements HasMiddleware
         $order->delete();
 
         return response()->json(['message' => 'Order deleted successfully']);
+    }
+
+    /**
+     * Send order to a courier service.
+     */
+    public function syncCourier(Request $request, string $id)
+    {
+        $request->validate([
+            'courier' => 'required|in:steadfast,pathao,redx',
+        ]);
+
+        $order = \App\Models\Order::with(['customer', 'items.product'])->where('user_id', auth()->id())->findOrFail($id);
+
+        if ($order->tracking_number && strpos($order->tracking_number, ':') !== false) {
+            return response()->json(['message' => 'Order already synced with a courier', 'type' => 'error'], 400);
+        }
+
+        $deliverySetting = \App\Models\ShopSetting::where('user_id', auth()->id())
+            ->where('group', 'delivery')
+            ->where('key', $request->courier)
+            ->first();
+
+        if (!$deliverySetting) {
+            return response()->json(['message' => ucfirst($request->courier) . ' settings not found', 'type' => 'error'], 400);
+        }
+
+        $credentials = json_decode($deliverySetting->value, true);
+
+        if (!$credentials || !isset($credentials['active']) || !$credentials['active']) {
+            return response()->json(['message' => ucfirst($request->courier) . ' is not active', 'type' => 'error'], 400);
+        }
+        
+        $customerName = optional($order->customer)->first_name ? trim($order->customer->first_name . ' ' . $order->customer->last_name) : (optional($order->customer)->name ?? 'Customer');
+
+        if ($request->courier === 'steadfast') {
+            $apiKey = $credentials['apiKey'] ?? '';
+            $secretKey = $credentials['secretKey'] ?? '';
+
+            if (!$apiKey || !$secretKey) {
+                return response()->json(['message' => 'Steadfast credentials missing', 'type' => 'error'], 400);
+            }
+
+            $response = \Illuminate\Support\Facades\Http::withHeaders([
+                'Api-Key' => $apiKey,
+                'Secret-Key' => $secretKey,
+                'Content-Type' => 'application/json'
+            ])->post('https://portal.packzy.com/api/v1/create_order', [
+                'invoice' => $order->invoice_number,
+                'recipient_name' => $customerName,
+                'recipient_phone' => optional($order->customer)->phone ?? '01XXXXXXXXX',
+                'recipient_address' => $order->shipping_address ?? 'N/A',
+                'cod_amount' => $order->payment_status === 'paid' ? 0 : floatval($order->total_amount),
+                'note' => $order->notes ?? '',
+            ]);
+
+            if ($response->successful() && isset($response['consignment']['tracking_code'])) {
+                $order->tracking_number = 'Steadfast:' . $response['consignment']['tracking_code'];
+                $order->status = 'courier';
+                $order->save();
+
+                return response()->json(['message' => 'Order synced with Steadfast successfully!', 'data' => $order]);
+            }
+
+            return response()->json([
+                'message' => 'Failed to sync with Steadfast',
+                'error' => $response->json()
+            ], 400);
+        }
+
+        return response()->json(['message' => 'Courier integration not supported yet', 'type' => 'error'], 400);
     }
 }

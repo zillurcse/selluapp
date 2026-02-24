@@ -226,16 +226,30 @@
           >
             Close
           </button>
-          <!-- Using absolute relative URL based on the Nuxt routes to avoid hard reloading -->
-          <NuxtLink 
-            v-if="order"
-            :to="`/vendor/orders/invoice/${order.id}?type=${orderType}`"
-            target="_blank"
-            class="px-6 py-2.5 bg-indigo-600 text-white font-black rounded-xl hover:bg-indigo-700 transition-all shadow-md shadow-indigo-600/20 flex items-center gap-2 active:scale-95"
-          >
-            <PrinterIcon class="w-4 h-4" />
-            Print Invoice
-          </NuxtLink>
+          
+          <div class="flex items-center gap-3">
+              <button 
+                v-if="order"
+                @click="syncCourier('steadfast')"
+                :disabled="syncingCourier"
+                class="px-6 py-2.5 bg-[#22C55E] text-white font-black rounded-xl hover:bg-emerald-600 transition-all shadow-md shadow-emerald-600/20 flex items-center gap-2 active:scale-95 disabled:opacity-50"
+              >
+                <TruckIcon v-if="!syncingCourier" class="w-4 h-4" />
+                <div v-else class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Send to Steadfast
+              </button>
+
+              <!-- Using absolute relative URL based on the Nuxt routes to avoid hard reloading -->
+              <NuxtLink 
+                v-if="order"
+                :to="`/vendor/orders/invoice/${order.id}?type=${orderType}`"
+                target="_blank"
+                class="px-6 py-2.5 bg-indigo-600 text-white font-black rounded-xl hover:bg-indigo-700 transition-all shadow-md shadow-indigo-600/20 flex items-center gap-2 active:scale-95"
+              >
+                <PrinterIcon class="w-4 h-4" />
+                Print Invoice
+              </NuxtLink>
+          </div>
         </div>
       </div>
     </Transition>
@@ -260,12 +274,13 @@ import {
   ChevronDownIcon,
   PhoneIcon,
   MailIcon,
-  PrinterIcon
+  PrinterIcon,
+  TruckIcon
 } from 'lucide-vue-next'
 import { ref } from 'vue'
 import { toast } from 'vue-sonner'
 
-const { getAll, updateItem } = useCrud()
+const { getAll, updateItem, createItem } = useCrud()
 const emit = defineEmits(['updated'])
 
 const isOpen = ref(false)
@@ -274,6 +289,8 @@ const order = ref(null)
 const orderType = ref('Standard')
 const orderStatus = ref('')
 const statusUpdating = ref(false)
+const activeCouriers = ref([])
+const syncingCourier = ref(false)
 
 const openDrawer = async (id, type) => {
     isOpen.value = true
@@ -286,6 +303,24 @@ const openDrawer = async (id, type) => {
         order.value = response.data
         orderType.value = response.type
         orderStatus.value = order.value.status 
+
+        // Fetch active couriers
+        if (type.toUpperCase() !== 'POS' && !order.value?.tracking_number) {
+           try {
+              const delRes = await getAll('/vendor/delivery')
+              if (delRes.data) {
+                  activeCouriers.value = []
+                  if (delRes.data.steadfast) {
+                      const sf = typeof delRes.data.steadfast === 'string' ? JSON.parse(delRes.data.steadfast) : delRes.data.steadfast;
+                      if (sf.active) activeCouriers.value.push('steadfast');
+                  }
+                  if (delRes.data.pathao) {
+                      const pt = typeof delRes.data.pathao === 'string' ? JSON.parse(delRes.data.pathao) : delRes.data.pathao;
+                      if (pt.active) activeCouriers.value.push('pathao');
+                  }
+              }
+           } catch(e) {}
+        }
     } catch (e) {
         toast.error('Failed to load order details.')
         closeDrawer()
@@ -311,6 +346,25 @@ const updateStatus = async () => {
         toast.error('Failed to update status.')
     } finally {
         statusUpdating.value = false
+    }
+}
+
+const syncCourier = async (courier) => {
+    if(!order.value) return;
+    syncingCourier.value = true
+    try {
+        const payload = { courier };
+        const res = await createItem(`/vendor/orders/${order.value.id}/sync`, payload, null, false)
+        if (res && res.data) {
+             order.value = res.data
+             orderStatus.value = order.value.status
+             emit('updated')
+             toast.success(`Successfully sent order to ${courier} Courier`)
+        }
+    } catch (e) {
+        toast.error(e.response?.data?.message || `Failed to sync with ${courier} Courier.`)
+    } finally {
+        syncingCourier.value = false
     }
 }
 
