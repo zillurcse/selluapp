@@ -59,9 +59,17 @@ class ProductController extends Controller implements HasMiddleware
              $query->where('is_active', $request->is_active);
         }
 
-        $products = $query->latest()->get();
+        $perPage = $request->get('limit') ?? $request->get('per_page');
 
-        foreach ($products as $product) {
+        if ($perPage) {
+            $products = $query->latest()->paginate($perPage);
+            $items = $products->items();
+        } else {
+            $products = $query->latest()->get();
+            $items = $products;
+        }
+
+        foreach ($items as $product) {
             $product->image = $product->image ? Storage::disk('public')->url($product->image) : null;
             $product->thumbnail = $product->thumbnail ? Storage::disk('public')->url($product->thumbnail) : null;
             $product->video = $product->video ? Storage::disk('public')->url($product->video) : null;

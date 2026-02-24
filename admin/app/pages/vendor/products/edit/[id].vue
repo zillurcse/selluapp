@@ -666,7 +666,7 @@ const route = useRoute()
 const config = useRuntimeConfig()
 const auth = useAuthStore()
 const { getAll, createItem, getById, deleteItem } = useCrud()
-
+import { toast } from 'vue-sonner';
 // Determine if we are in List View (Status) or Edit View (ID)
 const isListView = computed(() => ['published', 'draft', 'pending'].includes(route.params.id))
 
@@ -1118,7 +1118,7 @@ const handleUnitCreate = async (name) => {
 
 const updateProduct = async () => {
   if (!form.value.name || !form.value.category_ids?.length || !form.value.sale_price) {
-      alert('Please fill in required fields')
+      toast.error('Please fill in required fields!')
       return
   }
 
@@ -1170,7 +1170,10 @@ const updateProduct = async () => {
   formData.append('key_features', JSON.stringify([]))
 
   try {
-     await createItem('/vendor/products', formData, form)
+    useUtilityStore.isEdit = true
+     await createItem('/vendor/products', formData, route.params.id)
+     useUtilityStore.isEdit = false
+     route.push('/vendor/products')
   } catch (error) {
      console.error('Error updating product:', error)
   }

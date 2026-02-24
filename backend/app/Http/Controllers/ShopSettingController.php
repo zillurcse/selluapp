@@ -71,6 +71,32 @@ class ShopSettingController extends Controller implements HasMiddleware
             $settings = json_decode($settings, true) ?? [];
         }
 
+        if ($group === 'shop_domain') {
+            if (!empty($settings['subDomain'])) {
+                $exists = ShopSetting::where('key', 'subDomain')
+                    ->where('value', $settings['subDomain'])
+                    ->where('user_id', '!=', $userId)
+                    ->exists();
+                if ($exists) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'subDomain' => ['The subdomain has already been taken.']
+                    ]);
+                }
+            }
+
+            if (!empty($settings['customDomain'])) {
+                $exists = ShopSetting::where('key', 'customDomain')
+                    ->where('value', $settings['customDomain'])
+                    ->where('user_id', '!=', $userId)
+                    ->exists();
+                if ($exists) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'customDomain' => ['The custom domain has already been taken.']
+                    ]);
+                }
+            }
+        }
+
         foreach ($settings as $key => $value) {
             // Encode arrays to JSON string before saving
             $saveValue = is_array($value) ? json_encode($value) : $value;

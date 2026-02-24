@@ -7,6 +7,8 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Customer;
+use App\Models\ShopSetting;
+use App\Models\FraudCheck;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -72,6 +74,34 @@ class CheckoutController extends Controller
                 
                 $totalAmount = $subtotal + $shippingCost;
 
+                // Check Spider Intelligence Settings
+                $spiderIntelligenceSettings = ShopSetting::where('user_id', $vendorId)
+                    ->where('group', 'spider_intelligence')
+                    ->get()
+                    ->pluck('value', 'key');
+
+                $isSpiderActive = isset($spiderIntelligenceSettings['isActive']) && in_array($spiderIntelligenceSettings['isActive'], [true, 'true', '1'], true);
+                $sensitivity = isset($spiderIntelligenceSettings['sensitivity']) ? (int)$spiderIntelligenceSettings['sensitivity'] : 65;
+                
+                $riskScore = 0;
+                $requiresManualReview = false;
+                $fraudFlags = [];
+
+                if ($isSpiderActive) {
+                    // Mock risk score calculation (random for now, could be based on order traits)
+                    $riskScore = rand(0, 100);
+                    $threshold = 100 - $sensitivity; // e.g. Sensitivity 65 => threshold 35
+                    
+                    if ($riskScore > $threshold) {
+                        $requiresManualReview = true;
+                        if ($riskScore > 80) {
+                            $fraudFlags[] = 'High risk IP address detected.';
+                        } else {
+                            $fraudFlags[] = 'Unusual purchasing pattern.';
+                        }
+                    }
+                }
+
                 $order = Order::create([
                     'user_id' => $vendorId, // Vendor ID
                     'customer_id' => $customer->id,
@@ -83,6 +113,7 @@ class CheckoutController extends Controller
                     'total_amount' => $totalAmount,
                     'payment_method' => $validated['payment_method'],
                     'payment_status' => 'pending',
+                    'requires_manual_review' => $requiresManualReview,
                     'shipping_address' => json_encode([
                         'first_name' => $validated['first_name'],
                         'last_name' => $validated['last_name'],
@@ -92,6 +123,16 @@ class CheckoutController extends Controller
                         'postal_code' => $validated['postal_code'],
                     ]),
                 ]);
+
+                if ($requiresManualReview) {
+                    FraudCheck::create([
+                        'user_id' => $vendorId,
+                        'order_id' => $order->id,
+                        'risk_score' => $riskScore,
+                        'flags' => $fraudFlags,
+                        'status' => 'pending',
+                    ]);
+                }
 
                 foreach ($vendorItems as $vi) {
                     $price = $vi['product']->discount_price ?: $vi['product']->sale_price;

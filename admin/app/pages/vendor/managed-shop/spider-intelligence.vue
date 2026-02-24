@@ -133,7 +133,7 @@ const saving = ref(false)
 const isActive = ref(true)
 const dynamicScaling = ref(true)
 const sensitivity = ref(65)
-const blockedCount = ref('2.4k') // Mocked blocked count
+const blockedCount = ref(0) 
 
 const sensitivityLabel = computed(() => {
   if (sensitivity.value < 30) return 'Low Level'
@@ -150,6 +150,13 @@ const loadSettings = async () => {
       isActive.value = data.isActive === 'true' || data.isActive === true || data.isActive === '1'
       dynamicScaling.value = data.dynamicScaling === 'true' || data.dynamicScaling === true || data.dynamicScaling === '1'
       sensitivity.value = data.sensitivity ? parseInt(data.sensitivity) : 65
+    }
+    
+    // Fetch stats for blocked threats
+    const statsResponse = await getAll('/vendor/fraud-checks/stats')
+    if (statsResponse) {
+      // Depending on structure, use high_risk_blocked
+      blockedCount.value = statsResponse.high_risk_blocked || 0
     }
   } catch (error) {
     if (error.response?.status !== 404) {

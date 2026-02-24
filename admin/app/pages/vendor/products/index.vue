@@ -11,10 +11,10 @@
           <p class="text-sm text-slate-500 dark:text-slate-400 font-semibold opacity-80">Manage and track your product inventory efficiently.</p>
         </div>
       </div>
-      <NuxtLink to="/vendor/products/create" class="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl transition-all shadow-lg shadow-indigo-600/20 active:scale-95 group">
+      <button @click="handleAddProduct" class="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl transition-all shadow-lg shadow-indigo-600/20 active:scale-95 group">
         <Plus class="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
         Add Product
-      </NuxtLink>
+      </button>
     </div>
 
     <!-- Status Tabs -->
@@ -41,7 +41,7 @@
       v-model:brand="selectedBrand"
       :categories="categories"
       :brands="brands"
-      @filter="fetchProducts"
+      @filter="handleFilter"
       @clear="clearFilters"
     >
       <template #actions>
@@ -176,12 +176,55 @@
         </table>
       </div>
     </div>
+    
+    <!-- Modern Pagination Component -->
+    <div v-if="totalPages > 1" class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 px-4">
+      <div class="text-sm font-medium text-slate-500 dark:text-slate-400">
+        Showing <span class="font-black text-slate-900 dark:text-white">{{ pagination.from }}</span> to 
+        <span class="font-black text-slate-900 dark:text-white">{{ pagination.to }}</span> of 
+        <span class="font-black text-slate-900 dark:text-white">{{ pagination.total }}</span> results
+      </div>
+      <div class="flex items-center gap-2">
+        <button 
+          @click="changePage(pagination.current_page - 1)" 
+          :disabled="pagination.current_page === 1"
+          class="p-2 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 bg-white dark:bg-slate-900 shadow-sm"
+        >
+          <ChevronLeft class="w-4 h-4" />
+        </button>
+        <div class="flex items-center gap-1">
+          <button 
+            v-for="page in visiblePages" 
+            :key="page"
+            @click="page !== '...' && changePage(page)"
+            :class="[
+              'w-9 h-9 flex items-center justify-center rounded-xl text-sm font-bold transition-all',
+              page === pagination.current_page 
+                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' 
+                : page === '...' 
+                  ? 'text-slate-400 dark:text-slate-500 cursor-default bg-transparent' 
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer active:scale-95 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm'
+            ]"
+          >
+            {{ page }}
+          </button>
+        </div>
+        <button 
+          @click="changePage(pagination.current_page + 1)" 
+          :disabled="pagination.current_page === pagination.last_page"
+          class="p-2 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 bg-white dark:bg-slate-900 shadow-sm"
+        >
+          <ChevronRight class="w-4 h-4" />
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { 
   ChevronLeft, 
+  ChevronRight,
   ChevronDown, 
   Search, 
   X, 
@@ -195,12 +238,16 @@ import {
 } from 'lucide-vue-next'
 import AppProductFilter from '~/components/AppProductFilter.vue'
 import AppConfirmationModal from '~/components/AppConfirmationModal.vue'
+import { toast } from 'vue-sonner'
+import { useAuthStore } from '~/stores/useAuthStore'
 
 definePageMeta({
   middleware: 'auth',
   permissions: 'products.view'
 })
 const route = useRoute()
+const router = useRouter()
+const authStore = useAuthStore()
 const { deleteItem, getAll } = useCrud()
 const products = ref([])
 const categories = ref([])
@@ -225,6 +272,47 @@ const tabs = [
   { label: 'Pending', value: 'pending' }
 ]
 
+const handleAddProduct = () => {
+  const user = authStore.user
+  const packageDetails = user?.vendor_profile?.package || user?.owner?.vendorProfile?.package
+  const limit = packageDetails?.product_limit
+
+  if (limit !== undefined && limit !== -1 && pagination.value.total >= limit) {
+    toast.error(`Product limit reached (${pagination.value.total}/${limit}). Please upgrade your plan.`, {
+      description: 'You cannot add more products with your current subscription.'
+    })
+  } else {
+    router.push('/vendor/products/create')
+  }
+}
+
+const pagination = ref({
+  current_page: 1,
+  last_page: 1,
+  total: 0,
+  per_page: 10,
+  from: 0,
+  to: 0
+})
+
+const totalPages = computed(() => pagination.value.last_page)
+
+const changePage = (page) => {
+  if (page < 1 || page > pagination.value.last_page) return
+  pagination.value.current_page = page
+  fetchProducts()
+}
+
+const visiblePages = computed(() => {
+  const current = pagination.value.current_page
+  const last = pagination.value.last_page
+  
+  if (last <= 7) return Array.from({ length: last }, (_, i) => i + 1)
+  if (current <= 4) return [1, 2, 3, 4, 5, '...', last]
+  if (current >= last - 3) return [1, '...', last - 4, last - 3, last - 2, last - 1, last]
+  return [1, '...', current - 1, current, current + 1, '...', last]
+})
+
 const deleteModalMessage = computed(() => {
   return deleteMode.value === 'bulk'
     ? `Are you sure you want to delete ${selectedItems.value.length} selected products? This action cannot be undone.`
@@ -247,10 +335,16 @@ const toggleAll = () => {
   }
 }
 
+const handleFilter = () => {
+  pagination.value.current_page = 1
+  fetchProducts()
+}
+
 const clearFilters = () => {
   searchQuery.value = ''
   selectedCategory.value = ''
   selectedBrand.value = ''
+  pagination.value.current_page = 1
   fetchProducts()
 }
 
@@ -261,12 +355,31 @@ const fetchProducts = async () => {
   if (selectedBrand.value) queryParams.append('brand_id', selectedBrand.value)
   if (activeStatus.value && activeStatus.value !== 'all') queryParams.append('status', activeStatus.value)
   
+  queryParams.append('per_page', pagination.value.per_page)
+  queryParams.append('page', pagination.value.current_page)
+
   const [productsRes] = await Promise.all([
     getAll(`/vendor/products?${queryParams.toString()}`),
   ])
 
   if (productsRes) {
-    products.value = productsRes
+    if (productsRes.data && productsRes.current_page !== undefined) {
+      products.value = productsRes.data
+      pagination.value = {
+        current_page: productsRes.current_page,
+        last_page: productsRes.last_page,
+        total: productsRes.total,
+        per_page: productsRes.per_page,
+        from: productsRes.from || 0,
+        to: productsRes.to || 0
+      }
+    } else {
+      products.value = productsRes.data || productsRes
+      pagination.value.total = products.value.length
+      pagination.value.from = products.value.length > 0 ? 1 : 0
+      pagination.value.to = products.value.length
+      pagination.value.last_page = 1
+    }
   }
 }
 
@@ -322,6 +435,7 @@ const bulkDelete = () => {
 
 // Watch for route changes to update view and fetch data
 watch(() => route.params.status, () => {
+  pagination.value.current_page = 1
   fetchProducts()
 })
 

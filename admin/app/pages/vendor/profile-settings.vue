@@ -190,11 +190,13 @@
           <!-- Actions -->
           <div class="flex items-center justify-end gap-3 sticky bottom-6 z-10">
              <div class="bg-white/80 backdrop-blur-md p-2 rounded-xl shadow-lg border border-gray-100 flex gap-3">
-                <button type="button" @click="fetchProfile" class="px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-                   Reset Changes
+                <button type="button" @click="fetchProfile" :disabled="isFetching" class="px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50">
+                   {{ isFetching ? 'Resetting...' : 'Reset Changes' }}
                 </button>
-                <button type="submit" class="px-5 py-2.5 text-sm font-medium bg-black text-white hover:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all flex items-center gap-2">
-                   <Save class="w-4 h-4" /> Save Changes
+                <button type="submit" :disabled="isSaving || isFetching" class="px-5 py-2.5 text-sm font-medium bg-black text-white hover:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                   <div v-if="isSaving" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                   <Save v-else class="w-4 h-4" /> 
+                   {{ isSaving ? 'Saving...' : 'Save Changes' }}
                 </button>
              </div>
           </div>
@@ -238,6 +240,9 @@ const activeTab = ref('profile')
 const logoPreview = ref(null)
 const bannerPreview = ref(null)
 
+const isFetching = ref(false)
+const isSaving = ref(false)
+
 const userInitials = computed(() => {
    const name = auth.user?.name || 'U'
    return name.substring(0, 1).toUpperCase()
@@ -261,16 +266,16 @@ const form = reactive({
   instagram: '',
   youtube: '',
 })
-
+const { getAll, createItem } = useCrud()
 // Fetch User Profile
 const fetchProfile = async () => {
+    isFetching.value = true
     try {
-        const { data } = await useFetch(`${config.public.apiBase}/vendor/profile`, {
-             headers: { Authorization: `Bearer ${auth.token}` }
-        })
+        const data = await getAll('/vendor/profile')
+        console.log('data', data);
         
-        if (data.value) {
-            const user = data.value
+        if (data) {
+            const user = data
             const profile = user.vendor_profile || {}
 
             form.name = user.name
@@ -287,11 +292,19 @@ const fetchProfile = async () => {
             form.instagram = profile.instagram || ''
             form.youtube = profile.youtube || ''
 
-            if (profile.logo) logoPreview.value = `${config.public.apiBase}/storage/${profile.logo}`
-            if (profile.banner) bannerPreview.value = `${config.public.apiBase}/storage/${profile.banner}`
+            form.logo = null
+            form.banner = null
+            
+            logoPreview.value = profile.logo ? `${config.public.apiBase}/storage/${profile.logo}` : null
+            bannerPreview.value = profile.banner ? `${config.public.apiBase}/storage/${profile.banner}` : null
+            
+            // Reset the slug manual flag so that it gets auto-generated again if name changes
+            isSlugManuallyEdited.value = false
         }
     } catch (e) {
         console.error('Failed to fetch profile', e)
+    } finally {
+        isFetching.value = false
     }
 }
 
@@ -314,6 +327,7 @@ const handleBannerUpload = (e) => {
 }
 
 const updateProfile = async () => {
+    isSaving.value = true
     try {
         const formData = new FormData()
         
@@ -340,15 +354,7 @@ const updateProfile = async () => {
         if(form.logo instanceof File) formData.append('logo', form.logo)
         if(form.banner instanceof File) formData.append('banner', form.banner)
 
-        await $fetch(`${config.public.apiBase}/vendor/profile`, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                Authorization: `Bearer ${auth.token}`
-            }
-        })
-        
-        toast.success('Profile updated successfully')
+        await createItem('/vendor/profile', formData)
         
         // Clear password fields
         form.current_password = ''
@@ -362,6 +368,33 @@ const updateProfile = async () => {
         console.error('Update failed', error)
         const msg = error.data?.message || 'Failed to update profile'
         toast.error(msg)
+    } finally {
+        isSaving.value = false
     }
 }
+
+// Auto-generate store slug when typing store name if slug is empty
+const isSlugManuallyEdited = ref(false)
+
+const generateSlug = (text) => {
+    if (!text) return ''
+    return text.toString().toLowerCase()
+        .replace(/\s+/g, '-')           // Replace spaces with -
+        .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
+        .replace(/\-\-+/g, '-')         // Replace multiple - with single -
+        .replace(/^-+/, '')             // Trim - from start of text
+        .replace(/-+$/, '');            // Trim - from end of text
+}
+
+watch(() => form.store_slug, (newSlug, oldSlug) => {
+    if (oldSlug !== undefined && newSlug !== generateSlug(form.store_name)) {
+        isSlugManuallyEdited.value = true
+    }
+})
+
+watch(() => form.store_name, (newName) => {
+    if (!isSlugManuallyEdited.value) {
+        form.store_slug = generateSlug(newName)
+    }
+})
 </script>

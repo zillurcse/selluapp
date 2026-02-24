@@ -25,12 +25,11 @@ class VendorProfileController extends Controller implements HasMiddleware
     public function index()
     {
         $user = auth()->user();
-        
+
         if ($user->vendor_id) {
             $owner = User::with('vendorProfile')->find($user->vendor_id);
             return response()->json($owner);
         }
-
         return response()->json($user->load('vendorProfile'));
     }
 
@@ -55,7 +54,7 @@ class VendorProfileController extends Controller implements HasMiddleware
             'address' => 'nullable|string',
             'logo' => 'nullable|image|max:2048',
             'banner' => 'nullable|image|max:2048',
-            
+
             // Socials
             'facebook' => 'nullable|string|max:255',
             'twitter' => 'nullable|string|max:255',
@@ -65,7 +64,7 @@ class VendorProfileController extends Controller implements HasMiddleware
 
         // 1. Update User Name
         $user->name = $request->name;
-        
+
         // 2. Update Password
         if ($request->filled('current_password') && $request->filled('new_password')) {
             if (!Hash::check($request->current_password, $user->password)) {
@@ -77,7 +76,7 @@ class VendorProfileController extends Controller implements HasMiddleware
 
         // 3. Update/Create Vendor Profile
         $profile = $user->vendorProfile ?? new VendorProfile(['user_id' => $user->id]);
-        
+
         $profile->fill([
             'store_name' => $request->store_name,
             'phone' => $request->phone,

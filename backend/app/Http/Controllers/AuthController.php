@@ -48,9 +48,9 @@ class AuthController extends Controller
                 'permissions:id,name',
                 'roles.permissions:id,name',
                 'vendorProfile:id,user_id,package_id,store_name,store_slug,logo',
-                'vendorProfile.package:id,name,pos_access,hrm_access,features',
+                'vendorProfile.package:id,name,pos_access,hrm_access,features,product_limit',
                 'owner.vendorProfile:id,user_id,package_id,store_name,store_slug,logo',
-                'owner.vendorProfile.package:id,name,pos_access,hrm_access,features'
+                'owner.vendorProfile.package:id,name,pos_access,hrm_access,features,product_limit'
             ])),
         ]);
     }
@@ -75,9 +75,9 @@ class AuthController extends Controller
                 'permissions:id,name',
                 'roles.permissions:id,name',
                 'vendorProfile:id,user_id,package_id,store_name,store_slug,logo',
-                'vendorProfile.package:id,name,pos_access,hrm_access,features',
+                'vendorProfile.package:id,name,pos_access,hrm_access,features,product_limit',
                 'owner.vendorProfile:id,user_id,package_id,store_name,store_slug,logo',
-                'owner.vendorProfile.package:id,name,pos_access,hrm_access,features'
+                'owner.vendorProfile.package:id,name,pos_access,hrm_access,features,product_limit'
             ])),
         ]);
     }
@@ -96,9 +96,9 @@ class AuthController extends Controller
             'permissions:id,name',
             'roles.permissions:id,name',
             'vendorProfile:id,user_id,package_id,store_name,store_slug,logo',
-            'vendorProfile.package:id,name,pos_access,hrm_access,features',
+            'vendorProfile.package:id,name,pos_access,hrm_access,features,product_limit',
             'owner.vendorProfile:id,user_id,package_id,store_name,store_slug,logo',
-            'owner.vendorProfile.package:id,name,pos_access,hrm_access,features'
+            'owner.vendorProfile.package:id,name,pos_access,hrm_access,features,product_limit'
         ]));
     }
 }

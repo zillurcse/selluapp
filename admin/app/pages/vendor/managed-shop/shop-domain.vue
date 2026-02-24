@@ -265,7 +265,13 @@ const saveSettings = async () => {
     router.push('/vendor/managed-shop')
   } catch (error) {
     console.error(error)
-    $toast.error('Failed to save domain settings')
+    const errData = error.response?.data
+    if (errData?.errors) {
+      const firstError = Object.values(errData.errors)[0][0]
+      $toast.error(firstError)
+    } else {
+      $toast.error(errData?.message || 'Failed to save domain settings')
+    }
   } finally {
     saving.value = false
   }

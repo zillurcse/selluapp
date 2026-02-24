@@ -206,7 +206,7 @@
             <div class="grid transition-all duration-500 ease-in-out overflow-hidden" :class="isProductsOpen ? 'grid-rows-[1fr] opacity-100 mt-2' : 'grid-rows-[0fr] opacity-0 pointer-events-none'">
               <div class="min-h-0 space-y-1 pl-10 pr-2 relative">
                 <div class="absolute left-[20px] top-0 bottom-4 w-[1px] bg-slate-100 dark:bg-slate-800/60 rounded-full"></div>
-                <NuxtLink v-for="link in productLinks" :key="link.to" :to="link.to" class="sub-nav-link group/sub" active-class="sub-nav-link-active">
+                <NuxtLink v-for="link in productLinks" :key="link.to" :to="link.to" @click="handleProductLinkClick(link, $event)" class="sub-nav-link group/sub" active-class="sub-nav-link-active">
                   <div class="w-1.5 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 indicator transition-all group-hover/sub:bg-indigo-500"></div>
                   <span class="flex-1">{{ link.label }}</span>
                   <component :is="link.icon" class="w-3 h-3 opacity-0 group-hover/sub:opacity-100 transition-opacity" />
@@ -364,12 +364,43 @@ import {
   Settings,
 } from 'lucide-vue-next'
 
+import { toast } from 'vue-sonner'
+
 const { can, hasRole, hasFeature } = usePermissions()
 
 const route = useRoute()
+const router = useRouter()
 const sidebar = useSidebar()
 const colorMode = useColorMode()
 const auth = useAuthStore()
+const { getAll } = useCrud()
+
+const handleProductLinkClick = async (link, event) => {
+  if (link.to === '/vendor/products/create') {
+    const user = auth.user
+    const packageDetails = user?.vendor_profile?.package || user?.owner?.vendorProfile?.package || user?.vendorProfile?.package
+    const limit = packageDetails?.product_limit
+    
+    if (limit !== undefined && limit !== -1) {
+       event.preventDefault()
+       try {
+         const productsRes = await getAll('/vendor/products?per_page=1')
+         const total = productsRes?.total ?? productsRes?.data?.length ?? 0
+         
+         if (total >= limit) {
+           toast.error(`Product limit reached (${total}/${limit}). Please upgrade your plan.`, {
+             description: 'You cannot add more products with your current subscription.'
+           })
+           return 
+         }
+         router.push(link.to)
+       } catch (e) {
+         console.error(e)
+         router.push(link.to)
+       }
+    }
+  }
+}
 
 // ─── Role helpers ─────────────────────────────────────────────────────────────
 const isSuperAdmin = computed(() => auth.user?.roles?.some(r => r.name === 'super-admin') ?? false)

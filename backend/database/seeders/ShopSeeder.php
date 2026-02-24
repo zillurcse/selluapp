@@ -30,7 +30,7 @@ class ShopSeeder extends Seeder
         \Illuminate\Support\Facades\DB::table('category_product')->truncate();
         \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();
 
-        $vendors = User::role('vendor')->get();
+        $vendors = User::role('vendor')->with('vendorProfile.package')->get();
 
         if ($vendors->isEmpty()) {
             $this->command->warn('No vendors found. Please run RoleSeeder first.');
@@ -116,10 +116,15 @@ class ShopSeeder extends Seeder
             }
 
             // 5. Seed Products
+            $productLimit = 500; // Default minimum 500 products
+            if ($vendor->vendorProfile?->package?->slug === 'starter') {
+                $productLimit = 50;
+            }
+
             $adjectives = ['Premium', 'Ultra', 'Minimalist', 'Smart', 'Professional', 'Eco-friendly', 'Ergonomic', 'Heavy-duty', 'Compact', 'Vintage', 'Modern', 'Sleek', 'Durable', 'Luxury', 'Classic'];
             $nouns = ['Wireless Headphones', 'Smartphone', 'Leather Wallet', 'Fitness Watch', 'DSLR Camera', 'Bluetooth Speaker', 'Mechanical Keyboard', 'Gaming Mouse', 'Backpack', 'Sunglasses', 'Desk Lamp', 'Water Bottle', 'Coffee Maker', 'Electric Toothbrush', 'Power Bank', 'Running Shoes', 'Yoga Mat', 'Drone', 'Monitor', 'Earbuds'];
 
-            for ($idx = 0; $idx < 100; $idx++) {
+            for ($idx = 0; $idx < $productLimit; $idx++) {
                 $randomWord = $faker->word();
                 $productName = $faker->randomElement($adjectives) . ' ' . $faker->randomElement($nouns) . ' ' . ucfirst($randomWord) . ' ' . rand(10, 999);
                 $productName = ucwords($productName);
