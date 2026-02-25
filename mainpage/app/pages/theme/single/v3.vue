@@ -11,7 +11,7 @@
       <div class="relative z-20 space-y-12 max-w-5xl animate-fade-in-up">
         <div class="flex justify-center">
           <span class="inline-flex items-center gap-3 px-6 py-2 bg-indigo-50 border border-indigo-100 rounded-full text-xs font-black uppercase tracking-[0.3em] text-indigo-600">
-            Series 01 // Limited
+            {{ settings.hero_subtitle || 'Series 01 // Limited' }}
           </span>
         </div>
         
@@ -27,7 +27,7 @@
           
           <div class="flex items-center gap-8">
             <button class="px-12 py-6 bg-black text-white rounded-full font-black uppercase tracking-widest text-xs hover:bg-indigo-600 hover:scale-105 transition-all duration-500 shadow-2xl shadow-indigo-200">
-              Reserve Now — ${{ product.price }}
+              {{ settings.cta_text ? `${settings.cta_text} — ৳${product.sale_price}` : `Reserve Now — ৳${product.sale_price}` }}
             </button>
             <button class="w-16 h-16 rounded-full border-2 border-slate-100 flex items-center justify-center group hover:border-black transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="group-hover:translate-y-1 transition-transform"><path d="m6 9 6 6 6-6"/></svg>
@@ -91,7 +91,7 @@
             </div>
           </div>
           <button class="px-20 py-8 bg-white text-black rounded-[2rem] font-black uppercase tracking-[0.2em] text-sm hover:bg-indigo-400 hover:text-white transition-all duration-500 scale-100 hover:scale-105 active:scale-95 shadow-2xl shadow-indigo-500/20">
-            Confirm Acquisition
+            {{ settings.cta_text || 'Confirm Acquisition' }}
           </button>
           <p class="text-white/40 text-[10px] font-bold uppercase tracking-[0.4em]">Guaranteed Express Global Shipping</p>
         </div>
@@ -114,14 +114,18 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import watchImg from '~/assets/img/watch.png'
+import { computed } from 'vue'
 
-const product = {
-  name: 'Nocturnal 01',
-  price: '895.00',
-  image: watchImg
-}
+const props = defineProps({
+  data: {
+    type: Object,
+    required: true
+  }
+})
+
+const product = computed(() => props.data.products?.[0] || {})
+const vendor = computed(() => props.data.vendor || {})
+const settings = computed(() => props.data.landingPage?.settings || {})
 </script>
 
 <style scoped>

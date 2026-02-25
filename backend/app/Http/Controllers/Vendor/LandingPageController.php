@@ -43,7 +43,12 @@ class LandingPageController extends Controller implements HasMiddleware
             'title' => 'required|string|max:255',
             'settings' => 'nullable|array',
             'status' => 'nullable|string',
+            'is_home' => 'nullable|boolean',
         ]);
+
+        if (!empty($validated['is_home'])) {
+            LandingPage::where('vendor_id', auth()->id())->update(['is_home' => false]);
+        }
 
         $validated['vendor_id'] = auth()->id();
         $validated['slug'] = Str::slug($validated['title']) . '-' . Str::random(6);
@@ -81,7 +86,14 @@ class LandingPageController extends Controller implements HasMiddleware
             'title' => 'nullable|string|max:255',
             'settings' => 'nullable|array',
             'status' => 'nullable|string',
+            'is_home' => 'nullable|boolean',
         ]);
+
+        if (!empty($validated['is_home'])) {
+            LandingPage::where('vendor_id', auth()->id())
+                ->where('id', '!=', $id)
+                ->update(['is_home' => false]);
+        }
 
         if (isset($validated['title']) && $validated['title'] !== $landingPage->title) {
             $validated['slug'] = Str::slug($validated['title']) . '-' . Str::random(6);

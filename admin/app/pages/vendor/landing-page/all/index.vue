@@ -37,7 +37,12 @@
                     <LayoutTemplate class="w-6 h-6 text-gray-400" />
                   </div>
                   <div>
-                    <div class="font-bold text-gray-900 dark:text-slate-100">{{ page.title }}</div>
+                    <div class="flex items-center gap-2">
+                      <div class="font-bold text-gray-900 dark:text-slate-100">{{ page.title }}</div>
+                      <span v-if="page.is_home" class="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 text-[10px] font-black rounded-full uppercase tracking-tighter flex items-center shadow-sm border border-indigo-200 dark:border-indigo-800">
+                        <Home class="w-2.5 h-2.5 mr-1" /> Home Page
+                      </span>
+                    </div>
                     <div class="text-xs text-gray-400 dark:text-slate-500 mt-1 flex items-center">
                       <Link2 class="w-3 h-3 mr-1" />
                       /l/{{ page.slug }}
@@ -70,6 +75,9 @@
                   </NuxtLink>
                   <button @click="copyLink(page.slug)" class="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all" title="Copy Link">
                     <Copy class="w-5 h-5" />
+                  </button>
+                  <button @click="handleSetHome(page)" :class="page.is_home ? 'text-indigo-600 bg-indigo-50' : 'text-gray-400 hover:text-indigo-600 hover:bg-indigo-50'" class="p-2 rounded-lg transition-all" title="Set as Home Page">
+                    <Home class="w-5 h-5" />
                   </button>
                   <button @click="handleDelete(page.id)" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Delete">
                     <Trash2 class="w-5 h-5" />
@@ -106,7 +114,8 @@ import {
   Pencil, 
   Copy, 
   Trash2,
-  Link2
+  Link2,
+  Home
 } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 
@@ -148,6 +157,18 @@ const handleToggleStatus = async (page) => {
     page.status = newStatus
   } catch (error) {
     console.error('Error toggling status:', error)
+  }
+}
+
+const handleSetHome = async (page) => {
+  try {
+    const newHomeStatus = !page.is_home
+    await updateItem(`/vendor/landing-pages/${page.id}`, { is_home: newHomeStatus })
+    // Fetch all to update the list since handleSetHome in backend unsets others
+    fetchLandingPages()
+    toast.success(newHomeStatus ? 'Page set as home!' : 'Home page status removed.')
+  } catch (error) {
+    console.error('Error setting home status:', error)
   }
 }
 

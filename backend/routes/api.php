@@ -13,6 +13,7 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::get('/storefront', [StorefrontController::class, 'index']);
 Route::get('/storefront/products', [StorefrontController::class, 'products']);
 Route::get('/storefront/products/{product}', [StorefrontController::class, 'show']);
+Route::get('/storefront/landing-page/{slug}', [StorefrontController::class, 'landingPage']);
 Route::get('/storefront/vendors/{slug}', [StorefrontController::class, 'vendor']);
 Route::get('/storefront/categories', function() {
     return \App\Models\Category::where('is_active', true)->whereNull('parent_id')->get();

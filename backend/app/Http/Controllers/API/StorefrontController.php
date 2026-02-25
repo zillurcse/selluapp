@@ -51,6 +51,17 @@ class StorefrontController extends Controller
     public function index(Request $request)
     {
         $tenantId = $this->resolveTenantId($request);
+        
+        // Check for Home Landing Page first
+        $homeLandingPage = \App\Models\LandingPage::where('is_home', true)
+            ->where('status', 'active')
+            ->when($tenantId, fn($q) => $q->where('vendor_id', $tenantId))
+            ->first();
+
+        if ($homeLandingPage) {
+            return $this->landingPage($homeLandingPage->slug);
+        }
+
         $userId = $tenantId ?? 5; // fallback to 5 for default global sliders
 
         $cacheKey = 'storefront_index_' . ($tenantId ?? 'global');
@@ -390,6 +401,40 @@ class StorefrontController extends Controller
             'products' => $products,
             'categories' => $categories,
             'sliders' => $sliders
+        ]);
+    }
+
+    public function landingPage($slug)
+    {
+        $landingPage = \App\Models\LandingPage::where('slug', $slug)
+            ->where('status', 'active')
+            ->firstOrFail();
+
+        $productIds = [];
+        if ($landingPage->landing_page_type === 'multiple') {
+            $productIds = $landingPage->settings['product_ids'] ?? [$landingPage->product_id];
+        } else {
+            $productIds = [$landingPage->product_id];
+        }
+
+        $products = Product::with(['categories', 'brand', 'unit', 'vendor.vendorProfile'])
+            ->whereIn('id', $productIds)
+            ->where('is_active', true)
+            ->where('status', 'published')
+            ->get();
+
+        $this->formatProducts($products);
+
+        $vendorProfile = \App\Models\VendorProfile::where('user_id', $landingPage->vendor_id)->first();
+        if ($vendorProfile) {
+            $vendorProfile->logo_url = $vendorProfile->logo ? Storage::disk('public')->url($vendorProfile->logo) : null;
+            $vendorProfile->banner_url = $vendorProfile->banner ? Storage::disk('public')->url($vendorProfile->banner) : null;
+        }
+
+        return response()->json([
+            'landing_page' => $landingPage,
+            'products' => $products,
+            'vendor' => $vendorProfile
         ]);
     }
 

@@ -11,7 +11,8 @@ export const useStorefrontStore = defineStore('storefront', {
         trendingProducts: [] as any[],
         categoryWiseProducts: [] as any[],
         slides: [] as any[],
-        vendorProfile: null as any
+        vendorProfile: null as any,
+        homeLandingPage: null as any
     }),
 
     actions: {
@@ -69,6 +70,18 @@ export const useStorefrontStore = defineStore('storefront', {
 
             // 0. Vendor Profile
             this.vendorProfile = data.vendor || null
+
+            // 0.1 Home Landing Page
+            if (data.landing_page) {
+                this.homeLandingPage = {
+                    landingPage: data.landing_page,
+                    products: data.products,
+                    vendor: data.vendor
+                }
+                return // Skip regular storefront processing if landing page is home
+            } else {
+                this.homeLandingPage = null
+            }
 
             // 1. Map Categories
             this.topCategories = data.categories?.map((cat: any) => ({

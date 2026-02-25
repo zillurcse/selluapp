@@ -4,11 +4,12 @@
     <nav class="fixed top-0 left-0 w-full z-50 px-6 py-8 flex justify-between items-center">
       <NuxtLink to="/" class="group flex items-center gap-3">
         <div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center group-hover:rotate-[15deg] transition-all duration-500 shadow-xl shadow-white/10">
-          <span class="text-black font-black text-2xl">S</span>
+          <img v-if="vendor?.logo_url" :src="vendor.logo_url" class="w-8 h-8 object-contain" />
+          <span v-else class="text-black font-black text-2xl">{{ vendor?.store_name?.[0] || 'S' }}</span>
         </div>
         <div class="flex flex-col">
-          <span class="text-white font-black tracking-tighter text-2xl leading-none">SELLUEE</span>
-          <span class="text-indigo-500 text-[10px] font-black uppercase tracking-[0.3em]">Premium</span>
+          <span class="text-white font-black tracking-tighter text-2xl leading-none capitalize">{{ vendor?.store_name || 'SELLUEE' }}</span>
+          <span class="text-indigo-500 text-[10px] font-black uppercase tracking-[0.3em]">Official Store</span>
         </div>
       </NuxtLink>
       
@@ -43,12 +44,10 @@
           
           <h1 class="text-5xl sm:text-7xl font-extrabold tracking-tighter leading-[1] text-white font-heading">
             {{ product.name }}<br/>
-            <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-rose-400 to-amber-400">Pro Edition.</span>
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-rose-400 to-amber-400">{{ data.landingPage?.title || 'Pro Edition' }}</span>
           </h1>
           
-          <p class="text-white/50 text-base md:text-lg max-w-xl leading-relaxed font-light">
-            {{ product.description }}
-          </p>
+          <div class="text-white/50 text-base md:text-lg max-w-xl leading-relaxed font-light line-clamp-4" v-html="product.description"></div>
         </div>
 
         <!-- Variant & Action -->
@@ -76,8 +75,8 @@
             <div class="flex-1 min-w-[200px]">
               <h3 class="text-[10px] font-bold uppercase tracking-[0.3em] text-white/30 mb-5">Investment</h3>
               <div class="flex items-baseline gap-4">
-                <span class="text-4xl font-extrabold tracking-tighter">${{ product.price }}</span>
-                <span class="text-white/20 line-through text-lg font-bold">${{ (parseFloat(product.price) * 1.25).toFixed(2) }}</span>
+                <span class="text-4xl font-extrabold tracking-tighter">৳{{ product.sale_price }}</span>
+                <span v-if="product.regular_price > product.sale_price" class="text-white/20 line-through text-lg font-bold">৳{{ product.regular_price }}</span>
               </div>
             </div>
           </div>
@@ -96,7 +95,7 @@
             </div>
             
             <button class="flex-1 py-5 rounded-2xl bg-white text-black font-black uppercase tracking-[0.2em] text-sm hover:scale-[1.02] active:scale-[0.98] transition-all duration-500 shadow-[0_20px_40px_-10px_rgba(255,255,255,0.1)] flex items-center justify-center gap-3 group">
-              Add To Collection
+              {{ settings.cta_text || 'Add To Collection' }}
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="translate-x-0 group-hover:translate-x-2 transition-transform"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </button>
 
@@ -116,7 +115,7 @@
           
           <!-- Image -->
           <img 
-            :src="product.image" 
+            :src="product.image_url" 
             class="relative z-10 w-[85%] h-auto drop-shadow-[0_40px_80px_rgba(0,0,0,0.5)] group-hover:scale-110 group-hover:-translate-y-6 transition-all duration-1000 ease-out"
           />
 
@@ -200,8 +199,8 @@
           <img :src="product.image" class="w-full h-full object-cover scale-110 group-hover:scale-100 group-hover:rotate-1 transition-all duration-1000 opacity-60 group-hover:opacity-100" />
           <div class="absolute inset-0 bg-gradient-to-t from-black to-transparent"></div>
           <div class="absolute bottom-12 left-12 max-w-md">
-            <h3 class="text-4xl font-black mb-4 font-heading">Immersive Experience.</h3>
-            <p class="text-white/60 text-lg">Designed to fit perfectly within your ecosystem, providing both aesthetic appeal and raw power.</p>
+            <h3 class="text-4xl font-black mb-4 font-heading">{{ settings.narrative_title || 'Immersive Experience.' }}</h3>
+            <p class="text-white/60 text-lg">{{ settings.narrative_desc || 'Designed to fit perfectly within your ecosystem, providing both aesthetic appeal and raw power.' }}</p>
           </div>
         </div>
         <div class="lg:col-span-4 flex flex-col gap-8">
@@ -236,7 +235,7 @@
         </button>
         <div class="w-px h-6 bg-white/10 mx-2"></div>
         <button class="bg-indigo-500 px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-indigo-400 transition-colors">
-          Buy Now — ${{ product.price }}
+          {{ settings.cta_text ? `${settings.cta_text} — ৳${product.sale_price}` : `Order Now — ৳${product.sale_price}` }}
         </button>
       </div>
     </div>
@@ -244,8 +243,18 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import watchImg from '~/assets/img/watch.png'
+import { computed, ref } from 'vue'
+
+const props = defineProps({
+  data: {
+    type: Object,
+    required: true
+  }
+})
+
+const product = computed(() => props.data.products?.[0] || {})
+const vendor = computed(() => props.data.vendor || {})
+const settings = computed(() => props.data.landingPage?.settings || {})
 
 const quantity = ref(1)
 const activeColor = ref('#1a1a1a')
@@ -257,45 +266,53 @@ const colors = [
   { name: 'Indigo Night', hex: '#4338ca' },
 ]
 
-const product = {
-  name: 'Quantum X-1',
-  price: '499.00',
-  description: 'A masterpiece of minimalist engineering. The Quantum X-1 redefines the intersection of tactile feedback and digital precision. Crafted from aerospace-grade titanium and finished with sapphire glass, it is as durable as it is beautiful.',
-  image: watchImg
-}
-
-const keyFeatures = [
-  { 
-    title: 'Adaptive Sync', 
-    desc: 'Intelligent state-management that adapts to your workflow patterns in real-time.',
-    icon: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>'
-  },
-  { 
-    title: 'Titanium Shell', 
-    desc: 'Unibody construction milled from a single block of Grade-5 titanium for absolute rigidity.',
-    icon: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>'
-  },
-  { 
-    title: '90h Persistence', 
-    desc: 'Extended energy density cells provide industry-leading uptime without the bulk.',
-    icon: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>'
+const keyFeatures = computed(() => {
+  if (settings.value.features && settings.value.features.length > 0) {
+    return settings.value.features.map((f, idx) => ({
+      title: f.title,
+      desc: f.desc,
+      icon: idx === 0 ? '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>' :
+            idx === 1 ? '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>' :
+            '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>'
+    }))
   }
-]
+  
+  // Fallback
+  return [
+    { 
+      title: 'Premium Quality', 
+      desc: 'Crafted with absolute attention to detail using high-end materials.',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>'
+    },
+    { 
+      title: 'Official Warranty', 
+      desc: 'Get full peace of mind with our comprehensive manufacturer warranty.',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>'
+    },
+    { 
+      title: 'Fast Delivery', 
+      desc: 'Quick and secure shipping straight to your doorstep within 2-3 days.',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>'
+    }
+  ]
+})
 
-const specifications = {
-  'Processor': 'Custom XM-2 Silicon',
-  'Memory': '16GB Integrated Unified Storage',
-  'Display': '1.9" Dynamic LTPO AMOLED (2000 nits)',
-  'Connectivity': 'WiFi 6E, Bluetooth 5.3, Ultra-Wideband',
-  'Sensors': 'Precision SpO2, ECG, Altimeter, Gyro',
-  'Durability': 'Water resistant up to 100m (ISO 22810)',
-}
+const specifications = computed(() => {
+  const specs = product.value.specifications || {}
+  return typeof specs === 'string' ? JSON.parse(specs) : specs
+})
 
-const floatingPoints = [
-  { x: 15, y: 20, label: 'Materials', value: 'Aerospace Titanium' },
-  { x: 75, y: 30, label: 'Precision', value: '2ms Tactile Lag' },
-  { x: 25, y: 80, label: 'Optics', value: 'Sapphire Crystal' },
-]
+const floatingPoints = computed(() => {
+  if (settings.value.floating_points && settings.value.floating_points.length > 0) {
+    return settings.value.floating_points
+  }
+  return [
+    { x: 15, y: 20, label: 'Materials', value: 'Aerospace Grade' },
+    { x: 75, y: 30, label: 'Precision', value: 'High Accuracy' },
+    { x: 25, y: 80, label: 'Optics', value: 'Sapphire Crystal' },
+  ]
+})
+
 </script>
 
 <style scoped>

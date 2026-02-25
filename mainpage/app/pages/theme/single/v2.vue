@@ -56,7 +56,7 @@
             <nav class="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
               <NuxtLink to="/shop" class="hover:text-black">Catalog</NuxtLink>
               <span>/</span>
-              <span class="text-black">Essentials</span>
+              <span class="text-black">{{ settings.hero_subtitle || 'Essentials' }}</span>
             </nav>
             
             <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
@@ -125,7 +125,7 @@
                 <button @click="quantity++" class="text-xl font-bold text-slate-300 hover:text-black transition-colors">+</button>
               </div>
               <button class="flex-1 bg-black text-white rounded-2xl py-4 font-black uppercase tracking-[0.2em] text-xs shadow-2xl shadow-slate-300 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3">
-                Acquire Piece
+                {{ settings.cta_text || 'Acquire Piece' }}
                 <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
               </button>
             </div>
@@ -196,14 +196,18 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import watchImg from '~/assets/img/watch.png'
+import { ref, computed } from 'vue'
 
-const product = {
-  name: 'Essence No. 4',
-  price: '245.00',
-  image: watchImg
-}
+const props = defineProps({
+  data: {
+    type: Object,
+    required: true
+  }
+})
+
+const product = computed(() => props.data.products?.[0] || {})
+const vendor = computed(() => props.data.vendor || {})
+const settings = computed(() => props.data.landingPage?.settings || {})
 
 const activeImg = ref(1)
 const activeMaterial = ref('Brushed Steel')
@@ -211,11 +215,17 @@ const activeSize = ref('Standard')
 const quantity = ref(1)
 const openIdx = ref(0)
 
-const details = [
-  { title: 'Dimensions & Weight', content: 'Height: 145mm | Width: 80mm | Depth: 80mm. Weight: 1.2kg solid core construction.' },
-  { title: 'Sourcing & Ethicality', content: 'Our steel is 100% recycled from automotive industry waste. Hand-polished using water-based compounds in our Copenhagen studio.' },
-  { title: 'Global Delivery', content: 'Ships in 100% plastic-free packaging. Standard shipping: 3-5 days. Express: 24h available.' }
-]
+const details = computed(() => {
+  if (product.value.specifications) {
+    const specs = typeof product.value.specifications === 'string' ? JSON.parse(product.value.specifications) : product.value.specifications
+    return Object.entries(specs).map(([title, content]) => ({ title, content }))
+  }
+  return [
+    { title: 'Dimensions & Weight', content: 'Height: 145mm | Width: 80mm | Depth: 80mm. Weight: 1.2kg solid core construction.' },
+    { title: 'Sourcing & Ethicality', content: 'Our steel is 100% recycled from automotive industry waste.' },
+    { title: 'Global Delivery', content: 'Standard shipping: 3-5 days. Express: 24h available.' }
+  ]
+})
 </script>
 
 <style scoped>

@@ -332,7 +332,16 @@ const { data: productsData, pending } = await useAsyncData('products', () =>
       specs: filters.specs
     }
   }), {
-    watch: [() => filters.categories, () => filters.brands, () => filters.units, () => filters.sort, () => filters.search, () => filters.specs, () => filters.min_price, () => filters.max_price]
+    watch: [
+      () => JSON.stringify(filters.categories),
+      () => JSON.stringify(filters.brands),
+      () => JSON.stringify(filters.units),
+      () => filters.sort,
+      () => filters.search,
+      () => JSON.stringify(filters.specs),
+      () => filters.min_price,
+      () => filters.max_price
+    ]
   }
 )
 
@@ -375,12 +384,21 @@ watch(productsData, (newData) => {
 }, { immediate: true })
 
 // Reset offset when filters change
-watch([() => filters.categories, () => filters.brands, () => filters.units, () => filters.sort, () => filters.search, () => filters.specs, () => filters.min_price, () => filters.max_price], () => {
+watch([
+  () => filters.categories, 
+  () => filters.brands, 
+  () => filters.units, 
+  () => filters.sort, 
+  () => filters.search, 
+  () => filters.specs, 
+  () => filters.min_price, 
+  () => filters.max_price
+], () => {
   filters.offset = 0
   filters.limit = 10
   hasMore.value = true
   loadedPages.value = 1
-})
+}, { deep: true })
 
 const loadMore = async (isManual = false) => {
   if (!hasMore.value || isLoadingMore.value || pending.value) return

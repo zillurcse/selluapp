@@ -22,6 +22,7 @@ class LandingPage extends Model
         'slug',
         'settings',
         'status',
+        'is_home',
     ];
 
     protected $casts = [

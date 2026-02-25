@@ -97,6 +97,7 @@
         <div class="space-y-8">
           
           <!-- Page Title -->
+          <!-- Page Title -->
           <div class="space-y-3">
             <label class="block text-sm font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider ml-1">Landing Page Title</label>
             <input 
@@ -105,6 +106,85 @@
               placeholder="e.g., Summer Collection 2024" 
               class="w-full h-14 px-6 bg-gray-50 dark:bg-slate-800 border-2 border-gray-100 dark:border-slate-700 rounded-2xl focus:border-orange-500 focus:bg-white dark:focus:bg-slate-700 transition-all outline-none font-medium dark:text-slate-200"
             />
+          </div>
+          
+          
+          <div class="flex items-center gap-3 p-6 bg-orange-50/50 dark:bg-orange-900/10 rounded-2xl border-2 border-orange-100 dark:border-orange-900/30">
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" v-model="formData.is_home" class="sr-only peer">
+              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 dark:peer-focus:ring-orange-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-orange-500"></div>
+              <span class="ml-3 text-sm font-bold text-gray-900 dark:text-slate-200 uppercase tracking-wider">Set as Store Home Page</span>
+            </label>
+            <div class="ml-auto">
+              <div v-if="formData.is_home" class="flex items-center text-xs font-black text-orange-600 dark:text-orange-400 gap-1">
+                <CheckCircle2 class="w-3 h-3" /> ACTIVE
+              </div>
+            </div>
+          </div>
+
+          <!-- Advanced Content Customization -->
+          <div class="pt-8 space-y-8 border-t border-gray-100 dark:border-slate-800">
+            <h3 class="text-lg font-black text-gray-900 dark:text-white flex items-center gap-2 uppercase tracking-tight">
+              <span class="w-8 h-8 rounded-lg bg-orange-500 text-white flex items-center justify-center text-sm">2</span>
+              Content Customization
+            </h3>
+
+            <!-- Hero Subtitle -->
+            <div class="max-w-xl">
+              <label class="block text-sm font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider ml-1 mb-3">Hero Subtitle (Optional)</label>
+              <input 
+                v-model="formData.settings.hero_subtitle"
+                type="text" 
+                placeholder="e.g. Signature Series" 
+                class="w-full h-12 px-5 bg-gray-50 dark:bg-slate-800 border-2 border-gray-100 dark:border-slate-700 rounded-xl focus:border-orange-500 transition-all outline-none font-medium dark:text-slate-200"
+              />
+            </div>
+
+            <!-- Hero Description -->
+            <div class="space-y-4">
+              <label class="block text-sm font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider ml-1">Hero Description</label>
+              <textarea 
+                v-model="formData.settings.hero_desc" 
+                rows="3" 
+                placeholder="e.g. Unrivaled curation of design excellence..." 
+                class="w-full px-5 py-4 bg-gray-50 dark:bg-slate-800 border-2 border-gray-100 dark:border-slate-700 rounded-xl focus:border-orange-500 transition-all outline-none font-medium text-sm dark:text-slate-200"
+              ></textarea>
+            </div>
+
+            <!-- Features -->
+            <div class="space-y-4">
+              <label class="block text-sm font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider ml-1">Key Features (Max 3)</label>
+              <div v-for="(feature, index) in formData.settings.features" :key="index" class="p-6 bg-gray-50 dark:bg-slate-800/50 rounded-2xl border-2 border-dashed border-gray-200 dark:border-slate-700 space-y-4">
+                <div class="flex justify-between items-center">
+                  <span class="text-xs font-black text-orange-500 uppercase tracking-widest">Feature #{{ index + 1 }}</span>
+                  <button @click="removeFeature(index)" class="text-red-500 hover:text-red-600 transition-colors">
+                    <Trash2 class="w-4 h-4" />
+                  </button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <input v-model="feature.title" placeholder="Feature Title" class="w-full h-11 px-4 bg-white dark:bg-slate-800 border-2 border-gray-100 dark:border-slate-700 rounded-xl focus:border-orange-500 transition-all outline-none font-medium text-sm" />
+                  <input v-model="feature.desc" placeholder="Brief Description" class="w-full h-11 px-4 bg-white dark:bg-slate-800 border-2 border-gray-100 dark:border-slate-700 rounded-xl focus:border-orange-500 transition-all outline-none font-medium text-sm" />
+                </div>
+              </div>
+              <button 
+                v-if="formData.settings.features.length < 3"
+                @click="addFeature"
+                class="w-full py-4 border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-2xl text-gray-400 hover:border-orange-500 hover:text-orange-500 transition-all flex items-center justify-center gap-2 text-sm font-bold"
+              >
+                <Plus class="w-4 h-4" /> Add Feature
+              </button>
+            </div>
+
+            <!-- CTA Text -->
+            <div class="max-w-xl">
+              <label class="block text-sm font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider ml-1 mb-3">Call To Action Text</label>
+              <input 
+                v-model="formData.settings.cta_text"
+                type="text" 
+                placeholder="e.g. Explore All" 
+                class="w-full h-12 px-5 bg-gray-50 dark:bg-slate-800 border-2 border-gray-100 dark:border-slate-700 rounded-xl focus:border-orange-500 transition-all outline-none font-medium dark:text-slate-200"
+              />
+            </div>
           </div>
 
           <!-- Product Selection -->
@@ -203,7 +283,10 @@ import {
   Package,
   Search,
   Loader2,
-  PackageSearch
+  CheckCircle2,
+  PackageSearch,
+  Plus,
+  Trash2
 } from 'lucide-vue-next'
 
 definePageMeta({
@@ -246,8 +329,24 @@ const formData = ref({
   landing_page_type: 'multiple',
   template_name: 'bundle_grid',
   status: 'active',
-  settings: {}
+  is_home: false,
+  settings: {
+    hero_subtitle: '',
+    hero_desc: '',
+    cta_text: '',
+    features: []
+  }
 })
+
+const addFeature = () => {
+  if (formData.value.settings.features.length < 3) {
+    formData.value.settings.features.push({ title: '', desc: '', icon: '' })
+  }
+}
+
+const removeFeature = (index) => {
+  formData.value.settings.features.splice(index, 1)
+}
 
 // Fetch products
 const fetchProducts = async (page = 1, append = false) => {
@@ -303,7 +402,14 @@ const fetchPageData = async (id) => {
         landing_page_type: res.landing_page_type,
         template_name: res.template_name,
         status: res.status,
-        settings: res.settings || {}
+        is_home: res.is_home === 1 || res.is_home === true,
+        settings: {
+          product_ids: res.settings?.product_ids || [res.product_id],
+          hero_subtitle: res.settings?.hero_subtitle || '',
+          hero_desc: res.settings?.hero_desc || '',
+          cta_text: res.settings?.cta_text || '',
+          features: res.settings?.features || []
+        }
       }
       selectedTemplate.value = res.template_name
     }

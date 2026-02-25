@@ -4,11 +4,12 @@
     <nav class="fixed top-0 left-0 w-full z-50 px-6 py-8 flex justify-between items-center transition-all duration-300" :class="{ 'bg-black/80 backdrop-blur-xl border-b border-white/5 py-4': scrolled }">
       <NuxtLink to="/" class="group flex items-center gap-3">
         <div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center group-hover:rotate-[15deg] transition-all duration-500 shadow-xl shadow-white/10">
-          <span class="text-black font-black text-2xl">S</span>
+          <img v-if="vendor?.logo_url" :src="vendor.logo_url" class="w-8 h-8 object-contain" />
+          <span v-else class="text-black font-black text-2xl">{{ vendor?.store_name?.[0] || 'S' }}</span>
         </div>
         <div class="flex flex-col">
-          <span class="text-white font-black tracking-tighter text-2xl leading-none">SELLUEE</span>
-          <span class="text-rose-500 text-[10px] font-black uppercase tracking-[0.3em]">Signature</span>
+          <span class="text-white font-black tracking-tighter text-2xl leading-none capitalize">{{ vendor?.store_name || 'SELLUEE' }}</span>
+          <span class="text-rose-500 text-[10px] font-black uppercase tracking-[0.3em]">Official Store</span>
         </div>
       </NuxtLink>
       
@@ -36,20 +37,43 @@
       </div>
 
       <div class="max-w-4xl space-y-8 animate-slide-up">
-        <span class="px-5 py-2 rounded-full bg-white/5 border border-white/10 text-rose-400 text-[10px] font-black uppercase tracking-[0.4em] inline-block">SS2026 Collection</span>
+        <span class="px-5 py-2 rounded-full bg-white/5 border border-white/10 text-rose-400 text-[10px] font-black uppercase tracking-[0.4em] inline-block">{{ settings.hero_subtitle || 'Signature Series' }}</span>
         <h1 class="text-6xl md:text-8xl font-black tracking-[ -0.05em] leading-[0.9] font-heading">
-          ELEVATE YOUR <br/>
+          {{ data.landingPage?.title || 'ELEVATE YOUR' }} <br/>
           <span class="text-transparent bg-clip-text bg-gradient-to-r from-white via-white/40 to-white/20">AESTHETIC.</span>
         </h1>
         <p class="text-white/40 text-lg md:text-xl max-w-2xl mx-auto font-light leading-relaxed">
-          A definitive selection of industrial design excellence. Each piece curated for its unique contribution to the modern workspace and living environment.
+          {{ settings.hero_desc || 'Unrivaled curation of design excellence. A selection of premium products benchmarked for performance and aesthetic purity.' }}
         </p>
         <div class="flex items-center justify-center gap-6 pt-6">
-          <button class="px-10 py-5 rounded-2xl bg-white text-black font-black uppercase tracking-[0.2em] text-xs hover:scale-105 active:scale-95 transition-all shadow-2xl shadow-white/5">Explore All</button>
+          <button class="px-10 py-5 rounded-2xl bg-white text-black font-black uppercase tracking-[0.2em] text-xs hover:scale-105 active:scale-95 transition-all shadow-2xl shadow-white/5">{{ settings.cta_text || 'Explore All' }}</button>
           <button class="px-10 py-5 rounded-2xl bg-white/5 border border-white/10 text-white font-black uppercase tracking-[0.2em] text-xs hover:bg-white/10 transition-all">Our Story</button>
         </div>
       </div>
     </header>
+
+    <!-- Key Features Grid -->
+    <section v-if="keyFeatures && keyFeatures.length > 0" class="py-20 px-6 lg:px-20 relative overflow-hidden">
+      <div class="max-w-7xl mx-auto">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-12">
+          <div v-for="(feature, idx) in keyFeatures" :key="idx" 
+            class="group p-10 rounded-[3rem] bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.06] hover:border-white/10 transition-all duration-700 relative overflow-hidden flex flex-col gap-8 animate-slide-up"
+            :style="{ animationDelay: (0.4 + idx * 0.1) + 's' }"
+          >
+            <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-rose-500/5 blur-3xl rounded-full group-hover:bg-rose-500/10 transition-colors duration-700"></div>
+            
+            <div class="w-16 h-16 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-400 group-hover:scale-110 group-hover:rotate-12 transition-all duration-700">
+              <div v-html="feature.icon" class="w-8 h-8"></div>
+            </div>
+            
+            <div class="space-y-4">
+              <h3 class="text-2xl font-black tracking-tight font-heading">{{ feature.title }}</h3>
+              <p class="text-white/40 leading-relaxed font-medium">{{ feature.desc }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <!-- 4 Products Grid Showcase -->
     <section class="py-20 px-6 lg:px-20 relative">
@@ -70,16 +94,16 @@
 
             <div class="relative z-10 flex justify-between items-start">
               <div class="space-y-2">
-                <span class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30">{{ prod.category }}</span>
-                <h3 class="text-3xl lg:text-4xl font-black font-heading tracking-tighter">{{ prod.name }}</h3>
+                <span class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30">{{ prod.brand?.name || 'Premium' }}</span>
+                <h3 class="text-3xl lg:text-4xl font-black font-heading tracking-tighter line-clamp-2">{{ prod.name }}</h3>
               </div>
-              <div class="text-2xl font-black font-heading mt-1">${{ prod.price }}</div>
+              <div class="text-2xl font-black font-heading mt-1">৳{{ prod.sale_price }}</div>
             </div>
 
             <!-- Product Image -->
             <div class="relative flex-1 flex items-center justify-center py-10">
               <img 
-                :src="prod.image" 
+                :src="prod.image_url" 
                 class="w-[80%] h-auto object-contain drop-shadow-[0_30px_60px_rgba(0,0,0,0.5)] group-hover:scale-110 group-hover:-translate-y-8 transition-all duration-1000 ease-out" 
               />
               
@@ -138,7 +162,7 @@
             </div>
             <span class="text-white font-black tracking-tighter text-xl">SELLUEE</span>
           </NuxtLink>
-          <p class="text-[10px] font-bold uppercase tracking-[0.3em] text-white/20">© 2026 Selluee Limited. All Rights Reserved.</p>
+          <p class="text-[10px] font-bold uppercase tracking-[0.3em] text-white/20">© 2026 {{ vendor?.store_name || 'SELLUEE' }} Limited. All Rights Reserved.</p>
         </div>
         
         <div class="flex gap-12">
@@ -159,21 +183,33 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
-
-definePageMeta({
-  layout: 'theme'
+const props = defineProps({
+  data: {
+    type: Object,
+    required: true
+  }
 })
 
-// Import existing assets
-import watchImg from '~/assets/img/watch.png'
-import headphonesImg from '~/assets/img/headphones.png'
-import lampImg from '~/assets/img/lamp.png'
-import vaseImg from '~/assets/img/vase.png'
+const showcaseProducts = computed(() => props.data.products || [])
+const vendor = computed(() => props.data.vendor || {})
+const settings = computed(() => props.data.landingPage?.settings || {})
+
+const keyFeatures = computed(() => {
+  if (settings.value.features && settings.value.features.length > 0) {
+    return settings.value.features.map((f, idx) => ({
+      title: f.title,
+      desc: f.desc,
+      icon: idx === 0 ? '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>' :
+            idx === 1 ? '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>' :
+            '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>'
+    }))
+  }
+  return []
+})
 
 const scrolled = ref(false)
 const handleScroll = () => {
-  scrolled.ref = window.scrollY > 50
+  scrolled.value = window.scrollY > 50
 }
 
 onMounted(() => {
@@ -191,52 +227,6 @@ const footerLinks = {
   'Company': ['About Us', 'Sustainability', 'Careers'],
   'Support': ['Shipping', 'Returns', 'Contact']
 }
-
-const showcaseProducts = [
-  {
-    name: 'Quantum X-1',
-    category: 'Timepieces',
-    price: '499.00',
-    image: watchImg,
-    themeColor: '#4338ca',
-    specs: [
-      { x: 30, y: 30, label: 'Titanium Shell' },
-      { x: 70, y: 60, label: 'Sapphire Glass' }
-    ]
-  },
-  {
-    name: 'Acoustics Pro',
-    category: 'Audio',
-    price: '349.00',
-    image: headphonesImg,
-    themeColor: '#e11d48',
-    specs: [
-      { x: 20, y: 40, label: 'Hifi Sound' },
-      { x: 80, y: 70, label: '40h Battery' }
-    ]
-  },
-  {
-    name: 'Aura Lumina',
-    category: 'Lighting',
-    price: '219.00',
-    image: lampImg,
-    themeColor: '#f59e0b',
-    specs: [
-      { x: 50, y: 20, label: 'Smart Dimming' },
-      { x: 40, y: 80, label: 'Alloy Core' }
-    ]
-  },
-  {
-    name: 'Minimalist Vase',
-    category: 'Decor',
-    price: '89.00',
-    image: vaseImg,
-    themeColor: '#10b981',
-    specs: [
-      { x: 50, y: 50, label: 'Handcrafted' }
-    ]
-  }
-]
 </script>
 
 <style scoped>
