@@ -8,6 +8,7 @@
         v-model:customerSearchQuery="customerSearchQuery"
         :selectedCustomerData="selectedCustomerData"
         :filteredCustomers="filteredCustomers"
+        :storeName="vendorProfile?.vendor_profile?.store_name || 'My Store'"
         @openAddCustomerModal="openAddCustomerModal"
       />
 
@@ -166,6 +167,7 @@ const products   = ref([])
 const customers  = ref([])
 const categories = ref([])
 const brands     = ref([])
+const vendorProfile = ref(null)
 const registerStats     = ref({})
 const isLoadingProducts = ref(false)
 const isLoadingMore     = ref(false)
@@ -233,6 +235,15 @@ const fetchBrands = async () => {
   } catch (e) { console.error(e) }
 }
 
+const fetchVendorProfile = async () => {
+  try {
+    vendorProfile.value = await getAll('/vendor/profile')
+  } catch (e) { 
+    console.error('Failed to fetch vendor profile', e)
+    vendorProfile.value = { vendor_profile: { store_name: 'My Store' } }
+  }
+}
+
 const fetchSales = async () => {
   isLoadingSales.value = true
   try {
@@ -263,6 +274,7 @@ onMounted(() => {
   fetchCategories()
   fetchBrands()
   fetchPosSettings()
+  fetchVendorProfile()
 })
 
 // ── Customer Logic ─────────────────────────────────────────────────

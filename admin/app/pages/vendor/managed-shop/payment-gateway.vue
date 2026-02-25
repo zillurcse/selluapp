@@ -19,11 +19,12 @@
     <div v-if="pending" class="flex justify-center items-center py-20">
       <div class="w-8 h-8 border-4 border-[#0F172A] dark:border-white border-t-transparent rounded-full animate-spin"></div>
     </div>
+    
     <!-- Payment Methods Grid -->
     <div v-else class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
       <div 
         v-for="(gateway, index) in gateways" 
-        :key="gateway.type"
+        :key="gateway.slug"
         class="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-sm p-8 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-500 group relative overflow-hidden flex flex-col justify-between"
       >
         <!-- Background Pattern -->
@@ -31,8 +32,8 @@
 
         <div class="relative space-y-6 flex-grow">
           <div class="flex items-start justify-between">
-            <div :class="['w-16 h-16 rounded-2xl flex items-center justify-center shadow-inner', gateway.bg]">
-              <component :is="gateway.icon" class="w-8 h-8 text-white" />
+            <div class="w-16 h-16 rounded-2xl flex items-center justify-center shadow-inner bg-indigo-600">
+              <component :is="getIcon(gateway.icon)" class="w-8 h-8 text-white" />
             </div>
             <button 
               @click="gateway.active = !gateway.active"
@@ -44,15 +45,15 @@
 
           <div>
             <h2 class="text-xl font-black text-slate-900 dark:text-white tracking-tight">{{ gateway.name }}</h2>
-            <p class="text-sm font-bold text-slate-400 dark:text-slate-500 mt-1">{{ gateway.desc }}</p>
+            <p class="text-sm font-bold text-slate-400 dark:text-slate-500 mt-1 line-clamp-2">{{ gateway.description }}</p>
           </div>
         </div>
 
-        <div class="relative mt-6" v-if="gateway.type !== 'cod' && gateway.active">
+        <div class="relative mt-6" v-if="gateway.config_fields?.length > 0 && gateway.active">
           <div class="pt-4 border-t border-slate-50 dark:border-slate-800">
             <button @click="openConfig(index)" class="w-full py-4 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-black rounded-2xl transition-all flex items-center justify-center gap-2">
               <Settings2 class="w-4 h-4 text-slate-400" />
-              Configure API Keys
+              Settings
             </button>
           </div>
         </div>
@@ -64,8 +65,8 @@
           <Plus class="w-8 h-8 text-slate-300 group-hover:text-indigo-500" />
         </div>
         <div>
-          <h3 class="font-black text-slate-400 group-hover:text-slate-800 dark:group-hover:text-white">Add More Gateways</h3>
-          <p class="text-xs font-bold text-slate-300 group-hover:text-slate-400 dark:group-hover:text-slate-500">Request SSLCommerz, bKash, or AmarPay</p>
+          <h3 class="font-black text-slate-400 group-hover:text-slate-800 dark:group-hover:text-white">Request More Gateways</h3>
+          <p class="text-xs font-bold text-slate-300 group-hover:text-slate-400 dark:group-hover:text-slate-500">Need SSLCommerz or AmarPay? Contact Support.</p>
         </div>
       </div>
     </div>
@@ -102,70 +103,25 @@
 
         <!-- Drawer Body -->
         <div class="flex-grow overflow-y-auto px-8 py-4 space-y-6" v-if="gateways[editingIndex]">
-          <div v-if="gateways[editingIndex].type === 'stripe'" class="space-y-4">
-            <div class="space-y-2">
-              <label class="text-sm font-bold text-slate-600 dark:text-slate-400">Publishable Key</label>
-              <input v-model="gateways[editingIndex].config.publicKey" type="text" placeholder="pk_test_..." class="w-full h-14 px-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-slate-900/5 focus:border-slate-900 outline-none transition-all font-semibold text-slate-700 dark:text-slate-200">
-            </div>
-            <div class="space-y-2 relative">
-              <label class="text-sm font-bold text-slate-600 dark:text-slate-400">Secret Key</label>
-              <input v-model="gateways[editingIndex].config.secretKey" :type="showSecret ? 'text' : 'password'" placeholder="sk_test_..." class="w-full h-14 px-5 pr-12 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-slate-900/5 focus:border-slate-900 outline-none transition-all font-semibold text-slate-700 dark:text-slate-200">
-              <button @click="showSecret = !showSecret" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
-                <EyeOff v-if="showSecret" class="w-4 h-4" />
-                <Eye v-else class="w-4 h-4" />
-              </button>
-            </div>
-            <div class="space-y-2">
-              <label class="text-sm font-bold text-slate-600 dark:text-slate-400">Webhook Secret</label>
-              <input v-model="gateways[editingIndex].config.webhookSecret" type="password" placeholder="whsec_..." class="w-full h-14 px-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-slate-900/5 focus:border-slate-900 outline-none transition-all font-semibold text-slate-700 dark:text-slate-200">
-            </div>
-          </div>
+          <div v-for="field in gateways[editingIndex].config_fields" :key="field.name" class="space-y-2 relative">
+             <label class="text-sm font-bold text-slate-600 dark:text-slate-400">{{ field.label }}</label>
+             
+             <!-- Select Field -->
+             <select v-if="field.type === 'select'" v-model="gateways[editingIndex].config[field.name]" class="w-full h-14 px-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-slate-900/5 focus:border-slate-900 outline-none transition-all font-semibold text-slate-700 dark:text-slate-200 appearance-none">
+                <option v-for="opt in field.options" :key="opt" :value="opt">{{ opt.toUpperCase() }}</option>
+             </select>
 
-          <div v-if="gateways[editingIndex].type === 'wallet'" class="space-y-4">
-            <div class="space-y-2">
-              <label class="text-sm font-bold text-slate-600 dark:text-slate-400">Wallet Type</label>
-              <select v-model="gateways[editingIndex].config.walletType" class="w-full h-14 px-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-slate-900/5 focus:border-slate-900 outline-none transition-all font-semibold text-slate-700 dark:text-slate-200 appearance-none">
-                <option value="bkash">bKash</option>
-                <option value="nagad">Nagad</option>
-                <option value="rocket">Rocket</option>
-                <option value="upay">Upay</option>
-              </select>
-            </div>
-            <div class="space-y-2">
-              <label class="text-sm font-bold text-slate-600 dark:text-slate-400">Account Type</label>
-              <select v-model="gateways[editingIndex].config.accountType" class="w-full h-14 px-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-slate-900/5 focus:border-slate-900 outline-none transition-all font-semibold text-slate-700 dark:text-slate-200 appearance-none">
-                <option value="Personal">Personal</option>
-                <option value="Agent">Agent</option>
-                <option value="Merchant">Merchant</option>
-              </select>
-            </div>
-            <div class="space-y-2">
-              <label class="text-sm font-bold text-slate-600 dark:text-slate-400">Mobile Number</label>
-              <input v-model="gateways[editingIndex].config.number" type="text" placeholder="01XXXXXXXXX" class="w-full h-14 px-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-slate-900/5 focus:border-slate-900 outline-none transition-all font-semibold text-slate-700 dark:text-slate-200">
-            </div>
-          </div>
+             <!-- Password Field -->
+             <div v-else-if="field.type === 'password'" class="relative">
+                <input v-model="gateways[editingIndex].config[field.name]" :type="showSecret ? 'text' : 'password'" :placeholder="field.placeholder" class="w-full h-14 px-5 pr-12 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-slate-900/5 focus:border-slate-900 outline-none transition-all font-semibold text-slate-700 dark:text-slate-200">
+                <button @click="showSecret = !showSecret" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                  <EyeOff v-if="showSecret" class="w-4 h-4" />
+                  <Eye v-else class="w-4 h-4" />
+                </button>
+             </div>
 
-          <div v-if="gateways[editingIndex].type === 'bank'" class="space-y-4">
-            <div class="space-y-2">
-              <label class="text-sm font-bold text-slate-600 dark:text-slate-400">Bank Name</label>
-              <input v-model="gateways[editingIndex].config.bankName" type="text" placeholder="e.g. Dutch Bangla Bank" class="w-full h-14 px-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-slate-900/5 focus:border-slate-900 outline-none transition-all font-semibold text-slate-700 dark:text-slate-200">
-            </div>
-            <div class="space-y-2">
-              <label class="text-sm font-bold text-slate-600 dark:text-slate-400">Account Name</label>
-              <input v-model="gateways[editingIndex].config.accountName" type="text" placeholder="e.g. John Doe" class="w-full h-14 px-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-slate-900/5 focus:border-slate-900 outline-none transition-all font-semibold text-slate-700 dark:text-slate-200">
-            </div>
-            <div class="space-y-2">
-              <label class="text-sm font-bold text-slate-600 dark:text-slate-400">Account Number</label>
-              <input v-model="gateways[editingIndex].config.accountNumber" type="text" placeholder="e.g. 1012XXXXXXXX" class="w-full h-14 px-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-slate-900/5 focus:border-slate-900 outline-none transition-all font-semibold text-slate-700 dark:text-slate-200">
-            </div>
-            <div class="space-y-2">
-              <label class="text-sm font-bold text-slate-600 dark:text-slate-400">Branch Name</label>
-              <input v-model="gateways[editingIndex].config.branchName" type="text" placeholder="e.g. Banani Branch" class="w-full h-14 px-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-slate-900/5 focus:border-slate-900 outline-none transition-all font-semibold text-slate-700 dark:text-slate-200">
-            </div>
-            <div class="space-y-2">
-              <label class="text-sm font-bold text-slate-600 dark:text-slate-400">Routing Number (Optional)</label>
-              <input v-model="gateways[editingIndex].config.routingNumber" type="text" placeholder="Routing Number" class="w-full h-14 px-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-slate-900/5 focus:border-slate-900 outline-none transition-all font-semibold text-slate-700 dark:text-slate-200">
-            </div>
+             <!-- Text Field -->
+             <input v-else v-model="gateways[editingIndex].config[field.name]" type="text" :placeholder="field.placeholder" class="w-full h-14 px-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-slate-900/5 focus:border-slate-900 outline-none transition-all font-semibold text-slate-700 dark:text-slate-200">
           </div>
         </div>
 
@@ -207,7 +163,8 @@ import {
   Save,
   X,
   Eye,
-  EyeOff
+  EyeOff,
+  Globe
 } from 'lucide-vue-next'
 import { ref, onMounted } from 'vue'
 
@@ -226,39 +183,42 @@ const isDrawerOpen = ref(false)
 const editingIndex = ref(-1)
 const showSecret = ref(false)
 
-const gateways = ref([
-  { type: 'cod', name: 'Cash on Delivery', desc: 'Accept payments at your doorstep.', icon: Banknote, bg: 'bg-emerald-600', active: true, config: {} },
-  { type: 'stripe', name: 'Stripe', desc: 'Secure worldwide card payments.', icon: CreditCard, bg: 'bg-indigo-600', active: false, config: { publicKey: '', secretKey: '', webhookSecret: '' } },
-  { type: 'wallet', name: 'Digital Wallet', desc: 'Mobile wallet systems (bKash/Nagad).', icon: Wallet, bg: 'bg-rose-500', active: true, config: { walletType: 'bkash', number: '', accountType: 'Personal' } },
-  { type: 'bank', name: 'Instant Bank Transfer', desc: 'Real-time bank verification.', icon: Zap, bg: 'bg-blue-600', active: false, config: { bankName: '', accountName: '', accountNumber: '', branchName: '', routingNumber: '' } },
-])
+const gateways = ref([])
 
-const openConfig = (index) => {
-  editingIndex.value = index
-  isDrawerOpen.value = true
+const getIcon = (iconName) => {
+  const icons = { CreditCard, Wallet, Banknote, Zap, Globe }
+  return icons[iconName] || Globe
 }
 
 const loadSettings = async () => {
   try {
     pending.value = true
-    const response = await getAll('/vendor/settings?group=payment_gateways')
-    if (response.data) {
-      const data = response.data
-      gateways.value.forEach(gateway => {
-        if (data[gateway.type]) {
-          const remoteData = typeof data[gateway.type] === 'string' ? JSON.parse(data[gateway.type]) : data[gateway.type]
-          gateway.active = remoteData.active ?? gateway.active
-          gateway.config = remoteData.config || gateway.config
-        }
-      })
-    }
+    
+    // 1. Load active payment methods defined by admin
+    const methodsResponse = await getAll('/vendor/payment-methods')
+    const methods = methodsResponse || []
+    
+    // 2. Load vendor's specific configurations
+    const configResponse = await getAll('/vendor/settings?group=payment_gateways')
+    const savedConfig = configResponse.data || {}
+
+    gateways.value = methods.map(method => ({
+      ...method,
+      active: savedConfig[method.slug]?.active ?? false,
+      config: savedConfig[method.slug]?.config ?? {}
+    }))
+
   } catch (error) {
-    if (error.response?.status !== 404) {
-      $toast.error('Failed to load payment gateways')
-    }
+    console.error(error)
+    $toast.error('Failed to load payment gateways')
   } finally {
     pending.value = false
   }
+}
+
+const openConfig = (index) => {
+  editingIndex.value = index
+  isDrawerOpen.value = true
 }
 
 const saveSettings = async () => {
@@ -266,7 +226,7 @@ const saveSettings = async () => {
     saving.value = true
     const settingsPayload = {}
     gateways.value.forEach(gateway => {
-      settingsPayload[gateway.type] = {
+      settingsPayload[gateway.slug] = {
         active: gateway.active,
         config: gateway.config
       }
@@ -277,7 +237,7 @@ const saveSettings = async () => {
       settings: settingsPayload
     })
     
-    router.push('/vendor/managed-shop/payment-gateway')
+    $toast.success('Payment gateways updated successfully')
   } catch (error) {
     console.error(error)
     $toast.error('Failed to save settings')
@@ -286,13 +246,10 @@ const saveSettings = async () => {
   }
 }
 
-onMounted(() => {
-  loadSettings()
-})
+onMounted(loadSettings)
 </script>
 
 <style scoped>
-/* Custom scrollbar for drawer body */
 .overflow-y-auto::-webkit-scrollbar {
   width: 4px;
 }

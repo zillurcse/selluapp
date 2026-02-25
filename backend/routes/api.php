@@ -89,11 +89,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('settings', [App\Http\Controllers\SuperAdmin\GlobalSettingController::class, 'index']);
         Route::post('settings', [App\Http\Controllers\SuperAdmin\GlobalSettingController::class, 'update']);
         Route::post('settings/upload', [App\Http\Controllers\SuperAdmin\GlobalSettingController::class, 'uploadFile']);
+
+        // Dynamic Payment Methods
+        Route::apiResource('payment-methods', App\Http\Controllers\API\PaymentMethodController::class);
     });
 
 
     // Vendor Routes
     Route::prefix('vendor')->group(function () {
+        Route::get('payment-methods', [App\Http\Controllers\API\PaymentMethodController::class, 'index']);
         Route::apiResource('attributes/categories', App\Http\Controllers\VendorAttributeController::class);
         Route::apiResource('attributes/products', App\Http\Controllers\VendorAttributeController::class); // This might need to be specific product controller later
         Route::apiResource('attributes/brands', App\Http\Controllers\VendorBrandController::class);

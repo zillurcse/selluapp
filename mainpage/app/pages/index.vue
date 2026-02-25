@@ -35,7 +35,6 @@
 
 <script setup>
 import { storeToRefs } from 'pinia'
-import { useStorefrontStore } from '~/stores/useStorefrontStore'
 
 const storefrontStore = useStorefrontStore()
 const { slides, topCategories, trendingProducts: products, categoryWiseProducts } = storeToRefs(storefrontStore)

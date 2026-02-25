@@ -7,8 +7,12 @@
           <ArrowLeft class="w-5 h-5" />
         </button>
         <div>
-          <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">Build Your Landing Page</h1>
-          <p class="text-gray-500 dark:text-slate-400 mt-1">Select a template, fill in product details, and create your landing page easily.</p>
+          <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+            {{ store.isEdit ? 'Edit Your Landing Page' : 'Build Your Landing Page' }}
+          </h1>
+          <p class="text-gray-500 dark:text-slate-400 mt-1">
+            {{ store.isEdit ? 'Update your landing page details below.' : 'Select a template, fill in product details, and create your landing page easily.' }}
+          </p>
         </div>
       </div>
     </div>
@@ -134,42 +138,96 @@
 
       <!-- Form Section -->
       <div class="bg-white dark:bg-slate-900 rounded-3xl p-10 shadow-xl border border-gray-100 dark:border-slate-800 max-w-5xl mx-auto space-y-8 transition-colors duration-300">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
-          
-          <!-- Product Selection -->
-          <div class="space-y-3">
+        </div>
+
+        <!-- Product Selection Section -->
+        <div class="space-y-6">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <label class="block text-sm font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider ml-1">Select Product</label>
-            <div class="relative">
-              <select v-model="formData.product_id" class="w-full h-14 pl-5 pr-12 bg-gray-50 dark:bg-slate-800 border-2 border-gray-100 dark:border-slate-700 rounded-2xl focus:border-blue-500 focus:bg-white dark:focus:bg-slate-700 transition-all appearance-none cursor-pointer outline-none font-medium dark:text-slate-200">
-                <option value="">-- Select Product --</option>
-                <option v-for="product in products" :key="product.id" :value="product.id">{{ product.name }}</option>
-              </select>
-              <ChevronDown class="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+            
+            <!-- Search Bar -->
+            <div class="relative w-full md:w-96">
+              <Search class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input 
+                v-model="searchQuery"
+                type="text" 
+                placeholder="Search products..." 
+                class="w-full h-12 pl-12 pr-4 bg-gray-50 dark:bg-slate-800 border-2 border-gray-100 dark:border-slate-700 rounded-2xl focus:border-blue-500 transition-all outline-none font-medium dark:text-slate-200"
+                @input="handleSearch"
+              />
             </div>
           </div>
 
-          <!-- Page Title -->
-          <div class="space-y-3">
-            <label class="block text-sm font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider ml-1">Page Title</label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div v-for="product in products" :key="product.id" 
+              @click="formData.product_id = product.id"
+              class="relative flex flex-col p-5 rounded-2xl border-2 transition-all cursor-pointer group hover:shadow-lg"
+              :class="formData.product_id === product.id ? 'border-blue-500 bg-blue-50/30 dark:bg-blue-900/10' : 'border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-gray-200 dark:hover:border-slate-700'"
+            >
+              <div class="w-full aspect-square rounded-xl bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 mb-4 flex items-center justify-center overflow-hidden">
+                <img v-if="product.image" :src="product.image" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                <Package v-else class="w-10 h-10 text-gray-200" />
+              </div>
+              
+              <div class="flex-1">
+                <div class="font-bold text-gray-900 dark:text-slate-100 leading-tight mb-1">{{ product.name }}</div>
+                <div class="text-sm font-black text-blue-600 dark:text-blue-400">৳{{ product.sale_price }}</div>
+              </div>
+
+              <div v-if="formData.product_id === product.id" class="absolute top-3 right-3 bg-blue-500 text-white rounded-full p-1 shadow-md">
+                <Check class="w-4 h-4" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Pagination & Loading -->
+          <div class="flex flex-col items-center justify-center pt-8 space-y-4">
+            <div v-if="loading" class="flex items-center space-x-2 text-gray-500">
+              <Loader2 class="w-5 h-5 animate-spin" />
+              <span class="text-sm font-medium">Loading products...</span>
+            </div>
+            
+            <button 
+              v-if="hasMore && !loading" 
+              @click="loadMore"
+              class="px-8 py-3 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 rounded-xl text-sm font-bold hover:bg-gray-200 dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm"
+            >
+              Load More Products
+            </button>
+
+            <div v-if="!hasMore && products.length > 0" class="text-xs text-gray-400">
+              No more products found
+            </div>
+
+            <div v-if="!loading && products.length === 0" class="flex flex-col items-center py-10">
+              <PackageSearch class="w-16 h-16 text-gray-200 mb-4" />
+              <p class="text-gray-500 font-medium">No products found for "{{ searchQuery }}"</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Page Title & Additional Settings -->
+        <div class="pt-6 border-t border-gray-100 dark:border-slate-800 space-y-8">
+          <div class="max-w-xl">
+            <label class="block text-sm font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider ml-1 mb-3">Landing Page Title</label>
             <input 
               v-model="formData.title"
               type="text" 
-              placeholder="Enter Page Title" 
+              placeholder="e.g. Premium Wireless Headphones Landing Page" 
               class="w-full h-14 px-6 bg-gray-50 dark:bg-slate-800 border-2 border-gray-100 dark:border-slate-700 rounded-2xl focus:border-blue-500 focus:bg-white dark:focus:bg-slate-700 transition-all outline-none font-medium dark:text-slate-200"
             />
           </div>
-
-        </div>
 
         <!-- Submit Button -->
         <button 
           @click="submitLandingPage"
           class="w-full h-16 bg-black dark:bg-slate-800 text-white rounded-2xl font-black text-xl hover:bg-gray-800 dark:hover:bg-slate-700 active:scale-[0.98] transition-all shadow-xl flex items-center justify-center group"
-          :disabled="!isValid"
-          :class="{'opacity-50 cursor-not-allowed': !isValid}"
+          :disabled="!isValid || store.isLoading"
+          :class="{'opacity-50 cursor-not-allowed': !isValid || store.isLoading}"
         >
-          Let's Create Page
-          <ArrowRight class="w-6 h-6 ml-3 group-hover:translate-x-1 transition-transform" />
+          {{ store.isEdit ? 'Update Page' : "Let's Create Page" }}
+          <ArrowRight v-if="!store.isLoading" class="w-6 h-6 ml-3 group-hover:translate-x-1 transition-transform" />
+          <Loader2 v-else class="w-6 h-6 ml-3 animate-spin" />
         </button>
       </div>
 
@@ -185,7 +243,11 @@ import {
   Check, 
   CheckCircle2, 
   Eye, 
-  PartyPopper 
+  PartyPopper,
+  Loader2,
+  Search,
+  Package,
+  PackageSearch
 } from 'lucide-vue-next'
 
 definePageMeta({
@@ -194,9 +256,32 @@ definePageMeta({
   permissions: 'landing_pages.create'
 })
 
-const { getAll, createItem } = useCrud()
+const { getAll, createItem, getById, updateItem } = useCrud()
+const route = useRoute()
 const utilityStore = useUtilityStore()
 utilityStore.pageBackLink = '/vendor/landing-page/all'
+
+// Set edit mode based on query param
+onMounted(() => {
+  if (route.query.id) {
+    utilityStore.isEdit = true
+    fetchPageData(route.query.id)
+  } else {
+    utilityStore.isEdit = false
+  }
+})
+
+const store = utilityStore
+
+// Search & Pagination state
+const products = ref([])
+const loading = ref(false)
+const searchQuery = ref('')
+const currentPage = ref(1)
+const hasMore = ref(true)
+const perPage = 8
+
+let searchTimeout = null
 
 const selectedTemplate = ref('modern')
 const formData = ref({
@@ -208,15 +293,69 @@ const formData = ref({
   settings: {}
 })
 
-const products = ref([])
-
 // Fetch products
-const fetchProducts = async () => {
+const fetchProducts = async (page = 1, append = false) => {
+  loading.value = true
   try {
-    const res = await getAll('/vendor/products')
-    products.value = res || []
+    const res = await getAll('/vendor/products', {
+      search: searchQuery.value,
+      per_page: perPage,
+      page: page
+    })
+    
+    // Check if it's paginated response
+    const newProducts = res.data || res || []
+    
+    if (append) {
+      products.value = [...products.value, ...newProducts]
+    } else {
+      products.value = newProducts
+    }
+    
+    // If we're editing, we might need to fetch the selected product if it's not in the first 8
+    // But since it's a list, the user can search for it if they want to change it.
+    // The initial fetchPageData will set formData.product_id which is fine for the form.
+    
+    hasMore.value = newProducts.length === perPage
   } catch (error) {
     console.error('Failed to fetch products:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleSearch = () => {
+  if (searchTimeout) clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    currentPage.value = 1
+    fetchProducts(1, false)
+  }, 500)
+}
+
+const loadMore = () => {
+  if (!loading.value && hasMore.value) {
+    currentPage.value++
+    fetchProducts(currentPage.value, true)
+  }
+}
+
+// Fetch single page data (for edit)
+const fetchPageData = async (id) => {
+  try {
+    const res = await getById('/vendor/landing-pages', id)
+    if (res) {
+      formData.value = {
+        product_id: res.product_id,
+        title: res.title,
+        landing_page_type: res.landing_page_type,
+        template_name: res.template_name,
+        status: res.status,
+        settings: res.settings || {}
+      }
+      selectedTemplate.value = res.template_name
+    }
+  } catch (error) {
+    console.error('Failed to fetch page data:', error)
   }
 }
 
@@ -240,9 +379,15 @@ const submitLandingPage = async () => {
       ...formData.value,
       template_name: selectedTemplate.value
     }
-    await createItem('/vendor/landing-pages', payload)
+    
+    if (store.isEdit) {
+      await updateItem(`/vendor/landing-pages/${route.query.id}`, payload)
+      navigateTo('/vendor/landing-page/all')
+    } else {
+      await createItem('/vendor/landing-pages', payload)
+    }
   } catch (error) {
-    console.error('Error creating landing page:', error)
+    console.error('Error submitting landing page:', error)
   }
 }
 </script>

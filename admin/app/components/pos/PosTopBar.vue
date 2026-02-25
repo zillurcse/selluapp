@@ -60,6 +60,28 @@
       </button>
     </div>
 
+    <!-- Clock & Vendor Display -->
+    <div class="hidden lg:flex items-center gap-3 px-4 py-1.5 bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-gray-100 dark:border-slate-800">
+      <div class="flex items-center gap-3 border-r border-gray-200 dark:border-slate-700 pr-3 mr-1">
+        <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+          <Store class="w-4 h-4" />
+        </div>
+        <div class="flex flex-col">
+          <span class="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider leading-none mb-1">Merchant</span>
+          <span class="text-[13px] font-black text-gray-800 dark:text-slate-100 leading-none truncate max-w-[120px]">{{ storeName }}</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+          <Clock class="w-4 h-4" />
+        </div>
+        <div class="flex flex-col">
+          <span class="text-[13px] font-black text-gray-800 dark:text-slate-100 tabular-nums leading-none">{{ formattedTime }}</span>
+          <span class="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mt-1 leading-none">{{ formattedDate }}</span>
+        </div>
+      </div>
+    </div>
+
     <div class="flex-1 max-w-xl relative">
       <div class="relative group">
         <Search class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
@@ -98,10 +120,14 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
-import { User, Search, Plus, UserPlus, X } from 'lucide-vue-next'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { User, Search, Plus, UserPlus, X, Clock, Store } from 'lucide-vue-next'
 
 const props = defineProps({
+  storeName: {
+    type: String,
+    default: 'My Store'
+  },
   selectedCustomerData: {
     type: Object,
     default: () => ({ name: 'Walk-in Customer' })
@@ -120,7 +146,39 @@ const emit = defineEmits(['openAddCustomerModal'])
 
 const showDropdown = ref(false)
 const searchInput = ref(null)
+const showAddCustomer = ref(false)
 const showExitModal = ref(false)
+
+// Clock Logic
+const currentTime = ref(new Date())
+let timer = null
+
+const formattedDate = computed(() => {
+  return new Intl.DateTimeFormat('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  }).format(currentTime.value)
+})
+
+const formattedTime = computed(() => {
+  return new Intl.DateTimeFormat('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true
+  }).format(currentTime.value)
+})
+
+onMounted(() => {
+  timer = setInterval(() => {
+    currentTime.value = new Date()
+  }, 1000)
+})
+
+onUnmounted(() => {
+  if (timer) clearInterval(timer)
+})
 
 const exitPos = async () => {
   await navigateTo('/vendor')

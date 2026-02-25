@@ -51,22 +51,23 @@
                 </span>
               </td>
               <td class="px-6 py-5">
-                <span 
-                  class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold"
-                  :class="page.status === 'active' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400'"
+                <button 
+                  @click="handleToggleStatus(page)"
+                  class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold transition-all active:scale-95"
+                  :class="page.status === 'active' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200' : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-gray-200'"
                 >
                   <span class="w-1.5 h-1.5 rounded-full mr-2" :class="page.status === 'active' ? 'bg-green-500' : 'bg-gray-400'"></span>
                   {{ page.status === 'active' ? 'Active' : 'Draft' }}
-                </span>
+                </button>
               </td>
               <td class="px-6 py-5 text-right">
                 <div class="flex items-center justify-end space-x-2">
-                  <button class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="View">
+                  <a :href="`/l/${page.slug}`" target="_blank" class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="View">
                     <Eye class="w-5 h-5" />
-                  </button>
-                  <button class="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all" title="Edit">
+                  </a>
+                  <NuxtLink :to="page.landing_page_type === 'multiple' ? `/vendor/landing-page/multiple?id=${page.id}` : `/vendor/landing-page/single?id=${page.id}`" class="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all" title="Edit">
                     <Pencil class="w-5 h-5" />
-                  </button>
+                  </NuxtLink>
                   <button @click="copyLink(page.slug)" class="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all" title="Copy Link">
                     <Copy class="w-5 h-5" />
                   </button>
@@ -115,7 +116,7 @@ definePageMeta({
   permissions: 'landing_pages.view'
 })
 
-const { getAll, deleteItem } = useCrud()
+const { getAll, deleteItem, updateItem } = useCrud()
 const landingPages = ref([])
 
 // Fetch landing pages
@@ -140,11 +141,21 @@ const copyLink = (slug) => {
   }
 }
 
+const handleToggleStatus = async (page) => {
+  try {
+    const newStatus = page.status === 'active' ? 'draft' : 'active'
+    await updateItem(`/vendor/landing-pages/${page.id}`, { status: newStatus })
+    page.status = newStatus
+  } catch (error) {
+    console.error('Error toggling status:', error)
+  }
+}
+
 const handleDelete = async (id) => {
   if (confirm('Are you sure you want to delete this landing page?')) {
      try {
        await deleteItem(id, '/vendor/landing-pages')
-       await fetchLandingPages()
+       fetchLandingPages()
      } catch (error) {
        console.error('Error deleting landing page:', error)
      }

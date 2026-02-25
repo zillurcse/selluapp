@@ -8,10 +8,14 @@
         </button>
         <div>
           <div class="flex items-center">
-            <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">Multiple Products Landing Page</h1>
-            <span class="ml-4 bg-orange-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full tracking-widest uppercase shadow-sm">PRO</span>
+            <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+              {{ store.isEdit ? 'Edit Multiple Products Page' : 'Multiple Products Landing Page' }}
+            </h1>
+            <span class="ml-4 bg-orange-500 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full tracking-widest uppercase shadow-sm">PRO</span>
           </div>
-          <p class="text-gray-500 dark:text-slate-400 mt-1">Showcase 3-4 products together on a single landing page to maximize bundle sales.</p>
+          <p class="text-gray-500 dark:text-slate-400 mt-1">
+            {{ store.isEdit ? 'Update your multi-product landing page details.' : 'Showcase 3-4 products together on a single landing page to maximize bundle sales.' }}
+          </p>
         </div>
       </div>
     </div>
@@ -105,7 +109,22 @@
 
           <!-- Product Selection -->
           <div class="space-y-4">
-            <label class="block text-sm font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider ml-1">Select Products (Max 4)</label>
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <label class="block text-sm font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider ml-1">Select Products (Max 4)</label>
+              
+              <!-- Search Bar -->
+              <div class="relative w-full md:w-80">
+                <Search class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input 
+                  v-model="searchQuery"
+                  type="text" 
+                  placeholder="Search products..." 
+                  class="w-full h-11 pl-11 pr-4 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-xl focus:border-orange-500 transition-all outline-none text-sm dark:text-slate-200"
+                  @input="handleSearch"
+                />
+              </div>
+            </div>
+
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div v-for="product in products" :key="product.id" 
                 @click="toggleProduct(product.id)"
@@ -126,7 +145,35 @@
                 </div>
               </div>
             </div>
-            <p class="text-xs text-gray-400 ml-1">Selected: {{ formData.selectedProducts.length }} / 4 products</p>
+
+            <!-- Loading & Load More -->
+            <div class="flex flex-col items-center justify-center pt-4 space-y-4">
+              <div v-if="loading" class="flex items-center space-x-2 text-gray-500">
+                <Loader2 class="w-5 h-5 animate-spin" />
+                <span class="text-sm font-medium">Loading products...</span>
+              </div>
+              
+              <button 
+                v-if="hasMore && !loading" 
+                @click="loadMore"
+                class="px-6 py-2 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 rounded-full text-sm font-bold hover:bg-gray-200 dark:hover:bg-slate-700 transition-all active:scale-95"
+              >
+                Load More Products
+              </button>
+
+              <div v-if="!hasMore && products.length > 0" class="text-xs text-gray-400">
+                No more products to load
+              </div>
+
+              <div v-if="!loading && products.length === 0" class="flex flex-col items-center py-6">
+                <PackageSearch class="w-12 h-12 text-gray-200 mb-2" />
+                <p class="text-gray-500 text-sm">No products found matching your search</p>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-2">
+              <p class="text-xs text-gray-400 ml-1">Selected: {{ formData.selectedProducts.length }} / 4 products</p>
+            </div>
           </div>
 
         </div>
@@ -135,11 +182,12 @@
         <button 
           @click="submitLandingPage"
           class="w-full h-16 bg-black dark:bg-slate-800 text-white rounded-2xl font-black text-xl hover:bg-gray-800 dark:hover:bg-slate-700 active:scale-[0.98] transition-all shadow-xl flex items-center justify-center group"
-          :disabled="!isValid"
-          :class="{'opacity-50 cursor-not-allowed': !isValid}"
+          :disabled="!isValid || store.isLoading"
+          :class="{'opacity-50 cursor-not-allowed': !isValid || store.isLoading}"
         >
-          Create Multi-Product Page
-          <ArrowRight class="w-6 h-6 ml-3 group-hover:translate-x-1 transition-transform" />
+          {{ store.isEdit ? 'Update Multi-Product Page' : 'Create Multi-Product Page' }}
+          <ArrowRight v-if="!store.isLoading" class="w-6 h-6 ml-3 group-hover:translate-x-1 transition-transform" />
+          <Loader2 v-else class="w-6 h-6 ml-3 animate-spin" />
         </button>
       </div>
 
@@ -149,10 +197,13 @@
 
 <script setup>
 import { 
-  ArrowLeft, 
+  ArrowLeft,
   ArrowRight,
   Check, 
-  Package
+  Package,
+  Search,
+  Loader2,
+  PackageSearch
 } from 'lucide-vue-next'
 
 definePageMeta({
@@ -161,9 +212,32 @@ definePageMeta({
   permissions: 'landing_pages.create'
 })
 
-const { getAll, createItem } = useCrud()
+const { getAll, createItem, getById, updateItem } = useCrud()
+const route = useRoute()
 const utilityStore = useUtilityStore()
 utilityStore.pageBackLink = '/vendor/landing-page/all'
+
+// Set edit mode based on query param
+onMounted(() => {
+  if (route.query.id) {
+    utilityStore.isEdit = true
+    fetchPageData(route.query.id)
+  } else {
+    utilityStore.isEdit = false
+  }
+})
+
+const store = utilityStore
+
+// Search and Pagination state
+const products = ref([])
+const loading = ref(false)
+const searchQuery = ref('')
+const currentPage = ref(1)
+const hasMore = ref(true)
+const perPage = 8
+
+let searchTimeout = null
 
 const selectedTemplate = ref('bundle_grid')
 const formData = ref({
@@ -175,15 +249,66 @@ const formData = ref({
   settings: {}
 })
 
-const products = ref([])
-
 // Fetch products
-const fetchProducts = async () => {
+const fetchProducts = async (page = 1, append = false) => {
+  loading.value = true
   try {
-    const res = await getAll('/vendor/products')
-    products.value = res || []
+    const res = await getAll('/vendor/products', {
+      search: searchQuery.value,
+      per_page: perPage,
+      page: page
+    })
+    
+    // Check if it's paginated response (standard Laravel format)
+    const newProducts = res.data || res || []
+    
+    if (append) {
+      products.value = [...products.value, ...newProducts]
+    } else {
+      products.value = newProducts
+    }
+    
+    // Check if there are more products to load
+    hasMore.value = newProducts.length === perPage
   } catch (error) {
     console.error('Failed to fetch products:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleSearch = () => {
+  if (searchTimeout) clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    currentPage.value = 1
+    fetchProducts(1, false)
+  }, 500)
+}
+
+const loadMore = () => {
+  if (!loading.value && hasMore.value) {
+    currentPage.value++
+    fetchProducts(currentPage.value, true)
+  }
+}
+
+// Fetch single page data (for edit)
+const fetchPageData = async (id) => {
+  try {
+    const res = await getById('/vendor/landing-pages', id)
+    if (res) {
+      formData.value = {
+        title: res.title,
+        selectedProducts: res.settings?.product_ids || [res.product_id],
+        landing_page_type: res.landing_page_type,
+        template_name: res.template_name,
+        status: res.status,
+        settings: res.settings || {}
+      }
+      selectedTemplate.value = res.template_name
+    }
+  } catch (error) {
+    console.error('Failed to fetch page data:', error)
   }
 }
 
@@ -223,9 +348,15 @@ const submitLandingPage = async () => {
         product_ids: formData.value.selectedProducts
       }
     }
-    await createItem('/vendor/landing-pages', payload)
+    
+    if (store.isEdit) {
+      await updateItem(`/vendor/landing-pages/${route.query.id}`, payload)
+      navigateTo('/vendor/landing-page/all')
+    } else {
+      await createItem('/vendor/landing-pages', payload)
+    }
   } catch (error) {
-    console.error('Error creating landing page:', error)
+    console.error('Error submitting landing page:', error)
   }
 }
 </script>
