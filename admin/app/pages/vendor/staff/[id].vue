@@ -181,7 +181,7 @@ const fetchData = async () => {
   try {
     const [rolesRes, staffRes] = await Promise.all([
       getAll('/vendor/roles'),
-      getById(memberId, '/vendor/staff')
+      getById('vendor/staff', memberId)
     ])
     
     roles.value = rolesRes
@@ -202,7 +202,7 @@ const handleSubmit = async () => {
   try {
     // Putting data in createItem because useCrud editItem usually expects (id, data, endpoint)
     // and createItem with id in useCrud usually performs update
-    await createItem({...form.value, id: memberId}, '/vendor/staff')
+    await createItem('/vendor/staff', {...form.value, id: memberId})
     $toast.success('Staff member updated successfully')
     router.push('/vendor/staff')
   } catch (error) {

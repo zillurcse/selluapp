@@ -165,14 +165,14 @@
         </div>
 
         <!-- Assets Management -->
-        <div class="space-y-1 mb-6">
+        <div class="space-y-1 mb-6" v-if="visibleAttributeLinks.length > 0 || productLinks.length > 0">
           <div class="nav-section-label">
             <div class="w-4 h-[2px] bg-slate-200 dark:bg-slate-800 rounded-full"></div>
             <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.25em]">Assets</span>
           </div>
 
           <!-- Attributes Accordion -->
-          <div class="space-y-1 mb-1">
+          <div class="space-y-1 mb-1" v-if="visibleAttributeLinks.length > 0">
             <button @click="toggleAttributesMenu" class="nav-dropdown-trigger group" :class="{ 'nav-dropdown-active': isAttributesOpen || isAttributesActive }">
               <div class="flex items-center">
                 <div class="nav-link-icon-bg group-hover:bg-slate-950 dark:group-hover:bg-indigo-500/20 group-hover:border-transparent">
@@ -193,7 +193,7 @@
           </div>
 
           <!-- Products Accordion -->
-          <div class="space-y-1 mb-1">
+          <div class="space-y-1 mb-1" v-if="productLinks.length > 0">
             <button @click="toggleProductsMenu" class="nav-dropdown-trigger group" :class="{ 'nav-dropdown-active': isProductsOpen || isProductsActive }">
               <div class="flex items-center">
                 <div class="nav-link-icon-bg group-hover:bg-slate-950 dark:group-hover:bg-indigo-500/20 group-hover:border-transparent">
@@ -217,7 +217,7 @@
         </div>
 
         <!-- Operations -->
-        <div class="space-y-1 mb-6">
+        <div class="space-y-1 mb-6" v-if="operationsItems.length > 0">
           <div class="nav-section-label">
             <div class="w-4 h-[2px] bg-slate-200 dark:bg-slate-800 rounded-full"></div>
             <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.25em]">Operations</span>
@@ -235,7 +235,7 @@
         </div>
 
         <!-- Analytics & Tools -->
-        <div class="space-y-1 mb-6">
+        <div class="space-y-1 mb-6" v-if="toolItems.length > 0">
           <div class="nav-section-label">
             <div class="w-4 h-[2px] bg-slate-200 dark:bg-slate-800 rounded-full"></div>
             <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.25em]">Tools</span>
@@ -253,7 +253,7 @@
         </div>
 
         <!-- Settings & Admin -->
-        <div class="space-y-1 mb-6">
+        <div class="space-y-1 mb-6" v-if="settingsItems.length > 0">
           <div class="nav-section-label">
             <div class="w-4 h-[2px] bg-slate-200 dark:bg-slate-800 rounded-full"></div>
             <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.25em]">Settings</span>
@@ -276,7 +276,7 @@
             <div class="w-4 h-[2px] bg-slate-200 dark:bg-slate-800 rounded-full"></div>
             <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.25em]">Support</span>
           </div>
-          <NuxtLink to="/vendor/upgrade-package" class="nav-link support-link-upgrade group" active-class="nav-link-active">
+          <NuxtLink v-if="isVendorOwner" to="/vendor/upgrade-package" class="nav-link support-link-upgrade group" active-class="nav-link-active">
             <div class="nav-link-icon-bg bg-emerald-50 dark:bg-emerald-500/10 group-hover:bg-emerald-500/20">
               <Sparkles class="w-5 h-5 text-emerald-500" />
             </div>

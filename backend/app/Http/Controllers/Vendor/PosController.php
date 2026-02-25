@@ -58,7 +58,10 @@ class PosController extends Controller implements HasMiddleware
             $query->where('brand_id', $request->brand_id);
         }
 
-        $products = $query->latest()->get()->map(function ($product) {
+        $perPage = $request->get('limit', 20);
+        $productsPaginated = $query->latest()->paginate($perPage);
+
+        $productsPaginated->getCollection()->transform(function ($product) {
             return [
                 'id'       => $product->id,
                 'name'     => $product->name,
@@ -71,7 +74,7 @@ class PosController extends Controller implements HasMiddleware
             ];
         });
 
-        return response()->json($products);
+        return response()->json($productsPaginated);
     }
 
     /**

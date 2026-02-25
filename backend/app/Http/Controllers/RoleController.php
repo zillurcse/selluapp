@@ -37,14 +37,23 @@ class RoleController extends Controller implements HasMiddleware
 
     public function store(Request $request)
     {
+        $user = Auth::user();
+
         $request->validate([
-            'name' => 'required|unique:roles,name',
+            'name' => [
+                'required',
+                \Illuminate\Validation\Rule::unique('roles', 'name')->where(function ($query) use ($user) {
+                    if ($user->hasRole('vendor')) {
+                        return $query->where('vendor_id', $user->id);
+                    }
+                    return $query->whereNull('vendor_id');
+                })
+            ],
             'permissions' => 'array',
             'permissions.*' => 'exists:permissions,name'
         ]);
 
-        return DB::transaction(function () use ($request) {
-            $user = Auth::user();
+        return DB::transaction(function () use ($request, $user) {
             $roleData = [
                 'name' => $request->name, 
                 'guard_name' => 'web'
@@ -88,7 +97,15 @@ class RoleController extends Controller implements HasMiddleware
         }
 
         $request->validate([
-            'name' => 'required|unique:roles,name,' . $role->id,
+            'name' => [
+                'required',
+                \Illuminate\Validation\Rule::unique('roles', 'name')->ignore($role->id)->where(function ($query) use ($user) {
+                    if ($user->hasRole('vendor')) {
+                        return $query->where('vendor_id', $user->id);
+                    }
+                    return $query->whereNull('vendor_id');
+                })
+            ],
             'permissions' => 'array',
             'permissions.*' => 'exists:permissions,name'
         ]);
