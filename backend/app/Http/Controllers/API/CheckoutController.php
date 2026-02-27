@@ -15,6 +15,67 @@ use Illuminate\Support\Str;
 
 class CheckoutController extends Controller
 {
+    public function getPaymentMethods(Request $request)
+    {
+        $validated = $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*.id' => 'required|exists:products,id',
+        ]);
+
+        // Determine vendor from the first item
+        $product = Product::findOrFail($validated['items'][0]['id']);
+        $vendorId = $product->vendor_id;
+
+        // 1. Load active payment methods defined by admin
+        $adminMethods = \App\Models\PaymentMethod::where('is_active', true)->get();
+
+        // 2. Load vendor's specific configurations
+        $configResponse = ShopSetting::where('user_id', $vendorId)
+            ->where('group', 'payment_gateways')
+            ->get()
+            ->pluck('value', 'key');
+
+        $savedConfig = [];
+        foreach ($configResponse as $key => $val) {
+            $decoded = json_decode($val, true);
+            $savedConfig[$key] = (json_last_error() === JSON_ERROR_NONE) ? $decoded : $val;
+        }
+
+        $adminSlugs = $adminMethods->pluck('slug')->toArray();
+        $gateways = [];
+
+        // Add admin methods that are activated by the vendor
+        foreach ($adminMethods as $method) {
+            $slug = $method->slug;
+            if (isset($savedConfig[$slug]) && $savedConfig[$slug]['active']) {
+                $gateways[] = [
+                    'slug' => $slug,
+                    'name' => $method->name,
+                    'type' => 'admin',
+                    'icon' => $method->icon,
+                ];
+            }
+        }
+
+        // Add vendor's custom methods
+        foreach ($savedConfig as $key => $data) {
+            if (!in_array($key, $adminSlugs) && isset($data['active']) && $data['active'] && isset($data['custom_meta'])) {
+                $gateways[] = [
+                    'slug' => $key,
+                    'name' => $data['custom_meta']['name'] ?? 'Custom Method',
+                    'type' => $data['custom_meta']['type'] ?? 'manual',
+                    'icon' => $data['custom_meta']['icon'] ?? 'Banknote',
+                    'instruction' => $data['config']['instruction'] ?? null, // Expose only safe configuration like instructions
+                ];
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'gateways' => $gateways
+        ]);
+    }
+
     public function placeOrder(Request $request)
     {
         $validated = $request->validate([

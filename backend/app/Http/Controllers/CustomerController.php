@@ -44,7 +44,7 @@ class CustomerController extends Controller implements HasMiddleware
     public function store(StoreCustomerRequest $request): JsonResponse
     {
         $validatedData = $request->validated();
-        
+
         // Add vendor user ID to the customer data
         $validatedData['vendor_id'] = $request->user()->id;
 
@@ -52,7 +52,7 @@ class CustomerController extends Controller implements HasMiddleware
         if (!empty($validatedData['password'])) {
             $validatedData['password'] = Hash::make($validatedData['password']);
         }
-        
+
 
         $customer = Customer::create($validatedData);
         // create user for customer

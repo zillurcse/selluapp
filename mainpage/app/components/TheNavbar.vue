@@ -151,7 +151,7 @@
                 <div class="text-[0.9rem] font-bold text-gray-900 truncate">{{ authStore.user?.name }}</div>
                 <div class="text-[0.75rem] font-medium text-gray-400 truncate">{{ authStore.user?.email }}</div>
               </div>
-              <NuxtLink v-for="link in accountLinks" :key="link.to" :to="link.to" class="dropdown-item-tailwind flex items-center gap-3">
+              <NuxtLink v-for="link in accountLinks" :key="link.to" :to="link.to" @click="isProfileOpen = false" class="dropdown-item-tailwind flex items-center gap-3">
                 <span class="text-lg opacity-70 group-hover:opacity-100">{{ link.icon }}</span> {{ link.label }}
               </NuxtLink>
               <div class="border-t border-gray-50 my-1"></div>

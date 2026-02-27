@@ -227,6 +227,15 @@ export default function useCrud() {
   };
   const duplicateItem = async () => { };
 
+  const getPaymentMethods = async (apiEndpoint: string, bodyData: any = {}) => {
+    return await $fetch(apiEndpoint, {
+      baseURL,
+      method: 'POST',
+      body: bodyData,
+      headers: getHeaders()
+    });
+  };
+
   return {
     createItem,
     getItem,
@@ -237,7 +246,8 @@ export default function useCrud() {
     updateItem,
     duplicateItem,
     updateSettings,
-    getHeaders
+    getHeaders,
+    getPaymentMethods
   };
 }
 

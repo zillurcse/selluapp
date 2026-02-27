@@ -15,7 +15,7 @@ Route::get('/storefront/products', [StorefrontController::class, 'products']);
 Route::get('/storefront/products/{product}', [StorefrontController::class, 'show']);
 Route::get('/storefront/landing-page/{slug}', [StorefrontController::class, 'landingPage']);
 Route::get('/storefront/vendors/{slug}', [StorefrontController::class, 'vendor']);
-Route::get('/storefront/categories', function() {
+Route::get('/storefront/categories', function () {
     return \App\Models\Category::where('is_active', true)->whereNull('parent_id')->get();
 });
 
@@ -32,7 +32,21 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Checkout Routes
     Route::post('/storefront/checkout', [\App\Http\Controllers\API\CheckoutController::class, 'placeOrder']);
+    Route::post('/storefront/checkout/payment-methods', [\App\Http\Controllers\API\CheckoutController::class, 'getPaymentMethods']);
 
+    // Customer Panel Routes
+    Route::prefix('customer')->group(function () {
+        Route::get('dashboard', [\App\Http\Controllers\API\CustomerPanelController::class, 'dashboard']);
+        Route::get('profile', [\App\Http\Controllers\API\CustomerPanelController::class, 'profile']);
+        Route::put('profile', [\App\Http\Controllers\API\CustomerPanelController::class, 'updateProfile']);
+        Route::put('password', [\App\Http\Controllers\API\CustomerPanelController::class, 'updatePassword']);
+        Route::get('orders', [\App\Http\Controllers\API\CustomerPanelController::class, 'orders']);
+
+        Route::get('addresses', [\App\Http\Controllers\API\CustomerPanelController::class, 'addresses']);
+        Route::post('addresses', [\App\Http\Controllers\API\CustomerPanelController::class, 'storeAddress']);
+        Route::put('addresses/{address}', [\App\Http\Controllers\API\CustomerPanelController::class, 'updateAddress']);
+        Route::delete('addresses/{address}', [\App\Http\Controllers\API\CustomerPanelController::class, 'destroyAddress']);
+    });
 
     // Admin Routes
     Route::prefix('admin')->group(function () {

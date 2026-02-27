@@ -133,7 +133,7 @@
               <div class="w-14 h-14 rounded-xl bg-gray-100 flex items-center justify-center text-2xl shrink-0">{{ order.icon }}</div>
               <div class="flex-1">
                 <div class="font-semibold text-gray-900">{{ order.name }}</div>
-                <div class="text-sm text-gray-400 mt-0.5">Order #{{ order.id }} · {{ order.date }}</div>
+                <div class="text-sm text-gray-400 mt-0.5">{{ order.date }}</div>
                 <div class="text-sm text-gray-400">{{ order.items }} item{{ order.items > 1 ? 's' : '' }}</div>
               </div>
               <div class="flex flex-col sm:items-end gap-2">
@@ -155,11 +155,14 @@
           <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <h2 class="font-bold text-gray-900 mb-5">Wishlist ({{ wishlistItems.length }})</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div v-for="item in wishlistItems" :key="item.id" class="group border border-gray-100 rounded-2xl p-4 hover:border-gray-200 hover:shadow-sm transition-all">
-                <div class="text-6xl text-center mb-3 py-2">{{ item.emoji }}</div>
+              <div v-for="item in wishlistItems" :key="item.id" class="group border border-gray-100 rounded-2xl p-4 hover:border-gray-200 hover:shadow-sm transition-all text-center">
+                <div class="text-6xl mb-3 py-2">{{ item.emoji || '📦' }}</div>
                 <div class="font-semibold text-gray-900 text-sm mb-1">{{ item.name }}</div>
                 <div class="text-sm font-bold text-gray-900 mb-3">${{ item.price }}</div>
                 <button class="w-full py-2 bg-gray-900 text-white text-xs font-bold rounded-xl hover:shadow-md transition border-none cursor-pointer">Add to Cart</button>
+              </div>
+              <div v-if="wishlistItems.length === 0" class="col-span-full py-8 text-center text-gray-500 text-sm">
+                Your wishlist is currently empty.
               </div>
             </div>
           </div>
@@ -212,17 +215,17 @@
             <div class="flex flex-col gap-4 max-w-md">
               <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1.5">Current password</label>
-                <input type="password" placeholder="Enter current password" class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm outline-none transition focus:border-gray-900" />
+                <input v-model="passwordForm.current_password" type="password" placeholder="Enter current password" class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm outline-none transition focus:border-gray-900" />
               </div>
               <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1.5">New password</label>
-                <input type="password" placeholder="Min. 8 characters" class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm outline-none transition focus:border-gray-900" />
+                <input v-model="passwordForm.password" type="password" placeholder="Min. 8 characters" class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm outline-none transition focus:border-gray-900" />
               </div>
               <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1.5">Confirm new password</label>
-                <input type="password" placeholder="Re-enter new password" class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm outline-none transition focus:border-gray-900" />
+                <input v-model="passwordForm.password_confirmation" type="password" placeholder="Re-enter new password" class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm outline-none transition focus:border-gray-900" />
               </div>
-              <button class="w-fit px-6 py-2.5 bg-gray-900 text-white text-sm font-bold rounded-xl transition hover:-translate-y-0.5 border-none cursor-pointer">Update Password</button>
+              <button @click="changePassword" class="w-fit px-6 py-2.5 bg-gray-900 text-white text-sm font-bold rounded-xl transition hover:-translate-y-0.5 border-none cursor-pointer">Update Password</button>
             </div>
           </div>
         </div>
@@ -232,19 +235,66 @@
           <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <div class="flex items-center justify-between mb-6">
               <h2 class="font-bold text-gray-900">Saved Addresses</h2>
-              <button class="px-4 py-2 bg-gray-900 text-white text-sm font-bold rounded-xl transition hover:-translate-y-0.5 border-none cursor-pointer">+ Add Address</button>
+              <button @click="isAddingAddress = !isAddingAddress" class="px-4 py-2 bg-gray-900 text-white text-sm font-bold rounded-xl transition hover:-translate-y-0.5 border-none cursor-pointer">
+                {{ isAddingAddress ? 'Cancel' : '+ Add Address' }}
+              </button>
             </div>
+
+            <!-- Add Address Form -->
+            <div v-if="isAddingAddress" class="mb-6 p-5 bg-gray-50 border border-gray-100 rounded-2xl">
+              <h3 class="text-sm font-bold text-gray-900 mb-4">New Address</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="sm:col-span-2">
+                  <label class="block text-xs font-semibold text-gray-700 mb-1.5">Full Name</label>
+                  <input v-model="addressForm.name" type="text" class="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-gray-900" />
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="block text-xs font-semibold text-gray-700 mb-1.5">Address Line 1</label>
+                  <input v-model="addressForm.line1" type="text" class="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-gray-900" />
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-gray-700 mb-1.5">City</label>
+                  <input v-model="addressForm.city" type="text" class="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-gray-900" />
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-gray-700 mb-1.5">State/Province</label>
+                  <input v-model="addressForm.state" type="text" class="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-gray-900" />
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-gray-700 mb-1.5">Postal/Zip Code</label>
+                  <input v-model="addressForm.zip" type="text" class="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-gray-900" />
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-gray-700 mb-1.5">Country</label>
+                  <input v-model="addressForm.country" type="text" class="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-gray-900" />
+                </div>
+                <div class="sm:col-span-2 flex items-center justify-between mt-2">
+                  <label class="flex items-center gap-2 cursor-pointer select-none">
+                    <input v-model="addressForm.is_default" type="checkbox" class="w-4 h-4 rounded border-gray-300 text-gray-900 cursor-pointer" />
+                    <span class="text-sm text-gray-600">Set as default address</span>
+                  </label>
+                  <button @click="submitAddress" class="px-5 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 transition border-none cursor-pointer">
+                    Save Address
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Address Grid -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div v-for="addr in addresses" :key="addr.id" class="relative border border-gray-100 rounded-2xl p-5 hover:border-gray-200 transition-all"
-                :class="addr.default ? 'border-gray-900 ring-1 ring-gray-900' : ''">
-                <div v-if="addr.default" class="absolute top-3 right-3 px-2 py-0.5 bg-gray-900 text-white text-xs font-bold rounded-full">Default</div>
+                :class="addr.is_default ? 'border-gray-900 ring-1 ring-gray-900 bg-gray-50/50' : ''">
+                <div v-if="addr.is_default" class="absolute top-3 right-3 px-2 py-0.5 bg-gray-900 text-white text-[10px] font-bold rounded-full">Default</div>
                 <div class="text-sm font-bold text-gray-900 mb-1">{{ addr.name }}</div>
                 <div class="text-sm text-gray-500 leading-relaxed">{{ addr.line1 }}<br/>{{ addr.city }}, {{ addr.state }} {{ addr.zip }}<br/>{{ addr.country }}</div>
                 <div class="flex gap-3 mt-4">
                   <button class="text-xs font-bold text-violet-600 hover:text-violet-700 transition border-none bg-transparent cursor-pointer">Edit</button>
-                  <button v-if="!addr.default" class="text-xs font-bold text-gray-500 hover:text-gray-700 transition border-none bg-transparent cursor-pointer">Set as default</button>
-                  <button v-if="!addr.default" class="text-xs font-bold text-red-400 hover:text-red-600 transition border-none bg-transparent cursor-pointer ml-auto">Delete</button>
+                  <button v-if="!addr.is_default" class="text-xs font-bold text-gray-500 hover:text-gray-700 transition border-none bg-transparent cursor-pointer">Set as default</button>
+                  <button v-if="!addr.is_default" class="text-xs font-bold text-red-400 hover:text-red-600 transition border-none bg-transparent cursor-pointer ml-auto">Delete</button>
                 </div>
+              </div>
+              <div v-if="addresses.length === 0 && !isAddingAddress" class="col-span-full py-8 text-center text-gray-500 text-sm border-2 border-dashed border-gray-100 rounded-2xl">
+                No addresses saved yet. Minimum one address is needed for shipping.
               </div>
             </div>
           </div>
@@ -288,66 +338,106 @@
 <script setup>
 const activeTab = ref('overview')
 const orderFilter = ref('All')
+const { getAll, updateItem, createItem } = useCrud()
 
-const user = {
-  name: 'Alex Johnson',
-  email: 'alex.johnson@email.com',
-  initials: 'AJ',
+const user = ref({
+  name: '',
+  email: '',
+  initials: '',
+})
+
+const profileForm = ref({
+  firstName: '',
+  lastName: '',
+  email: '',
+  phone: '',
+})
+
+const fetchCustomerData = async () => {
+  try {
+    const dashboardData = await getAll('/customer/dashboard')
+    if (dashboardData) {
+      stats.value = dashboardData.stats || []
+      recentOrders.value = dashboardData.recentOrders || []
+      wishlistItems.value = dashboardData.wishlistItems || []
+    }
+
+    const profileData = await getAll('/customer/profile')
+    if (profileData) {
+      user.value = profileData.user || {}
+      profileForm.value = profileData.profile || {}
+    }
+
+    const ordersData = await getAll('/customer/orders')
+    if (ordersData) {
+      allOrders.value = ordersData.orders || []
+    }
+    const addressesData = await getAll('/customer/addresses')
+    if (addressesData) {
+      addresses.value = addressesData.addresses || []
+    }
+  } catch (error) {
+    console.error('Error fetching customer data:', error)
+  }
 }
 
-const navItems = [
+onMounted(fetchCustomerData)
+
+const logout = () => navigateTo('/login')
+
+const navItems = computed(() => [
   { id: 'overview',   icon: '🏠', label: 'Dashboard' },
-  { id: 'orders',     icon: '📦', label: 'My Orders',   badge: '3' },
-  { id: 'wishlist',   icon: '❤️', label: 'Wishlist',    badge: '4' },
+  { id: 'orders',     icon: '📦', label: 'My Orders',   badge: allOrders.value.length > 0 ? allOrders.value.length.toString() : null },
+  { id: 'wishlist',   icon: '❤️', label: 'Wishlist',    badge: wishlistItems.value.length > 0 ? wishlistItems.value.length.toString() : null },
   { id: 'addresses',  icon: '📍', label: 'Addresses' },
   { id: 'profile',    icon: '👤', label: 'Profile' },
   { id: 'settings',   icon: '⚙️', label: 'Settings' },
-]
+])
 
-const stats = [
-  { icon: '📦', value: '12',    label: 'Total Orders' },
-  { icon: '❤️', value: '4',     label: 'Wishlist Items' },
-  { icon: '💰', value: '$846',  label: 'Total Spent' },
-  { icon: '⭐', value: '3',     label: 'Reviews Left' },
-]
+const stats = ref([])
+const recentOrders = ref([])
+const allOrders = ref([])
+const wishlistItems = ref([])
+const addresses = ref([])
+const isAddingAddress = ref(false)
 
-const recentOrders = [
-  { id: '28401', icon: '💡', name: 'Marble Desk Lamp', date: 'Feb 20, 2026', items: 1, total: '120.00', status: 'Delivered' },
-  { id: '28392', icon: '🏺', name: 'Ceramic Vase Set', date: 'Feb 17, 2026', items: 3, total: '195.00', status: 'Shipped' },
-  { id: '28388', icon: '⌚', name: 'Smart Watch Series 7', date: 'Feb 14, 2026', items: 1, total: '399.00', status: 'Delivered' },
-]
+const addressForm = ref({
+  name: '',
+  line1: '',
+  city: '',
+  state: '',
+  zip: '',
+  country: '',
+  is_default: false
+})
+
+const passwordForm = ref({
+  current_password: '',
+  password: '',
+  password_confirmation: ''
+})
 
 const filteredOrders = computed(() => {
-  if (orderFilter.value === 'All') return recentOrders
-  return recentOrders.filter(o => o.status === orderFilter.value)
+  if (orderFilter.value === 'All') return allOrders.value
+  return allOrders.value.filter(o => o.status === orderFilter.value)
 })
 
-const wishlistItems = [
-  { id: 1, emoji: '🛋️', name: 'Velvet Sofa',        price: '899.00' },
-  { id: 2, emoji: '🕯️', name: 'Scented Candle Set', price: '45.00' },
-  { id: 3, emoji: '🪴', name: 'Indoor Plant Trio',  price: '78.00' },
-  { id: 4, emoji: '🎧', name: 'Noise-Cancel Headphones', price: '249.00' },
-]
+const saveProfile = async () => {
+  await updateItem('/customer/profile', profileForm.value)
+}
 
-const profileForm = ref({
-  firstName: 'Alex',
-  lastName: 'Johnson',
-  email: 'alex.johnson@email.com',
-  phone: '+1 (555) 123-4567',
-})
+const changePassword = async () => {
+  await updateItem('/customer/password', passwordForm.value)
+  passwordForm.value = { current_password: '', password: '', password_confirmation: '' }
+}
 
-const addresses = ref([
-  { id: 1, name: 'Home', line1: '123 Maple Street', city: 'New York', state: 'NY', zip: '10001', country: 'United States', default: true },
-  { id: 2, name: 'Office', line1: '456 5th Avenue, Suite 200', city: 'New York', state: 'NY', zip: '10018', country: 'United States', default: false },
-])
-
-const notifications = ref([
-  { id: 1, label: 'Order updates',      desc: 'Receive notifications when your order status changes', enabled: true },
-  { id: 2, label: 'Promotions & deals', desc: 'Get notified about exclusive sales and discounts',      enabled: true },
-  { id: 3, label: 'New arrivals',       desc: 'Be the first to know about new products',               enabled: false },
-  { id: 4, label: 'Newsletter',         desc: 'Weekly curated content and inspiration',                 enabled: false },
-])
-
-const saveProfile = () => { alert('Profile saved!') }
-const logout = () => navigateTo('/login')
+const submitAddress = async () => {
+  await createItem('/customer/addresses', addressForm.value)
+  isAddingAddress.value = false
+  addressForm.value = { name: '', line1: '', city: '', state: '', zip: '', country: '', is_default: false }
+  
+  // Refetch the addresses to update the list
+  const addressesData = await getAll('/customer/addresses')
+  if (addressesData) addresses.value = addressesData.addresses || []
+}
 </script>
