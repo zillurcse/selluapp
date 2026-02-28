@@ -124,7 +124,9 @@ import {
   Ticket
 } from 'lucide-vue-next'
 
-const { data: couponsData, pending } = useFetch('/api/vendor/reports/coupons', {
+const config = useRuntimeConfig()
+const { data: couponsData, pending } = useFetch('/vendor/reports/coupons', {
+  baseURL: config.public.apiBase,
   headers: {
     Authorization: `Bearer ${useCookie('auth_token').value}`
   }

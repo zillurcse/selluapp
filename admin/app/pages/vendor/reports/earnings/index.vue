@@ -187,11 +187,8 @@ import {
   ArrowDownLeft
 } from 'lucide-vue-next'
 
-const { data: earningsData, pending } = useFetch('/api/vendor/reports/earnings', {
-  headers: {
-    Authorization: `Bearer ${useCookie('auth_token').value}`
-  }
-})
+const { getAll } = useCrud()
+const { data: earningsData, pending } = getAll('/vendor/reports/earnings')
 
 definePageMeta({
   middleware: 'auth'

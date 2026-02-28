@@ -1,11 +1,12 @@
 <?php
 
-namespace App\Http\Controllers\API\Vendor;
+namespace App\Http\Controllers\Vendor;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Facades\Auth;
 
 class ReportController extends Controller implements HasMiddleware
 {
@@ -201,17 +202,60 @@ class ReportController extends Controller implements HasMiddleware
 
     public function stock(Request $request)
     {
-        $vendorId = $request->user()->vendor_id ?? $request->user()->id;
-        $products = \App\Models\Product::where('user_id', $vendorId)
-            ->get(['id', 'name', 'stock_qty', 'sale_price', 'thumbnail']);
-            
-        $totalStockValue = $products->sum(function($product) {
-            return $product->stock_qty * $product->sale_price;
+        $query = \App\Models\Product::query();
+
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('id', 'like', "%{$search}%");
+            });
+        }
+
+        // Apply Filters
+        if ($request->has('filter')) {
+            switch ($request->filter) {
+                case 'low_stock':
+                    $query->where('stock_qty', '>', 0)->where('stock_qty', '<=', 5);
+                    break;
+                case 'out_of_stock':
+                    $query->where('stock_qty', '<=', 0);
+                    break;
+            }
+        }
+
+        // Calculate KPIs for the (potentially filtered) set
+        $allProducts = $query->get(['id', 'stock_qty', 'sale_price']);
+        
+        $inventoryValue = $allProducts->sum(function($product) {
+            return (float)$product->stock_qty * (float)$product->sale_price;
         });
 
+        $totalItems = $allProducts->sum('stock_qty');
+        $lowStockCount = $allProducts->where('stock_qty', '>', 0)->where('stock_qty', '<=', 5)->count();
+        $outOfStockCount = $allProducts->where('stock_qty', '<=', 0)->count();
+
+        // Apply Sorting
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+
+        if ($sortBy === 'valuation') {
+            $query->orderByRaw('stock_qty * sale_price ' . $sortOrder);
+        } else {
+            $query->orderBy($sortBy, $sortOrder);
+        }
+
+        // Paginate the results for the table
+        $products = $query->select(['id', 'name', 'stock_qty', 'sale_price', 'thumbnail'])
+            ->paginate($request->get('per_page', 10));
+
         return response()->json([
-            'total_stock_value' => $totalStockValue,
-            'low_stock_items' => $products->where('stock_qty', '<', 10)->count(),
+            'kpi' => [
+                'inventory_value' => (float) $inventoryValue,
+                'total_items' => (int) $totalItems,
+                'low_stock_items' => (int) $lowStockCount,
+                'out_of_stock_items' => (int) $outOfStockCount,
+            ],
             'products' => $products
         ]);
     }
@@ -222,21 +266,32 @@ class ReportController extends Controller implements HasMiddleware
             'product_id' => 'required|exists:products,id',
             'type' => 'required|in:add,subtract',
             'quantity' => 'required|integer|min:1',
+            'note' => 'nullable|string|max:255',
         ]);
 
-        $vendorId = $request->user()->vendor_id ?? $request->user()->id;
-        $product = \App\Models\Product::where('user_id', $vendorId)
-            ->where('id', $request->product_id)
-            ->firstOrFail();
+        // Automatically scoped via BelongsToVendor trait
+        $product = \App\Models\Product::where('id', $request->product_id)->firstOrFail();
 
-        if ($request->type === 'add') {
-            $product->stock_qty += $request->quantity;
-        } else {
-            // Ensure stock doesn't go below 0
-            $product->stock_qty = max(0, $product->stock_qty - $request->quantity);
+        $oldStock = $product->stock_qty;
+        $adjustment = (int) $request->quantity;
+        
+        if ($request->type === 'subtract') {
+            $adjustment = -$adjustment;
         }
 
+        $newStock = $oldStock + $adjustment;
+        
+        // Ensure stock doesn't go below 0
+        if ($newStock < 0) {
+            $newStock = 0;
+            $adjustment = -$oldStock;
+        }
+
+        $product->stock_qty = $newStock;
         $product->save();
+
+        // Log the adjustment using HasStock trait
+        $product->logStockChange($adjustment, 'adjustment', null, $request->note ?? 'Manual adjustment from stock report');
 
         return response()->json([
             'message' => 'Stock adjusted successfully',

@@ -108,7 +108,9 @@ import {
   ArrowDownRight
 } from 'lucide-vue-next'
 
-const { data: analyticsData, pending } = useFetch('/api/vendor/reports/sales-analytics', {
+const config = useRuntimeConfig()
+const { data: analyticsData, pending } = useFetch('/vendor/reports/sales-analytics', {
+  baseURL: config.public.apiBase,
   headers: {
     Authorization: `Bearer ${useCookie('auth_token').value}`
   }

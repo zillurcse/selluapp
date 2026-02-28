@@ -501,6 +501,10 @@ const rawProductLinks = [
   { to: '/vendor/products/published',label: 'Published',    icon: FileText, permission: 'products.view',   feature: 'Products' },
   { to: '/vendor/products/pending',  label: 'Pending',      icon: FileText, permission: 'products.view',   feature: 'Products' },
   { to: '/vendor/products/draft',    label: 'Drafts',       icon: FileText, permission: 'products.view',   feature: 'Products' },
+  { to: '/vendor/products/barcodes', label: 'Barcodes',     icon: Tag,      permission: 'products.view',   feature: 'Products' },
+  { to: '/vendor/products/restock',  label: 'Restock',      icon: Plus,     permission: 'stock.manage',    feature: 'Products' },
+  { to: '/vendor/products/suppliers',label: 'Suppliers',    icon: Truck,    permission: 'suppliers.view',  feature: 'Products' },
+  { to: '/vendor/warehouse/audit',   label: 'Stock Audit',  icon: Layers,   permission: 'products.view',   feature: 'Products' },
 ]
 
 const productLinks = computed(() => filterItems(rawProductLinks))

@@ -128,7 +128,9 @@ import {
   Package
 } from 'lucide-vue-next'
 
-const { data: performanceData, pending } = useFetch('/api/vendor/reports/product-performance', {
+const config = useRuntimeConfig()
+const { data: performanceData, pending } = useFetch('/vendor/reports/product-performance', {
+  baseURL: config.public.apiBase,
   headers: {
     Authorization: `Bearer ${useCookie('auth_token').value}`
   }

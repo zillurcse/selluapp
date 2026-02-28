@@ -139,7 +139,9 @@ import {
   Settings2
 } from 'lucide-vue-next'
 
-const { data: expensesData, pending } = useFetch('/api/vendor/reports/expenses', {
+const config = useRuntimeConfig()
+const { data: expensesData, pending } = useFetch('/vendor/reports/expenses', {
+  baseURL: config.public.apiBase,
   headers: {
     Authorization: `Bearer ${useCookie('auth_token').value}`
   }

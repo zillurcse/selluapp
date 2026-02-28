@@ -30,6 +30,8 @@ class RoleSeeder extends Seeder
             'attributes.view', 'attributes.create', 'attributes.edit', 'attributes.delete', 'attributes.sort',
             // Products
             'products.view', 'products.create', 'products.edit', 'products.delete',
+            // Barcodes
+            'barcodes.view', 'barcodes.generate', 'barcodes.audit',
             // Customers
             'customers.view', 'customers.create', 'customers.edit', 'customers.delete',
             // Coupons
@@ -62,6 +64,10 @@ class RoleSeeder extends Seeder
             'roles.view', 'roles.manage',
             // Staff Management
             'staff.view', 'staff.create', 'staff.edit', 'staff.delete',
+            // Suppliers
+            'suppliers.view', 'suppliers.create', 'suppliers.edit', 'suppliers.delete',
+            // Stock Management
+            'stock.view', 'stock.manage',
             
             // SUPER ADMIN / PLATFORM MANAGEMENT
             'admin.dashboard.view',
@@ -107,12 +113,15 @@ class RoleSeeder extends Seeder
             'hrm.employees.view',
             'hrm.attendance.view',
             'hrm.leaves.view',
+            'barcodes.view', 'barcodes.generate', 'barcodes.audit',
+            'suppliers.view', 'stock.manage',
         ]);
 
         // Admin gets a read-heavy subset
         $roleAdmin->syncPermissions([
             'brands.view', 'units.view', 'attributes.view', 'products.view',
             'customers.view', 'orders.view', 'reports.view', 'settings.view',
+            'suppliers.view', 'stock.manage',
         ]);
 
         // ─── Default Packages ────────────────────────────────────────────────────

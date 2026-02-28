@@ -150,7 +150,9 @@ import {
   ArrowDownRight
 } from 'lucide-vue-next'
 
-const { data: cancelsData, pending } = useFetch('/api/vendor/reports/cancels', {
+const config = useRuntimeConfig()
+const { data: cancelsData, pending } = useFetch('/vendor/reports/cancels', {
+  baseURL: config.public.apiBase,
   headers: {
     Authorization: `Bearer ${useCookie('auth_token').value}`
   }

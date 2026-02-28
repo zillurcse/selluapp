@@ -208,7 +208,9 @@ import {
   Filter
 } from 'lucide-vue-next'
 
-const { data: salesData, pending } = useFetch('/api/vendor/reports/sales', {
+const config = useRuntimeConfig()
+const { data: salesData, pending } = useFetch('/vendor/reports/sales', {
+  baseURL: config.public.apiBase,
   headers: {
     Authorization: `Bearer ${useCookie('auth_token').value}`
   }

@@ -228,10 +228,7 @@ definePageMeta({
   middleware: 'auth',
   permissions: 'reports.view'
 })
+const { getAll } = useCrud()
 
-const { data: overview, pending } = useFetch('/api/vendor/reports/overview', {
-  headers: {
-    Authorization: `Bearer ${useCookie('auth_token').value}`
-  }
-})
+const { data: overview, pending } = getAll('/vendor/reports/overview')
 </script>

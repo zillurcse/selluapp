@@ -113,22 +113,22 @@ Route::middleware('auth:sanctum')->group(function () {
     // Vendor Routes
     Route::prefix('vendor')->group(function () {
         Route::get('payment-methods', [App\Http\Controllers\API\PaymentMethodController::class, 'index']);
-        Route::apiResource('attributes/categories', App\Http\Controllers\VendorAttributeController::class);
-        Route::apiResource('attributes/products', App\Http\Controllers\VendorAttributeController::class); // This might need to be specific product controller later
-        Route::apiResource('attributes/brands', App\Http\Controllers\VendorBrandController::class);
-        Route::apiResource('attributes/units', App\Http\Controllers\VendorUnitController::class);
-        Route::post('attributes/categories/sort', [App\Http\Controllers\VendorAttributeController::class, 'updateOrder']);
-        Route::post('attributes/brands/sort', [App\Http\Controllers\VendorBrandController::class, 'updateOrder']);
-        Route::get('profile', [App\Http\Controllers\VendorProfileController::class, 'index']);
-        Route::post('profile', [App\Http\Controllers\VendorProfileController::class, 'update']);
+        Route::apiResource('attributes/categories', App\Http\Controllers\Vendor\CategoryController::class);
+        Route::apiResource('attributes/products', App\Http\Controllers\Vendor\CategoryController::class); 
+        Route::apiResource('attributes/brands', App\Http\Controllers\Vendor\BrandController::class);
+        Route::apiResource('attributes/units', App\Http\Controllers\Vendor\UnitController::class);
+        Route::post('attributes/categories/sort', [App\Http\Controllers\Vendor\CategoryController::class, 'updateOrder']);
+        Route::post('attributes/brands/sort', [App\Http\Controllers\Vendor\BrandController::class, 'updateOrder']);
+        Route::get('profile', [App\Http\Controllers\Vendor\ProfileController::class, 'index']);
+        Route::post('profile', [App\Http\Controllers\Vendor\ProfileController::class, 'update']);
         //products routes
-        Route::apiResource('products', App\Http\Controllers\ProductController::class);
+        Route::apiResource('products', App\Http\Controllers\Vendor\ProductController::class);
         Route::apiResource('product-attributes', \App\Http\Controllers\AttributeController::class);
-        Route::get('products/{product}/variants', [App\Http\Controllers\ProductController::class, 'variants']);
-        Route::get('products/{slug}', [App\Http\Controllers\ProductController::class, 'slugByStatusProducts']);
+        Route::get('products/{product}/variants', [App\Http\Controllers\Vendor\ProductController::class, 'variants']);
+        Route::get('products/{slug}', [App\Http\Controllers\Vendor\ProductController::class, 'slugByStatusProducts']);
 
         // Customers Routes
-        Route::apiResource('customers', App\Http\Controllers\CustomerController::class);
+        Route::apiResource('customers', App\Http\Controllers\Vendor\CustomerController::class);
 
         // Coupons Routes
         Route::apiResource('coupons', App\Http\Controllers\Vendor\CouponController::class);
@@ -143,32 +143,32 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('fraud-checks/{id}/action', [App\Http\Controllers\Vendor\FraudCheckController::class, 'action']);
 
         // Shop Delivery
-        Route::get('delivery', [App\Http\Controllers\VendorDeliveryController::class, 'index']);
-        Route::post('delivery', [App\Http\Controllers\VendorDeliveryController::class, 'store']);
+        Route::get('delivery', [App\Http\Controllers\Vendor\DeliveryController::class, 'index']);
+        Route::post('delivery', [App\Http\Controllers\Vendor\DeliveryController::class, 'store']);
 
         // Orders
-        Route::apiResource('orders', App\Http\Controllers\API\Vendor\OrderController::class);
-        Route::post('orders/{order}/sync', [App\Http\Controllers\API\Vendor\OrderController::class, 'syncCourier']);
+        Route::apiResource('orders', App\Http\Controllers\Vendor\OrderController::class);
+        Route::post('orders/{order}/sync', [App\Http\Controllers\Vendor\OrderController::class, 'syncCourier']);
 
         // Shop Settings
-        Route::get('settings', [App\Http\Controllers\ShopSettingController::class, 'index']);
-        Route::post('settings', [App\Http\Controllers\ShopSettingController::class, 'update']);
+        Route::get('settings', [App\Http\Controllers\Vendor\SettingController::class, 'index']);
+        Route::post('settings', [App\Http\Controllers\Vendor\SettingController::class, 'update']);
 
         // Reports Routes
         Route::prefix('reports')->group(function () {
-            Route::get('overview', [\App\Http\Controllers\API\Vendor\ReportController::class, 'overview']);
-            Route::get('sales', [\App\Http\Controllers\API\Vendor\ReportController::class, 'sales']);
-            Route::get('returns', [\App\Http\Controllers\API\Vendor\ReportController::class, 'returns']);
-            Route::get('cancels', [\App\Http\Controllers\API\Vendor\ReportController::class, 'cancels']);
-            Route::get('expenses', [\App\Http\Controllers\API\Vendor\ReportController::class, 'expenses']);
-            Route::get('coupons', [\App\Http\Controllers\API\Vendor\ReportController::class, 'coupons']);
-            Route::get('product-performance', [\App\Http\Controllers\API\Vendor\ReportController::class, 'productPerformance']);
-            Route::get('stock', [\App\Http\Controllers\API\Vendor\ReportController::class, 'stock']);
-            Route::post('stock/adjust', [\App\Http\Controllers\API\Vendor\ReportController::class, 'adjustStock']);
-            Route::get('customers', [\App\Http\Controllers\API\Vendor\ReportController::class, 'customers']);
-            Route::get('earnings', [\App\Http\Controllers\API\Vendor\ReportController::class, 'earnings']);
-            Route::get('tax', [\App\Http\Controllers\API\Vendor\ReportController::class, 'tax']);
-            Route::get('sales-analytics', [\App\Http\Controllers\API\Vendor\ReportController::class, 'salesAnalytics']);
+            Route::get('overview', [\App\Http\Controllers\Vendor\ReportController::class, 'overview']);
+            Route::get('sales', [\App\Http\Controllers\Vendor\ReportController::class, 'sales']);
+            Route::get('returns', [\App\Http\Controllers\Vendor\ReportController::class, 'returns']);
+            Route::get('cancels', [\App\Http\Controllers\Vendor\ReportController::class, 'cancels']);
+            Route::get('expenses', [\App\Http\Controllers\Vendor\ReportController::class, 'expenses']);
+            Route::get('coupons', [\App\Http\Controllers\Vendor\ReportController::class, 'coupons']);
+            Route::get('product-performance', [\App\Http\Controllers\Vendor\ReportController::class, 'productPerformance']);
+            Route::get('stock', [\App\Http\Controllers\Vendor\ReportController::class, 'stock']);
+            Route::post('stock/adjust', [\App\Http\Controllers\Vendor\ReportController::class, 'adjustStock']);
+            Route::get('customers', [\App\Http\Controllers\Vendor\ReportController::class, 'customers']);
+            Route::get('earnings', [\App\Http\Controllers\Vendor\ReportController::class, 'earnings']);
+            Route::get('tax', [\App\Http\Controllers\Vendor\ReportController::class, 'tax']);
+            Route::get('sales-analytics', [\App\Http\Controllers\Vendor\ReportController::class, 'salesAnalytics']);
         });
 
         // Role & Permission Routes
@@ -219,6 +219,24 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('sales', [App\Http\Controllers\Vendor\PosController::class, 'sales']);
             Route::get('stats', [App\Http\Controllers\Vendor\PosController::class, 'stats']);
         });
+
+        // Barcodes
+        Route::prefix('barcodes')->group(function () {
+            Route::get('scan', [App\Http\Controllers\Vendor\BarcodeController::class, 'scan']);
+            Route::post('generate', [App\Http\Controllers\Vendor\BarcodeController::class, 'generate']);
+            Route::post('print', [App\Http\Controllers\Vendor\BarcodeController::class, 'printLabels']);
+            Route::post('audit', [App\Http\Controllers\Vendor\BarcodeController::class, 'audit']);
+            Route::post('mark-as-printed', [App\Http\Controllers\Vendor\BarcodeController::class, 'markAsPrinted']);
+        });
+
+        // Stock Management
+        Route::prefix('stock')->group(function () {
+            Route::get('logs', [App\Http\Controllers\Vendor\StockController::class, 'logs']);
+            Route::post('restock', [App\Http\Controllers\Vendor\StockController::class, 'restock']);
+        });
+
+        // Suppliers CRUD
+        Route::apiResource('suppliers', App\Http\Controllers\Vendor\SupplierController::class);
 
         // Landing Pages
         Route::apiResource('landing-pages', App\Http\Controllers\Vendor\LandingPageController::class);

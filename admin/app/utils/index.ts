@@ -31,6 +31,18 @@ export const capitalize = (str: string): string => {
 }
 
 /**
+ * Simple debounce function
+ */
+export function debounce(fn: Function, delay: number) {
+    let timeoutId: any
+    return (...args: any[]) => {
+        clearTimeout(timeoutId)
+        timeoutId = setTimeout(() => fn(...args), delay)
+    }
+}
+
+
+/**
  * Handle form errors from API
  */
 export const formError = (errors: any, form: any) => {

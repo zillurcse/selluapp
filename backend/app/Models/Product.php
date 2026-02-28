@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 use App\Traits\BelongsToVendor;
+use App\Traits\HasStock;
 
 class Product extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToVendor;
+    use HasFactory, SoftDeletes, BelongsToVendor, HasStock;
 
     protected $fillable = [
         'vendor_id',
@@ -117,5 +118,10 @@ class Product extends Model
     public function variants()
     {
         return $this->hasMany(ProductVariant::class);
+    }
+
+    public function barcodes()
+    {
+        return $this->hasMany(ProductBarcode::class);
     }
 }

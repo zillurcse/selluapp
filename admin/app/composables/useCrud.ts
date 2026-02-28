@@ -227,6 +227,26 @@ export default function useCrud() {
   };
   const duplicateItem = async () => { };
 
+  //barcode print
+  const barcodePrint = async (apiEndpoint: string, data: any = {}) => {
+    store.isLoading = true;
+    try {
+      const response = await $fetch<any>(apiEndpoint, {
+        baseURL,
+        method: 'POST',
+        headers: getHeaders(),
+        body: data
+      });
+      store.isLoading = false;
+      return response;
+    } catch (err: any) {
+      store.isLoading = false;
+      const message = err.data?.message || err.message || 'Failed to print labels';
+      toast.error(message);
+      throw err;
+    }
+  };
+
   return {
     createItem,
     getItem,
@@ -236,6 +256,7 @@ export default function useCrud() {
     deleteItem,
     updateItem,
     duplicateItem,
+    barcodePrint,
     updateSettings,
     getHeaders
   };

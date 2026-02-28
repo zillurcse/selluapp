@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Vendor;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\VendorProfile;
@@ -12,7 +13,7 @@ use Illuminate\Support\Str;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 
-class VendorProfileController extends Controller implements HasMiddleware
+class ProfileController extends Controller implements HasMiddleware
 {
     public static function middleware(): array
     {

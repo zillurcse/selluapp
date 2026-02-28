@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Vendor;
 
+use App\Http\Controllers\Controller;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -137,6 +138,11 @@ class ProductController extends Controller implements HasMiddleware
         $product = Product::create($validated);
         $product->categories()->sync($categoryIds);
 
+        // Log initial stock if provided
+        if ($product->stock_qty > 0) {
+            $product->logStockChange($product->stock_qty, 'initial', null, 'Initial stock on creation');
+        }
+
         // Handle variants processing
         if ($request->has('variants') && isset($validated['has_variants']) && $validated['has_variants']) {
             $variantsData = json_decode($request->variants, true);
@@ -154,6 +160,11 @@ class ProductController extends Controller implements HasMiddleware
                         'image' => $variantImage,
                         'is_active' => $variantData['is_active'] ?? true,
                     ]);
+
+                    // Log variant initial stock
+                    if ($variant->stock_qty > 0) {
+                        $variant->logStockChange($variant->stock_qty, 'initial', null, 'Initial variant stock on creation');
+                    }
 
                     if (isset($variantData['attributes']) && is_array($variantData['attributes'])) {
                         $attributeIds = [];
@@ -284,7 +295,12 @@ class ProductController extends Controller implements HasMiddleware
             $validated['gallery'] = $galleryPaths;
         }
 
+        $oldStock = $product->stock_qty;
         $product->update($validated);
+
+        if (isset($validated['stock_qty']) && $validated['stock_qty'] != $oldStock) {
+            $product->logStockChange($validated['stock_qty'] - $oldStock, 'adjustment', null, 'Manual stock adjustment on update');
+        }
 
         // Handle variants processing
         if ($request->has('variants') && isset($validated['has_variants']) && $validated['has_variants']) {
@@ -306,6 +322,7 @@ class ProductController extends Controller implements HasMiddleware
                                 \Illuminate\Support\Facades\Storage::disk('public')->delete($variant->image);
                             }
                             
+                            $oldVStock = $variant->stock_qty;
                             $variant->update([
                                 'sku' => $variantData['sku'] ?? $variant->sku,
                                 'price' => $variantData['price'] ?? $variant->price,
@@ -313,6 +330,10 @@ class ProductController extends Controller implements HasMiddleware
                                 'image' => $hasNewImage ? $variantImage : ($variantData['image'] ?? $variant->image),
                                 'is_active' => $variantData['is_active'] ?? $variant->is_active,
                             ]);
+
+                            if (isset($variantData['stock_qty']) && $variantData['stock_qty'] != $oldVStock) {
+                                $variant->logStockChange($variantData['stock_qty'] - $oldVStock, 'adjustment', null, 'Manual variant stock adjustment on update');
+                            }
                             $keptVariantIds[] = $variant->id;
                         }
                     } else {

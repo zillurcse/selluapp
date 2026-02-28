@@ -99,7 +99,9 @@ import {
   Download
 } from 'lucide-vue-next'
 
-const { data: taxData, pending } = useFetch('/api/vendor/reports/tax', {
+const config = useRuntimeConfig()
+const { data: taxData, pending } = useFetch('/vendor/reports/tax', {
+  baseURL: config.public.apiBase,
   headers: {
     Authorization: `Bearer ${useCookie('auth_token').value}`
   }
