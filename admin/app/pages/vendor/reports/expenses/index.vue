@@ -7,7 +7,6 @@
         <ChevronRight class="w-4 h-4 mx-2" />
         <span class="font-bold text-gray-900">Expense Report</span>
       </div>
-      
       <div class="flex items-center gap-3">
         <button class="flex items-center gap-2 bg-white border border-gray-200 px-4 py-2 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all shadow-sm">
           <Download class="w-4 h-4" /> Export PDF
@@ -18,7 +17,7 @@
       </div>
     </div>
 
-    <!-- Header Section -->
+    <!-- Header -->
     <div class="bg-[#1a1c1e] rounded-[2.5rem] p-10 text-white relative overflow-hidden shadow-2xl">
       <div class="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-8">
         <div>
@@ -26,99 +25,246 @@
           <p class="text-gray-400 font-medium max-w-md">Monitor your operational costs, product procurement, and overheads.</p>
         </div>
         <div class="flex bg-white/10 backdrop-blur-md rounded-2xl p-1.5 border border-white/10">
-          <button class="px-6 py-2 text-sm font-bold rounded-xl bg-white text-gray-900 shadow-xl">Weekly</button>
-          <button class="px-6 py-2 text-sm font-bold rounded-xl text-gray-300 hover:text-white transition-all">Monthly</button>
-          <button class="px-6 py-2 text-sm font-bold rounded-xl text-gray-300 hover:text-white transition-all">Yearly</button>
+          <button
+            v-for="p in periods"
+            :key="p.value"
+            @click="setPeriod(p.value)"
+            class="px-6 py-2 text-sm font-bold rounded-xl transition-all"
+            :class="period === p.value ? 'bg-white text-gray-900 shadow-xl' : 'text-gray-300 hover:text-white'"
+          >
+            {{ p.label }}
+          </button>
         </div>
       </div>
-      <!-- Background Decorative Elements -->
       <div class="absolute top-0 right-0 w-64 h-64 bg-rose-500/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
+      <div class="absolute bottom-0 left-0 w-48 h-48 bg-orange-500/10 rounded-full blur-3xl -ml-24 -mb-24"></div>
     </div>
 
+    <!-- Loading -->
     <div v-if="pending" class="flex justify-center items-center py-20">
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-600"></div>
     </div>
 
     <template v-else>
       <!-- KPI Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <!-- Total All-time -->
         <div class="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm relative overflow-hidden group">
           <div class="relative z-10">
             <div class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Total Expenses</div>
-            <div class="text-4xl font-black text-gray-900 mb-4 tracking-tighter">৳{{ expensesData?.kpi?.total_expenses?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00' }}</div>
-            <div class="flex items-center text-sm font-bold text-rose-500 bg-rose-50 px-3 py-1 rounded-full w-fit">
-              <ArrowUpRight class="w-4 h-4 mr-1" /> +5.4%
-            </div>
+            <div class="text-4xl font-black text-gray-900 mb-4 tracking-tighter">৳{{ fmt(expensesData?.kpi?.total_expenses) }}</div>
+            <div class="text-sm font-bold text-gray-400">All-time</div>
           </div>
           <div class="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-110 transition-transform duration-500">
             <Wallet class="w-32 h-32 text-gray-900" />
           </div>
         </div>
 
+        <!-- Period Expenses -->
         <div class="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm relative overflow-hidden group">
           <div class="relative z-10">
-            <div class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Procurement Cost</div>
-            <div class="text-4xl font-black text-gray-900 mb-4 tracking-tighter">৳0.00</div>
-            <div class="flex items-center text-sm font-bold text-emerald-500 bg-emerald-50 px-3 py-1 rounded-full w-fit">
-              <ArrowDownRight class="w-4 h-4 mr-1" /> -12.2%
-            </div>
+            <div class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">{{ currentPeriodLabel }} Total</div>
+            <div class="text-4xl font-black text-rose-600 mb-4 tracking-tighter">৳{{ fmt(expensesData?.kpi?.period_expenses) }}</div>
+            <div class="text-sm font-bold text-gray-400">Selected period</div>
           </div>
           <div class="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-110 transition-transform duration-500">
             <Truck class="w-32 h-32 text-gray-900" />
           </div>
         </div>
 
+        <!-- Avg Expense -->
         <div class="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm relative overflow-hidden group">
           <div class="relative z-10">
-            <div class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Operative Cost</div>
-            <div class="text-4xl font-black text-gray-900 mb-4 tracking-tighter">৳0.00</div>
-            <div class="flex items-center text-sm font-bold text-rose-500 bg-rose-50 px-3 py-1 rounded-full w-fit">
-              <ArrowUpRight class="w-4 h-4 mr-1" /> +2.1%
-            </div>
+            <div class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Avg. Expense</div>
+            <div class="text-4xl font-black text-gray-900 mb-4 tracking-tighter">৳{{ fmt(expensesData?.kpi?.avg_expense) }}</div>
+            <div class="text-sm font-bold text-gray-400">Per entry</div>
           </div>
           <div class="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-110 transition-transform duration-500">
             <Settings2 class="w-32 h-32 text-gray-900" />
           </div>
         </div>
+
+        <!-- Total Entries -->
+        <div class="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm relative overflow-hidden group">
+          <div class="relative z-10">
+            <div class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Total Entries</div>
+            <div class="text-4xl font-black text-gray-900 mb-4 tracking-tighter">
+              {{ expensesData?.kpi?.total_count?.toLocaleString() || '0' }}
+            </div>
+            <div class="text-sm font-bold text-gray-400">Expense records</div>
+          </div>
+          <div class="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-110 transition-transform duration-500">
+            <Receipt class="w-32 h-32 text-gray-900" />
+          </div>
+        </div>
       </div>
 
-      <!-- Expense Breakdown -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div class="bg-white rounded-[2.5rem] p-10 border border-gray-100 shadow-sm">
-          <h3 class="text-2xl font-black text-gray-900 tracking-tight mb-8">Category Breakdown</h3>
-          <div class="space-y-8">
-            <div v-for="(cat, i) in ['Inventory', 'Logistics', 'Marketing', 'Rent/Utilities']" :key="cat" class="space-y-3">
-              <div class="flex justify-between items-end">
-                <span class="font-bold text-gray-700">{{ cat }}</span>
-                <span class="font-black text-gray-900">৳{{ (15000 / (i + 1)).toFixed(0) }}</span>
-              </div>
-              <div class="h-4 bg-gray-50 rounded-full overflow-hidden">
-                <div class="h-full bg-rose-500 rounded-full transition-all duration-1000" :style="{ width: (80 - (i * 15)) + '%' }"></div>
+      <!-- Chart & Breakdown -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Expense Trend Chart -->
+        <div class="lg:col-span-2 bg-white rounded-[2.5rem] p-10 border border-gray-100 shadow-sm">
+          <div class="flex items-center justify-between mb-10">
+            <h3 class="text-2xl font-black text-gray-900 tracking-tight">Expense Trend</h3>
+            <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-400">
+              <div class="w-3 h-3 bg-rose-500 rounded-full"></div> {{ currentPeriodLabel }}
+            </div>
+          </div>
+
+          <div v-if="chartData.length" class="h-72 flex items-end justify-between gap-2 py-4 relative">
+            <div class="absolute inset-0 flex flex-col justify-between pointer-events-none">
+              <div v-for="i in 5" :key="i" class="border-t border-gray-50 w-full h-0"></div>
+            </div>
+            <div
+              v-for="(bar, idx) in chartData"
+              :key="idx"
+              class="flex-1 group relative flex flex-col items-center gap-2"
+            >
+              <div
+                class="w-full rounded-t-xl transition-all duration-500 group-hover:bg-rose-500"
+                :class="bar.amount > 0 ? 'bg-rose-100' : 'bg-gray-50'"
+                :style="{ height: barHeight(bar.amount) }"
+              ></div>
+              <div class="text-[10px] font-black text-gray-400 tracking-tighter">{{ barLabel(bar.label) }}</div>
+              <div
+                v-if="bar.amount > 0"
+                class="absolute -top-12 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20"
+              >
+                ৳{{ fmt(bar.amount) }}
               </div>
             </div>
           </div>
+
+          <div v-else class="h-72 flex items-center justify-center text-gray-400 font-medium">
+            No expense data for this period.
+          </div>
         </div>
 
+        <!-- Status Breakdown -->
         <div class="bg-white rounded-[2.5rem] p-10 border border-gray-100 shadow-sm">
-          <h3 class="text-2xl font-black text-gray-900 tracking-tight mb-8">Recent Expenses</h3>
-          <div class="space-y-6">
-            <div v-for="expense in expensesData?.recent_expenses?.data || []" :key="expense.id" class="flex items-center justify-between p-4 rounded-3xl hover:bg-gray-50 transition-all border border-transparent hover:border-gray-100 group">
-              <div class="flex items-center gap-4">
-                <div class="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center font-black text-gray-400 group-hover:bg-white transition-colors shadow-sm text-xs">
-                  #EX{{ String(expense.id).padStart(3, '0') }}
-                </div>
-                <div>
-                  <div class="font-bold text-gray-900 mb-1">{{ expense.title }}</div>
-                  <div class="text-xs font-bold text-gray-400 uppercase tracking-widest">{{ new Date(expense.expense_date || expense.created_at).toLocaleDateString() }}</div>
-                </div>
+          <h3 class="text-2xl font-black text-gray-900 tracking-tight mb-8">By Status</h3>
+
+          <div v-if="breakdown.length" class="space-y-5">
+            <div
+              v-for="(item, idx) in breakdown"
+              :key="idx"
+              class="p-4 bg-gray-50 rounded-2xl hover:bg-rose-50 transition-all border border-transparent hover:border-rose-100"
+            >
+              <div class="flex items-center justify-between mb-1">
+                <div class="text-sm font-bold text-gray-700">{{ item.label }}</div>
+                <div class="text-xs font-black text-gray-400">{{ item.count }} entries</div>
               </div>
-              <div class="font-black text-rose-600">- ৳{{ Number(expense.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div>
+              <div class="text-base font-black text-rose-600 mb-2">৳{{ fmt(item.amount) }}</div>
+              <div class="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  class="h-full bg-rose-500 rounded-full transition-all duration-700"
+                  :style="{ width: breakdownPct(item.amount) }"
+                ></div>
+              </div>
             </div>
-            <div v-if="!expensesData?.recent_expenses?.data?.length" class="text-center text-gray-500 py-4 font-medium">
-              No recent expenses found.
-            </div>
-            <button v-else class="w-full py-4 text-sm font-bold text-gray-500 hover:text-rose-600 transition-colors bg-gray-50 rounded-2xl hover:bg-rose-50">
-              View All Expenses
+          </div>
+
+          <div v-else class="py-10 text-center text-gray-400 font-medium text-sm">
+            No expense data available.
+          </div>
+        </div>
+      </div>
+
+      <!-- Expenses Table -->
+      <div class="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
+        <div class="p-10 flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-gray-50 gap-4">
+          <h3 class="text-2xl font-black text-gray-900 tracking-tight">Expense Log</h3>
+          <div class="relative">
+            <Search class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Search expenses..."
+              class="pl-12 pr-6 py-3 bg-gray-50 border-none rounded-2xl text-sm font-medium focus:ring-2 focus:ring-rose-100 w-56 transition-all"
+            />
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left">
+            <thead class="bg-gray-50/50">
+              <tr>
+                <th class="px-10 py-6 text-xs font-black text-gray-400 uppercase tracking-widest">Title</th>
+                <th class="px-10 py-6 text-xs font-black text-gray-400 uppercase tracking-widest">Date</th>
+                <th class="px-10 py-6 text-xs font-black text-gray-400 uppercase tracking-widest">Status</th>
+                <th class="px-10 py-6 text-xs font-black text-gray-400 uppercase tracking-widest">Description</th>
+                <th class="px-10 py-6 text-xs font-black text-gray-400 uppercase tracking-widest">Amount</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+              <tr
+                v-for="expense in filteredExpenses"
+                :key="expense.id"
+                class="hover:bg-gray-50/50 transition-colors"
+              >
+                <td class="px-10 py-6">
+                  <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 bg-rose-50 rounded-2xl flex items-center justify-center text-[10px] font-black text-rose-400 shrink-0">
+                      #{{ String(expense.id).padStart(3, '0') }}
+                    </div>
+                    <span class="font-bold text-gray-900">{{ expense.title }}</span>
+                  </div>
+                </td>
+                <td class="px-10 py-6 text-sm font-medium text-gray-500">
+                  {{ expense.expense_date
+                    ? new Date(expense.expense_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                    : '—' }}
+                </td>
+                <td class="px-10 py-6">
+                  <span
+                    class="px-3 py-1 rounded-full text-[10px] font-black tracking-widest"
+                    :class="statusClass(expense.status)"
+                  >
+                    {{ expense.status || '—' }}
+                  </span>
+                </td>
+                <td class="px-10 py-6 text-sm text-gray-400 max-w-xs truncate">{{ expense.description || '—' }}</td>
+                <td class="px-10 py-6 font-black text-rose-600">- ৳{{ fmt(expense.amount) }}</td>
+              </tr>
+              <tr v-if="!filteredExpenses.length">
+                <td colspan="5" class="px-10 py-12 text-center text-gray-400 font-medium">
+                  {{ searchQuery ? 'No expenses match your search.' : 'No expenses recorded yet.' }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div
+          v-if="pagination && pagination.last_page > 1"
+          class="p-6 flex items-center justify-between border-t border-gray-50"
+        >
+          <span class="text-sm font-medium text-gray-400">
+            Showing {{ pagination.from }}–{{ pagination.to }} of {{ pagination.total }}
+          </span>
+          <div class="flex items-center gap-2">
+            <button
+              @click="goToPage(currentPage - 1)"
+              :disabled="currentPage <= 1"
+              class="px-4 py-2 rounded-xl text-sm font-bold bg-gray-50 text-gray-500 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            >
+              <ChevronLeft class="w-4 h-4" />
+            </button>
+            <button
+              v-for="pg in pageNumbers"
+              :key="pg"
+              @click="goToPage(pg)"
+              class="px-4 py-2 rounded-xl text-sm font-bold transition-all"
+              :class="pg === currentPage ? 'bg-rose-600 text-white shadow' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'"
+            >
+              {{ pg }}
+            </button>
+            <button
+              @click="goToPage(currentPage + 1)"
+              :disabled="currentPage >= pagination.last_page"
+              class="px-4 py-2 rounded-xl text-sm font-bold bg-gray-50 text-gray-500 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            >
+              <ChevronRight class="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -128,26 +274,124 @@
 </template>
 
 <script setup>
-import { 
-  ChevronRight, 
-  Download, 
+import { ref, computed, watch } from 'vue'
+import {
+  ChevronRight,
+  ChevronLeft,
+  Download,
   Plus,
-  ArrowUpRight, 
-  ArrowDownRight,
   Wallet,
   Truck,
-  Settings2
+  Settings2,
+  Receipt,
+  Search,
 } from 'lucide-vue-next'
 
-const config = useRuntimeConfig()
-const { data: expensesData, pending } = useFetch('/vendor/reports/expenses', {
-  baseURL: config.public.apiBase,
-  headers: {
-    Authorization: `Bearer ${useCookie('auth_token').value}`
+definePageMeta({ middleware: 'auth' })
+
+const config    = useRuntimeConfig()
+const authToken = useCookie('auth_token')
+
+// ── Period ────────────────────────────────────────────────────────────────────
+const periods = [
+  { label: 'Weekly',  value: 'weekly'  },
+  { label: 'Monthly', value: 'monthly' },
+  { label: 'Yearly',  value: 'yearly'  },
+]
+const period      = ref('monthly')
+const currentPage = ref(1)
+
+const currentPeriodLabel = computed(() => periods.find(p => p.value === period.value)?.label ?? '')
+
+function setPeriod(val) {
+  period.value      = val
+  currentPage.value = 1
+}
+
+function goToPage(pg) {
+  if (pg < 1 || (pagination.value && pg > pagination.value.last_page)) return
+  currentPage.value = pg
+}
+
+// ── Fetch ─────────────────────────────────────────────────────────────────────
+const { data: expensesData, pending, refresh } = useFetch(
+  () => `/vendor/reports/expenses?period=${period.value}&page=${currentPage.value}`,
+  {
+    baseURL: config.public.apiBase,
+    headers: { Authorization: `Bearer ${authToken.value}` },
+    watch: false,
   }
+)
+
+watch([period, currentPage], () => refresh())
+
+// ── Chart ─────────────────────────────────────────────────────────────────────
+const chartData = computed(() => expensesData.value?.chart ?? [])
+const maxAmount = computed(() => Math.max(...chartData.value.map(b => b.amount), 1))
+
+function barHeight(amount) {
+  const pct = (amount / maxAmount.value) * 100
+  return `${Math.max(pct, amount > 0 ? 4 : 1)}%`
+}
+
+const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+const DAYS        = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+
+function barLabel(label) {
+  if (period.value === 'monthly') return MONTH_NAMES[(+label) - 1] ?? label
+  if (period.value === 'weekly')  return DAYS[new Date(label).getDay()]
+  return label
+}
+
+// ── Breakdown ─────────────────────────────────────────────────────────────────
+const breakdown    = computed(() => expensesData.value?.breakdown ?? [])
+const maxBreakdown = computed(() => Math.max(...breakdown.value.map(r => r.amount), 1))
+
+function breakdownPct(amount) {
+  return `${Math.round((amount / maxBreakdown.value) * 100)}%`
+}
+
+// ── Pagination ────────────────────────────────────────────────────────────────
+const pagination = computed(() => {
+  const r = expensesData.value?.recent_expenses
+  if (!r) return null
+  return { from: r.from, to: r.to, total: r.total, last_page: r.last_page }
 })
 
-definePageMeta({
-  middleware: 'auth'
+const pageNumbers = computed(() => {
+  if (!pagination.value) return []
+  const total = pagination.value.last_page
+  const cur   = currentPage.value
+  const range = []
+  for (let i = Math.max(1, cur - 2); i <= Math.min(total, cur + 2); i++) range.push(i)
+  return range
 })
+
+// ── Search ────────────────────────────────────────────────────────────────────
+const searchQuery = ref('')
+
+const filteredExpenses = computed(() => {
+  const list = expensesData.value?.recent_expenses?.data ?? []
+  if (!searchQuery.value.trim()) return list
+  const q = searchQuery.value.toLowerCase()
+  return list.filter(e =>
+    (e.title       ?? '').toLowerCase().includes(q) ||
+    (e.description ?? '').toLowerCase().includes(q) ||
+    (e.status      ?? '').toLowerCase().includes(q)
+  )
+})
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function fmt(val) {
+  return Number(val ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+function statusClass(status) {
+  const map = {
+    paid:    'bg-emerald-50 text-emerald-600',
+    pending: 'bg-amber-50 text-amber-600',
+    unpaid:  'bg-rose-50 text-rose-600',
+  }
+  return map[status?.toLowerCase()] ?? 'bg-gray-100 text-gray-500'
+}
 </script>

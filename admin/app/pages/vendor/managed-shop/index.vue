@@ -97,6 +97,13 @@ const managementCards = [
     to: '/vendor/managed-shop/custom-pages'
   },
   {
+    title: 'Shipping',
+    description: 'Set shipping options to ensure smooth fulfillment.',
+    icon: Truck,
+    iconBg: 'bg-green-500',
+    to: '/vendor/managed-shop/shipping'
+  },
+  {
     title: 'Delivery Support',
     description: 'Set delivery options to ensure smooth fulfillment.',
     icon: Truck,

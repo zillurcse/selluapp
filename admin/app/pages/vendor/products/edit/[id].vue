@@ -237,8 +237,13 @@
         <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm ring-1 ring-gray-200/50 dark:ring-slate-800 p-6 transition-colors">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">SKU <span class="text-red-500">*</span></label>
-              <input v-model="form.sku" type="text" placeholder="Ex: UORLA-14464" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all bg-white dark:bg-slate-900 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500" required />
+              <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5 uppercase tracking-tighter font-black opacity-60">SKU (Stock Keeping Unit)</label>
+              <div class="flex gap-2">
+                 <input v-model="form.sku" type="text" placeholder="Ex: UORLA-14464" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all bg-white dark:bg-slate-900 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 font-bold uppercase"  />
+                 <button @click="generateRandomSku" type="button" class="px-4 py-2 bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors shadow-sm">
+                   <RefreshCw class="w-4 h-4" />
+                 </button>
+              </div>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Product Code <span class="text-red-500">*</span></label>
@@ -281,7 +286,7 @@
 
         <!-- Pricing & Inventory -->
         <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm ring-1 ring-gray-200/50 dark:ring-slate-800 p-6 transition-colors">
-           <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+           <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Purchase Price</label>
                 <div class="relative">
@@ -307,6 +312,13 @@
                 <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Stock Qty <span class="text-red-500">*</span></label>
                 <input v-model="form.stock_qty" type="number" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all bg-white dark:bg-slate-900 text-gray-900 dark:text-white" required />
               </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Weight (kg)</label>
+                <div class="relative">
+                  <input v-model="form.weight" type="number" step="0.01" min="0" placeholder="0.00" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all bg-white dark:bg-slate-900 text-gray-900 dark:text-white pr-10" />
+                  <span class="absolute right-3 top-2.5 text-gray-400 dark:text-slate-500 text-xs font-semibold">kg</span>
+                </div>
+              </div>
            </div>
            
            <div class="mt-6 flex items-center">
@@ -316,6 +328,111 @@
                <span class="ml-3 text-sm font-medium text-gray-700 dark:text-slate-300">Enable Variants</span>
              </label>
            </div>
+        </div>
+
+        <!-- Product Variants Configuration -->
+        <div v-if="form.has_variants" class="bg-white dark:bg-slate-900 rounded-xl shadow-sm ring-1 ring-gray-200/50 dark:ring-slate-800 p-6 transition-colors space-y-6">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <Box class="w-5 h-5 text-primary-500" />
+                    Product Variants
+                </h3>
+                <button type="button" @click="addAttributeLine" class="flex items-center gap-2 px-4 py-2 bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/50 text-sm font-bold transition-all">
+                    <Plus class="w-4 h-4" />
+                    Add Attribute
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <div v-for="(config, index) in selectedAttributesConfig" :key="index" class="p-4 bg-gray-50/50 dark:bg-slate-800/50 rounded-xl border border-gray-100 dark:border-slate-800 relative group animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <AppSearchSelect
+                            v-model="config.attribute_id"
+                            :items="productAttributesList"
+                            label="Select Attribute"
+                            placeholder="Choice Attribute"
+                        />
+                        <div v-if="config.attribute_id">
+                            <label class="block text-xs font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Select Values</label>
+                            <AppSearchSelect
+                                v-model="config.value_ids"
+                                :items="productAttributesList.find(a => a.id === config.attribute_id)?.values || []"
+                                label-key="value"
+                                value-key="id"
+                                multiple
+                                placeholder="Choose Values"
+                            />
+                        </div>
+                    </div>
+                    <button v-if="selectedAttributesConfig.length > 1" @click="removeAttributeLine(index)" class="absolute -top-2 -right-2 p-1.5 bg-red-500 text-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all hover:scale-110">
+                        <X class="w-3.5 h-3.5" />
+                    </button>
+                </div>
+            </div>
+
+            <!-- Variants Table (Matrix) -->
+            <div v-if="generatedVariants.length > 0" class="mt-8 border-t border-gray-100 dark:border-slate-800 pt-8 overflow-hidden">
+                <h4 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest mb-6">Generated Variants Matrix ({{ generatedVariants.length }})</h4>
+                <div class="overflow-x-auto rounded-xl border border-gray-100 dark:border-slate-800">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-slate-800">
+                                <th class="p-4 text-[10px] font-black uppercase text-gray-400 tracking-tighter">Variant Info</th>
+                                <th class="p-4 text-[10px] font-black uppercase text-gray-400 tracking-tighter">SKU</th>
+                                <th class="p-4 text-[10px] font-black uppercase text-gray-400 tracking-tighter">Price (৳)</th>
+                                <th class="p-4 text-[10px] font-black uppercase text-gray-400 tracking-tighter">Stock</th>
+                                <th class="p-4 text-[10px] font-black uppercase text-gray-400 tracking-tighter text-center">Image</th>
+                                <th class="p-4 text-[10px] font-black uppercase text-gray-400 tracking-tighter text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50 dark:divide-slate-800">
+                            <tr v-for="(variant, vIdx) in generatedVariants" :key="variant._key" class="hover:bg-gray-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                                <td class="p-4">
+                                    <div class="flex items-center gap-2">
+                                        <div v-for="attr in variant.attributes" :key="attr.id" class="px-2 py-1 bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-md shadow-sm">
+                                            <span class="text-[10px] font-black text-gray-400 dark:text-slate-500 block leading-none mb-0.5">{{ attr.attribute_name }}</span>
+                                            <span class="text-xs font-bold text-gray-900 dark:text-white">{{ attr.value }}</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="p-4">
+                                    <input v-model="variant.sku" type="text" class="w-32 px-3 py-1.5 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-lg text-xs font-bold focus:ring-2 focus:ring-primary-500/20" placeholder="SKU" />
+                                </td>
+                                <td class="p-4">
+                                    <input v-model="variant.price" type="number" class="w-24 px-3 py-1.5 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-lg text-xs font-bold focus:ring-2 focus:ring-primary-500/20" />
+                                </td>
+                                <td class="p-4">
+                                    <input v-model="variant.stock_qty" type="number" class="w-20 px-3 py-1.5 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-lg text-xs font-bold focus:ring-2 focus:ring-primary-500/20" />
+                                </td>
+                                <td class="p-4">
+                                    <div class="flex flex-col items-center gap-1.5">
+                                       <button type="button" @click="openMediaLibrary('variant', vIdx)" class="w-14 h-14 bg-gray-50 dark:bg-slate-800 border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-xl flex items-center justify-center hover:border-primary-500 transition-all overflow-hidden relative group">
+                                          <img v-if="variant.imagePreview" :src="variant.imagePreview" class="w-full h-full object-cover" />
+                                          <Plus v-else class="w-4 h-4 text-gray-400" />
+                                          <div v-if="variant.imagePreview" class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                             <Pencil class="w-4 h-4 text-white" />
+                                          </div>
+                                       </button>
+                                       <button v-if="variant.imagePreview" type="button" @click="removeVariantImage(vIdx)" class="text-[9px] font-black text-red-400 hover:text-red-600 uppercase tracking-widest flex items-center gap-0.5 transition-colors">
+                                          <X class="w-2.5 h-2.5" /> Remove
+                                       </button>
+                                    </div>
+                                </td>
+                                <td class="p-4">
+                                    <div class="flex justify-center">
+                                        <button type="button" @click="variant.is_active = !variant.is_active" :class="[
+                                            'px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest transition-all',
+                                            variant.is_active ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-red-50 text-red-600 border border-red-100'
+                                        ]">
+                                            {{ variant.is_active ? 'Active' : 'Hidden' }}
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         <!-- Accordions -->
@@ -335,40 +452,42 @@
                   <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                      <!-- Thumbnail -->
                      <div class="col-span-1">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Thumbnail (Max 2MB | 400x400)</label>
-                        <div class="border-2 border-dashed border-gray-300 dark:border-slate-700 rounded-xl h-48 flex flex-col items-center justify-center hover:bg-gray-50 dark:hover:bg-slate-800/50 bg-gray-50/30 dark:bg-slate-800/30 transition-colors cursor-pointer relative overflow-hidden group">
-                           <input type="file" @change="handleThumbnailUpload" class="absolute inset-0 opacity-0 cursor-pointer z-10" accept="image/*" />
-                           <div v-if="thumbnailPreview" class="absolute inset-0">
-                              <img :src="thumbnailPreview" class="w-full h-full object-cover" />
-                              <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                 <span class="text-white text-sm font-medium flex items-center">
-                                    <UploadCloud class="w-4 h-4 mr-1" /> Change Image
-                                 </span>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Thumbnail (Max 5MB)</label>
+                        <div 
+                           @click="openMediaLibrary('thumbnail')" 
+                           class="border-2 border-dashed border-gray-200 dark:border-slate-700 hover:border-primary-400 dark:hover:border-primary-500 bg-gray-50/50 dark:bg-slate-800/50 hover:bg-primary-50/10 dark:hover:bg-primary-900/10 rounded-2xl h-64 flex flex-col items-center justify-center transition-all cursor-pointer relative overflow-hidden group shadow-sm"
+                        >
+                           <div v-if="thumbnailPreview" class="absolute inset-0 w-full h-full p-2 animate-in fade-in duration-300">
+                              <img :src="thumbnailPreview" class="w-full h-full object-cover rounded-xl shadow-md" />
+                              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-xl m-2">
+                                <span class="text-white text-[10px] font-black uppercase tracking-widest bg-primary-600 px-4 py-2 rounded-lg shadow-lg">Change Image</span>
                               </div>
                            </div>
-                           <div v-else class="text-center p-4">
-                              <div class="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                                  <UploadCloud class="w-6 h-6 text-blue-500 dark:text-blue-400" />
+                           <div v-else class="text-center p-6">
+                              <div class="w-16 h-16 rounded-2xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center mx-auto mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                                <UploadCloud class="w-8 h-8 text-primary-500" />
                               </div>
-                              <span class="text-sm font-medium text-blue-600 dark:text-blue-400">Click to Upload Thumbnail</span>
+                              <span class="text-xs font-black text-gray-900 dark:text-white block mb-1 uppercase tracking-tight">Select from Gallery</span>
+                              <span class="text-[10px] text-gray-400 dark:text-slate-500 font-bold uppercase">400x400 Recommended</span>
                            </div>
                         </div>
                      </div>
                      <!-- Gallery -->
-                     <div class="col-span-1 md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Gallery Images (Max 2MB per image)</label>
-                         <div class="border-2 border-dashed border-gray-300 dark:border-slate-700 rounded-xl h-48 flex flex-col items-center justify-center hover:bg-gray-50 dark:hover:bg-slate-800/50 bg-gray-50/30 dark:bg-slate-800/30 transition-colors cursor-pointer relative group">
-                           <input type="file" @change="handleGalleryUpload" multiple class="absolute inset-0 opacity-0 cursor-pointer z-10" accept="image/*" />
-                           <div class="text-center p-4">
-                              <div class="flex justify-center mb-3">
-                                 <div class="w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                   <UploadCloud class="w-6 h-6 text-emerald-500 dark:text-emerald-400" />
-                                 </div>
+                      <div class="col-span-1 md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Gallery Images (Max 10 Images)</label>
+                         <div 
+                           @click="openMediaLibrary('gallery')"
+                           class="border-2 border-dashed border-gray-200 dark:border-slate-700 hover:border-primary-400 dark:hover:border-primary-500 bg-gray-50/50 dark:bg-slate-800/50 hover:bg-primary-50/10 dark:hover:bg-primary-900/10 rounded-2xl h-64 flex flex-col items-center justify-center transition-all cursor-pointer relative overflow-hidden group shadow-sm"
+                         >
+                           <div class="text-center p-6">
+                              <div class="w-16 h-16 rounded-2xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center mx-auto mb-4 group-hover:scale-110 group-hover:-rotate-3 transition-all duration-300">
+                                <Library class="w-8 h-8 text-primary-500" />
                               </div>
-                              <span class="text-sm font-medium text-emerald-600 dark:text-emerald-400 block mb-1">Click to Upload Gallery Images</span>
-                              <span class="text-xs text-slate-500 dark:text-slate-400">You can select up to 10 images</span>
+                              <span class="text-xs font-black text-gray-900 dark:text-white block mb-1 uppercase tracking-tight">Open Media Gallery</span>
+                              <span class="text-[10px] text-gray-400 dark:text-slate-500 font-bold uppercase">Select multiple images</span>
                            </div>
                         </div>
+                     </div>
                         <div v-if="galleryItems.length > 0" class="mt-6 flex flex-wrap gap-4">
                            <div 
                              v-for="(item, idx) in galleryItems" 
@@ -392,7 +511,6 @@
                            </div>
                         </div>
                      </div>
-                  </div>
                </div>
            </div>
 
@@ -577,6 +695,26 @@
                  </label>
               </div>
            </div>
+
+           <!-- Stock Visibility (New Section) -->
+           <h3 class="font-medium text-gray-900 dark:text-white mt-6 mb-4 pb-2 border-b border-gray-100 dark:border-slate-800">Stock Visibility State</h3>
+           <div class="space-y-4">
+              <div class="grid grid-cols-1 gap-3">
+                 <label v-for="state in ['quantity', 'text', 'hide']" :key="state" class="flex items-center p-3 rounded-xl border border-gray-100 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group" :class="{'ring-2 ring-primary-500/20 border-primary-500 bg-primary-50/5': form.stock_visibility_state === state}">
+                    <input type="radio" v-model="form.stock_visibility_state" :value="state" class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 focus:ring-primary-500 dark:bg-slate-700 dark:border-slate-600">
+                    <div class="ml-3">
+                       <span class="text-xs font-black text-gray-900 dark:text-white uppercase tracking-tighter block">
+                          {{ state === 'quantity' ? 'Show Stock Quantity' : state === 'text' ? 'Show Stock With Text Only' : 'Hide Stock' }}
+                       </span>
+                    </div>
+                 </label>
+              </div>
+
+              <div class="mt-4 p-4 bg-orange-50/30 dark:bg-orange-900/10 rounded-xl border border-orange-100 dark:border-orange-900/20">
+                 <label class="block text-[10px] font-black text-orange-600 dark:text-orange-400 uppercase tracking-widest mb-1.5">Low Stock Quantity Warning</label>
+                 <input v-model="form.low_stock_warning_qty" type="number" class="w-full px-4 py-2 bg-white dark:bg-slate-900 border border-orange-200 dark:border-orange-800 rounded-lg focus:ring-2 focus:ring-orange-500/20 outline-none text-sm font-bold" />
+              </div>
+           </div>
         </div>
 
         <!-- Product Discount -->
@@ -627,6 +765,15 @@
 
       </div>
     </form>
+
+    <!-- Media Library Component -->
+    <AppMediaLibrary 
+      :show="showMediaModal"
+      :multiple="mediaModalMode === 'gallery'"
+      :type-label="mediaModalMode === 'gallery' ? 'Gallery' : 'Selection'"
+      @close="showMediaModal = false"
+      @select="handleMediaSelection"
+    />
   </div>
 </template>
 
@@ -648,7 +795,8 @@ import {
   Pencil,
   ExternalLink,
   ListChecks,
-  GripVertical
+  GripVertical,
+  Library
 } from 'lucide-vue-next'
 import AppRichEditor from '~/components/AppRichEditor.vue'
 import AppSearchSelect from '~/components/AppSearchSelect.vue'
@@ -665,7 +813,7 @@ definePageMeta({
 const route = useRoute()
 const config = useRuntimeConfig()
 const auth = useAuthStore()
-const { getAll, createItem, getById, deleteItem } = useCrud()
+const { getAll, createItem, getById, deleteItem, updateItem } = useCrud()
 import { toast } from 'vue-sonner';
 // Determine if we are in List View (Status) or Edit View (ID)
 const isListView = computed(() => ['published', 'draft', 'pending'].includes(route.params.id))
@@ -680,6 +828,145 @@ const selectedCategory = ref('')
 // Get status from route or default to null
 const activeStatus = computed(() => isListView.value ? route.params.id : null)
 const selectedItems = ref([])
+
+// Variant State
+const productAttributesList = ref([])
+const selectedAttributesConfig = ref([
+    { attribute_id: '', value_ids: [] }
+])
+const generatedVariants = ref([])
+
+// Media Modal State
+const showMediaModal = ref(false)
+const mediaModalMode = ref('thumbnail') // 'thumbnail', 'gallery', 'variant'
+const targetVariantIndex = ref(null)
+
+const openMediaLibrary = (mode, index = null) => {
+    mediaModalMode.value = mode
+    targetVariantIndex.value = index
+    showMediaModal.value = true
+}
+
+const handleMediaSelection = (selection) => {
+    // Helper: normalise a single file object's URL
+    const getUrl = (file) => file.file_url || file.preview || file.path || ''
+
+    if (mediaModalMode.value === 'thumbnail') {
+        // Single selection for thumbnail
+        const file = Array.isArray(selection) ? selection[0] : selection
+        if (file) {
+            form.value.image = getUrl(file)
+            thumbnailPreview.value = getUrl(file)
+        }
+    } else if (mediaModalMode.value === 'gallery') {
+        // Multiple selections for gallery
+        const selections = Array.isArray(selection) ? selection : [selection]
+        selections.forEach(file => {
+            const url = getUrl(file)
+            if (url && !galleryItems.value.find(item => item.value === url)) {
+                galleryItems.value.push({
+                    id: file.id,
+                    source: 'existing',
+                    value: url,
+                    preview: url
+                })
+            }
+        })
+    } else if (mediaModalMode.value === 'variant' && targetVariantIndex.value !== null) {
+        // Single selection for variant image
+        const file = Array.isArray(selection) ? selection[0] : selection
+        const variant = generatedVariants.value[targetVariantIndex.value]
+        if (variant && file) {
+            variant.imagePath = getUrl(file)
+            variant.imagePreview = getUrl(file)
+        }
+    }
+}
+
+const removeVariantImage = (vIdx) => {
+    const variant = generatedVariants.value[vIdx]
+    if (variant) {
+        variant.imagePath = null
+        variant.imagePreview = null
+        variant.imageFile = null
+    }
+}
+
+const generateRandomSku = () => {
+    const prefix = form.value.name ? form.value.name.substring(0, 3).toUpperCase() : 'PROD'
+    const random = Math.random().toString(36).substring(2, 7).toUpperCase()
+    const datePart = new Date().toISOString().slice(2, 4) + new Date().toISOString().slice(5, 7)
+    form.value.sku = `${prefix}-${datePart}-${random}`
+}
+
+const addAttributeLine = () => {
+    selectedAttributesConfig.value.push({
+        attribute_id: '',
+        value_ids: []
+    })
+}
+
+const removeAttributeLine = (index) => {
+    selectedAttributesConfig.value.splice(index, 1)
+    generateCombinations()
+}
+
+const generateCombinations = () => {
+    // Get valid sets of values
+    const validGroupings = selectedAttributesConfig.value
+        .filter(conf => conf.attribute_id && conf.value_ids.length > 0)
+        .map(conf => {
+            const attrObj = productAttributesList.value.find(a => a.id === conf.attribute_id);
+            return conf.value_ids.map(valId => {
+                const valObj = attrObj.values.find(v => v.id === valId);
+                return {
+                    id: valId,
+                    value: valObj ? valObj.value : '',
+                    meta: valObj ? valObj.meta : '',
+                    attribute_name: attrObj.name,
+                    attribute_id: attrObj.id
+                };
+            });
+        });
+
+    if (validGroupings.length === 0) {
+        generatedVariants.value = [];
+        return;
+    }
+
+    const combinations = validGroupings.reduce((acc, current) => {
+        const temp = [];
+        acc.forEach(a => {
+            current.forEach(c => {
+                temp.push([...a, c]);
+            });
+        });
+        return temp;
+    }, [[]]);
+
+    // Map to variants keeping old data if possible
+    generatedVariants.value = combinations.map(combo => {
+        const comboKey = combo.map(c => c.id).sort().join('-');
+        
+        // Match by comboKey (attributes)
+        const existing = generatedVariants.value.find(v => v._key === comboKey);
+        
+        return {
+            _key: comboKey,
+            id: existing ? existing.id : null,
+            attributes: combo,
+            sku: existing ? existing.sku : form.value.sku ? `${form.value.sku}-${combo.map(c => c.value).join('-')}` : null,
+            price: existing ? existing.price : form.value.sale_price,
+            stock_qty: existing ? existing.stock_qty : form.value.stock_qty || 0,
+            imagePath: existing ? existing.imagePath : null,
+            imagePreview: existing ? existing.imagePreview : null,
+            is_active: existing ? existing.is_active : true
+        };
+    });
+}
+
+// Watch config structure to regenerate smartly
+watch(() => selectedAttributesConfig.value, () => generateCombinations(), { deep: true })
 
 const tabs = [
   { label: 'All Products', value: 'all' },
@@ -779,6 +1066,7 @@ const form = ref({
   sale_price: '',
   discount_price: '',
   stock_qty: '',
+  weight: '',
   has_variants: false,
   is_featured: false,
   is_special: false,
@@ -800,7 +1088,9 @@ const form = ref({
   faqs: [],
   key_features: [],
   specifications: [],
-  is_active: false
+  is_active: false,
+  stock_visibility_state: 'quantity',
+  low_stock_warning_qty: 1
 })
 
 // File state
@@ -830,10 +1120,11 @@ const fetchData = async () => {
 
     try {
         isLoading.value = true
-        const [categoriesRes, brandsRes, unitsRes, productRes] = await Promise.all([
+        const [categoriesRes, brandsRes, unitsRes, attributesRes, productRes] = await Promise.all([
              getAll('/vendor/attributes/categories'),
              getAll('/vendor/attributes/brands'),
              getAll('/vendor/attributes/units'),
+             getAll('/vendor/product-attributes'),
              getById('/vendor/products', route.params.id)
         ])
 
@@ -847,6 +1138,8 @@ const fetchData = async () => {
         }
         if (brandsRes && brandsRes.data) brands.value = brandsRes.data
         if (unitsRes && unitsRes.data) units.value = unitsRes.data
+        if (attributesRes && attributesRes.data) productAttributesList.value = attributesRes.data
+        else if (Array.isArray(attributesRes)) productAttributesList.value = attributesRes
 
         // Product Hydration
         if (productRes) {
@@ -930,9 +1223,58 @@ const fetchData = async () => {
                localSpecificationGroups.value = [{ title: 'Key Features', items: [{ label: '', value: '' }] }]
             }
 
-           // Previews
-           if (productRes.image) thumbnailPreview.value = productRes.image
-           if (productRes.gallery) {
+            // Previews
+            if (productRes.image) thumbnailPreview.value = productRes.image
+            
+            // Hydrate Variants Configuration
+            if (productRes.variants && productRes.variants.length > 0) {
+                const usedAttributeIds = new Set();
+                productRes.variants.forEach(v => {
+                    v.attributes.forEach(a => usedAttributeIds.add(a.attribute.id));
+                });
+
+                selectedAttributesConfig.value = Array.from(usedAttributeIds).map(attrId => {
+                    const values = new Set();
+                    productRes.variants.forEach(v => {
+                        v.attributes.forEach(a => {
+                            if (a.attribute.id === attrId) values.add(a.id);
+                        });
+                    });
+                    return {
+                        attribute_id: attrId,
+                        value_ids: Array.from(values)
+                    };
+                });
+
+                // Hydrate Generated Variants
+                generatedVariants.value = productRes.variants.map(v => {
+                    const combo = v.attributes.map(a => ({
+                        id: a.id,
+                        value: a.value,
+                        meta: a.meta,
+                        attribute_name: a.attribute.name,
+                        attribute_id: a.attribute.id
+                    }));
+                    const comboKey = combo.map(c => c.id).sort().join('-');
+                    return {
+                        _key: comboKey,
+                        id: v.id,
+                        attributes: combo,
+                        sku: v.sku,
+                        price: v.price,
+                        stock_qty: v.stock_qty,
+                        imagePath: v.image,
+                        imagePreview: v.image,
+                        is_active: !!v.is_active
+                    };
+                });
+            }
+
+            // Hydrate new fields
+            form.value.stock_visibility_state = productRes.stock_visibility_state || 'quantity'
+            form.value.low_stock_warning_qty = productRes.low_stock_warning_qty || 1
+
+            if (productRes.gallery) {
               const gallery = Array.isArray(productRes.gallery) ? productRes.gallery : []
               galleryItems.value = gallery.map(url => ({
                  id: Math.random().toString(36).substr(2, 9),
@@ -966,17 +1308,7 @@ const handleThumbnailUpload = (event) => {
 }
 
 const handleGalleryUpload = (event) => {
-   const files = Array.from(event.target.files)
-   const newFiles = files.slice(0, 10 - galleryItems.value.length) 
-   
-   newFiles.forEach(file => {
-      galleryItems.value.push({
-         id: Math.random().toString(36).substr(2, 9),
-         source: 'upload',
-         file: file,
-         preview: URL.createObjectURL(file)
-      })
-   })
+   // Legacy - handled by Media Library
 }
 
 const removeGalleryImage = (index) => {
@@ -1126,8 +1458,12 @@ const updateProduct = async () => {
   
   // Append basic fields
   Object.keys(form.value).forEach(key => {
-      if (key === 'faqs' || key === 'category_ids') return
+      if (key === 'faqs' || key === 'category_ids' || key === 'specifications' || key === 'key_features') return
       let value = form.value[key]
+      
+      // Handle SKU nullability
+      if (key === 'sku' && !value) value = null
+      
       if (typeof value === 'boolean') value = value ? 1 : 0
       if (value !== null && value !== undefined) formData.append(key, value)
   })
@@ -1171,9 +1507,28 @@ const updateProduct = async () => {
 
   try {
     useUtilityStore.isEdit = true
-     await createItem('/vendor/products', formData, route.params.id)
-     useUtilityStore.isEdit = false
-     route.push('/vendor/products')
+    
+    // Prepare Variants for submission
+    const cleanVariants = generatedVariants.value.map((v, index) => {
+        // Handle images (same logic as create.vue)
+        if (v.imageFile) {
+            formData.append(`variants_image_${index}`, v.imageFile)
+        }
+        return {
+            id: v.id, // Include ID for existing variants
+            sku: v.sku || null,
+            price: v.price,
+            stock_qty: v.stock_qty,
+            is_active: v.is_active,
+            image: v.imagePath || null,
+            attributes: v.attributes.map(attr => attr.id)
+        }
+    })
+    formData.append('variants', JSON.stringify(cleanVariants))
+
+    await updateItem(`/vendor/products/${route.params.id}`, formData)
+    useUtilityStore.isEdit = false
+    navigateTo('/vendor/products')
   } catch (error) {
      console.error('Error updating product:', error)
   }

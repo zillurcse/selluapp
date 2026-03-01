@@ -83,13 +83,15 @@ class CheckoutController extends Controller
             'first_name' => 'required|string',
             'last_name' => 'required|string',
             'address' => 'required|string',
-            'city' => 'required|string',
-            'postal_code' => 'required|string',
+            'city_id' => 'required|exists:cities,id',
+            'postal_code' => 'nullable|string',
             'payment_method' => 'required|string',
             'items' => 'required|array|min:1',
             'items.*.id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|integer|min:1',
         ]);
+
+        $city = \App\Models\City::findOrFail($validated['city_id']);
 
         DB::beginTransaction();
         try {
@@ -130,7 +132,7 @@ class CheckoutController extends Controller
                     $subtotal += $price * $vi['quantity'];
                 }
 
-                $shippingCost = !$shippingApplied ? 15.00 : 0.00; // Charge shipping only once
+                $shippingCost = !$shippingApplied ? (float)$city->cost : 0.00; // Charge shipping only once
                 $shippingApplied = true;
                 
                 $totalAmount = $subtotal + $shippingCost;
@@ -180,8 +182,9 @@ class CheckoutController extends Controller
                         'last_name' => $validated['last_name'],
                         'email' => $validated['email'],
                         'address' => $validated['address'],
-                        'city' => $validated['city'],
-                        'postal_code' => $validated['postal_code'],
+                        'city' => $city->name,
+                        'city_id' => $city->id,
+                        'postal_code' => $validated['postal_code'] ?? '',
                     ]),
                 ]);
 

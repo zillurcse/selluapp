@@ -59,9 +59,32 @@
                   <label class="block text-sm font-medium text-gray-700 mb-1.5">Address</label>
                   <input v-model="form.address" type="text" placeholder="Street address, apartment, suite, etc." class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black focus:border-transparent text-sm transition-shadow" />
                 </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1.5">City</label>
-                  <input v-model="form.city" type="text" class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black focus:border-transparent text-sm transition-shadow" />
+                <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+                  <div class="relative z-[60]">
+                    <AppSearchSelect 
+                      v-model="form.state_id" 
+                      :items="states"
+                      label="State / Division"
+                      placeholder="Select State"
+                      @update:modelValue="handleStateChange"
+                      class="!border-gray-300"
+                    />
+                  </div>
+                  <div class="relative z-[50]">
+                    <AppSearchSelect 
+                      v-model="form.city_id" 
+                      :items="cities"
+                      label="City / Area"
+                      :placeholder="loadingCities ? 'Loading...' : 'Select City'"
+                      :disabled="!form.state_id || loadingCities"
+                      @update:modelValue="handleCityChange"
+                      class="!border-gray-300"
+                    />
+                  </div>
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700 mb-1.5">Full Address</label>
+                  <textarea v-model="form.address" rows="2" placeholder="House #, Road #, Area details..." class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black focus:border-transparent text-sm transition-shadow reseize-none"></textarea>
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1.5">Postal Code</label>
@@ -166,8 +189,8 @@
                 <span class="font-medium text-gray-900">${{ cartTotal.toFixed(2) }}</span>
               </div>
               <div class="flex justify-between text-sm text-gray-600">
-                <span>Shipping</span>
-                <span class="font-medium text-gray-900">$15.00</span>
+                <span>Estimated Shipping</span>
+                <span class="font-medium text-gray-900">{{ `৳${shippingCost.toFixed(2)}` }}</span>
               </div>
               <div class="flex justify-between text-sm text-gray-600">
                 <span>Taxes</span>
@@ -178,8 +201,8 @@
             <div class="flex justify-between items-end pt-6 mt-6 border-t border-gray-100">
               <span class="text-base font-semibold text-gray-900">Total</span>
               <div class="text-right">
-                <span class="text-xs text-gray-500 font-medium mr-2">USD</span>
-                <span class="text-2xl font-bold text-gray-900">${{ (cartTotal + 15).toFixed(2) }}</span>
+                <span class="text-xs text-gray-500 font-medium mr-2">BDT</span>
+                <span class="text-2xl font-bold text-gray-900">৳{{ (cartTotal + shippingCost).toFixed(2) }}</span>
               </div>
             </div>
 
@@ -192,7 +215,7 @@
                 <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                 Processing...
               </span>
-              <span v-else>Pay ${{ (cartTotal + 15).toFixed(2) }}</span>
+              <span v-else>Place Order - ৳{{ (cartTotal + shippingCost).toFixed(2) }}</span>
             </button>
             
             <div class="mt-6 flex items-center justify-center gap-2 text-xs text-gray-500">
@@ -208,6 +231,7 @@
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
+import AppSearchSelect from '~/components/AppSearchSelect.vue'
 const { cart, cartTotal } = useCart()
 const authStore = useAuthStore()
 const router = useRouter()
@@ -223,12 +247,86 @@ const form = ref({
   first_name: '',
   last_name: '',
   address: '',
-  city: '',
+  state_id: '',
+  city_id: '',
+  city_name: '',
   postal_code: '',
   card_number: '',
   expiry_date: '',
   cvc: ''
 })
+
+const states = ref([])
+const cities = ref([])
+const loadingCities = ref(false)
+const shippingCost = ref(0)
+const selectedCity = ref(null)
+
+const fetchStates = async () => {
+  try {
+    const response = await $fetch(`${config.public.apiBase}/storefront/states`)
+    if (response.success) {
+      states.value = response.data
+    }
+  } catch (error) {
+    console.error('Failed to fetch states:', error)
+  }
+}
+
+const fetchCities = async (stateId) => {
+  if (!stateId) return
+  loadingCities.value = true
+  try {
+    const response = await $fetch(`${config.public.apiBase}/storefront/cities`, {
+      params: { state_id: stateId }
+    })
+    if (response.success) {
+      cities.value = response.data
+    }
+  } catch (error) {
+    console.error('Failed to fetch cities:', error)
+  } finally {
+    loadingCities.value = false
+  }
+}
+
+const handleStateChange = () => {
+  form.value.city_id = ''
+  selectedCity.value = null
+  shippingCost.value = 0
+  fetchCities(form.value.state_id)
+}
+
+const handleCityChange = async () => {
+  const city = cities.value.find(c => c.id === form.value.city_id)
+  if (city) {
+    selectedCity.value = city
+    form.value.city_name = city.name
+    
+    // Fetch estimated shipping cost from backend
+    try {
+      const response = await $fetch(`${config.public.apiBase}/checkout/estimate-shipping`, {
+        method: 'POST',
+        body: { 
+          city_id: city.id,
+          items: cart.value
+        }
+      })
+      if (response.status === 1) {
+        shippingCost.value = response.cost
+      } else {
+        // Fallback to local cost if API fails or returns error
+        shippingCost.value = parseFloat(city.cost || 0)
+      }
+    } catch (error) {
+      console.error('Failed to estimate shipping:', error)
+      shippingCost.value = parseFloat(city.cost || 0)
+    }
+  } else {
+    selectedCity.value = null
+    shippingCost.value = 0
+  }
+}
 
 const isValidCreditCardSelected = computed(() => {
   const selected = gateways.value.find(g => g.slug === paymentMethod.value)
@@ -274,6 +372,7 @@ onMounted(() => {
   }
   
   fetchGateways()
+  fetchStates()
 })
 
 const placeOrder = async () => {

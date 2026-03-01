@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\ShopSetting;
+use App\Models\Cart;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class StorefrontController extends Controller
@@ -438,6 +440,34 @@ class StorefrontController extends Controller
         ]);
     }
 
+    public function states(Request $request)
+    {
+        $tenantId = $this->resolveTenantId($request);
+        $states = \App\Models\State::where('status', true);
+        if ($tenantId) {
+            // If you want to limit states per vendor, you'd add logic here.
+            // For now, we return all active states.
+        }
+        return response()->json(['success' => true, 'data' => $states->get()]);
+    }
+
+    public function cities(Request $request)
+    {
+        $tenantId = $this->resolveTenantId($request);
+        $query = \App\Models\City::where('status', true);
+        
+        if ($request->filled('state_id')) {
+            $query->where('state_id', $request->state_id);
+        }
+
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
+
+        $cities = $query->get();
+        return response()->json(['success' => true, 'data' => $cities]);
+    }
+
     private function formatProducts($products)
     {
         foreach ($products as $product) {
@@ -466,6 +496,65 @@ class StorefrontController extends Controller
                 $variant->image_url = $variant->image ? Storage::disk('public')->url($variant->image) : null;
             }
         }
+    }
+
+    public function estimateShipping(Request $request)
+    {
+        $city_id = $request->city_id;
+        $userId = Auth::check() ? Auth::id() : null;
+        $tempUserId = Auth::check() ? null : ($request->header('X-Temp-User-Id') ?? session('temp_user_id'));
+
+        \Log::info("estimateShipping called. CityID: {$city_id}, Items count: " . (is_array($request->items) ? count($request->items) : 0));
+
+        // If items are passed directly (for guest checkout or unsynced cart), use them
+        if ($request->has('items') && is_array($request->items)) {
+            $rawItems = $request->items;
+            $carts = collect();
+            foreach ($rawItems as $item) {
+                $carts->push([
+                    'product_id' => $item['id'] ?? $item['product_id'],
+                    'quantity' => $item['quantity'],
+                    'id' => $item['id'] ?? 0
+                ]);
+            }
+        } else {
+            $carts = Cart::where(function ($query) use ($userId, $tempUserId) {
+                if ($userId) {
+                    $query->where('user_id', $userId);
+                } elseif ($tempUserId) {
+                    $query->where('temp_user_id', $tempUserId);
+                } else {
+                    $query->where('temp_user_id', '___NON_EXISTENT___'); // Avoid matching nulls
+                }
+            })->active()->get();
+        }
+
+        \Log::info("Carts to process: " . ($carts ? $carts->count() : 0));
+
+        if (!$carts || $carts->isEmpty()) {
+            return response()->json(['status' => 0, 'cost' => 0, 'message' => 'Cart empty']);
+        }
+
+        $shipping_info = ['country_id' => 1, 'city_id' => $city_id];
+        $total_shipping = 0;
+
+        foreach ($carts as $key => $cartItem) {
+            $cost = getShippingCost($carts, $key, $shipping_info);
+            $total_shipping += $cost;
+            // Only update DB if it's a real model
+            if ($cartItem instanceof \Illuminate\Database\Eloquent\Model) {
+                $cartItem['shipping_cost'] = $cost;
+                $cartItem->save();
+            }
+        }
+
+        \Log::info("Total calculation result: $total_shipping");
+
+        return response()->json([
+            'status'    => 1,
+            'cost'      => (float)$total_shipping,
+            'formatted' => format_price(convert_price($total_shipping)),
+        ]);
     }
 }
 

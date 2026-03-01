@@ -32,6 +32,9 @@ class Order extends Model
         'risk_flags',
         'requires_manual_review',
         'notes',
+        'courier_name',
+        'courier_order_id',
+        'courier_status',
     ];
 
     protected $casts = [

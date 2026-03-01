@@ -50,6 +50,9 @@ class Product extends Model
         'faqs',
         'specifications',
         'is_active',
+        'weight',
+        'stock_visibility_state',
+        'low_stock_warning_qty',
     ];
 
     protected $casts = [

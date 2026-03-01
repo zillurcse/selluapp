@@ -8,6 +8,9 @@ use App\Http\Controllers\AuthController;
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
+Route::post('/webhooks/steadfast', [App\Http\Controllers\Vendor\CourierController::class, 'steadfastWebhook']);
+
+
 
 // Public Storefront Routes
 Route::get('/storefront', [StorefrontController::class, 'index']);
@@ -18,6 +21,11 @@ Route::get('/storefront/vendors/{slug}', [StorefrontController::class, 'vendor']
 Route::get('/storefront/categories', function () {
     return \App\Models\Category::where('is_active', true)->whereNull('parent_id')->get();
 });
+Route::get('/storefront/states', [StorefrontController::class, 'states']);
+Route::get('/storefront/cities', [StorefrontController::class, 'cities']);
+
+Route::post('/checkout/estimate-shipping', [StorefrontController::class, 'estimateShipping']);
+
 
 Route::middleware('auth:sanctum')->group(function () {
 
@@ -142,9 +150,32 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('fraud-checks/settings', [App\Http\Controllers\Vendor\FraudCheckController::class, 'updateSetting']);
         Route::post('fraud-checks/{id}/action', [App\Http\Controllers\Vendor\FraudCheckController::class, 'action']);
 
+        // Shipping Areas
+        Route::apiResource('countries', App\Http\Controllers\Vendor\CountryController::class);
+        Route::apiResource('states', App\Http\Controllers\Vendor\StateController::class);
+        Route::get('all-countries', [App\Http\Controllers\Vendor\StateController::class, 'get_countries']);
+        Route::apiResource('cities', App\Http\Controllers\Vendor\CityController::class);
+        Route::get('all-states', [App\Http\Controllers\Vendor\CityController::class, 'get_states']);
+
+        Route::get('/pathao/bulk-sync', [App\Http\Controllers\Vendor\CityController::class, 'syncPathaoLocations']);
+
         // Shop Delivery
         Route::get('delivery', [App\Http\Controllers\Vendor\DeliveryController::class, 'index']);
         Route::post('delivery', [App\Http\Controllers\Vendor\DeliveryController::class, 'store']);
+
+        // Courier Routes
+        Route::controller(App\Http\Controllers\Vendor\CourierController::class)->prefix('couriers')->group(function () {
+            Route::get('/', 'index');
+            Route::post('/update', 'update');
+            Route::post('/send-to-pathao', 'sendToPathao');
+            Route::post('/send-to-steadfast', 'sendToSteadfast');
+            Route::get('/update-status/{id}', 'updateStatus');
+            Route::get('/pathao/cities', 'getPathaoCities');
+            Route::get('/pathao/zones/{city_id}', 'getPathaoZones');
+            Route::get('/pathao/areas/{zone_id}', 'getPathaoAreas');
+            Route::get('/pathao/bulk-sync', 'syncPathaoLocations');
+        });
+
 
         // Orders
         Route::apiResource('orders', App\Http\Controllers\Vendor\OrderController::class);
@@ -243,6 +274,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Staff Management
         Route::apiResource('staff', App\Http\Controllers\Vendor\VendorStaffController::class);
+
+        // Media Library
+        Route::apiResource('media', App\Http\Controllers\Vendor\UploadController::class);
 
         // Packages
         Route::get('packages', [App\Http\Controllers\Vendor\PackageController::class, 'index']);

@@ -16,11 +16,18 @@ export function useApiFetch<T>(
       const tokenStore = useTokenStore();
       const token = tokenStore.token;
 
-      if (token) {
-        options.headers = options.headers || {};
-        if (options.headers instanceof Headers) {
+      const storefrontStore = useStorefrontStore();
+      const vendorId = storefrontStore.vendorProfile?.user_id;
+
+      options.headers = options.headers || {};
+      if (options.headers instanceof Headers) {
+        options.headers.set("X-Vendor-Id", vendorId.toString());
+        if (token) {
           options.headers.set("Authorization", `Bearer ${token}`);
-        } else {
+        }
+      } else {
+        (options.headers as any)["X-Vendor-Id"] = vendorId.toString();
+        if (token) {
           (options.headers as any).Authorization = `Bearer ${token}`;
         }
       }

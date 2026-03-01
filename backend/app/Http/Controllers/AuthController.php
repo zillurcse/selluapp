@@ -22,6 +22,7 @@ class AuthController extends Controller
             'password' => 'required|string|min:8|confirmed',
         ]);
 
+
         $vendorId = $request->header('X-Vendor-Id') ?? 5; // Use header or fallback
 
         $customer = Customer::create([
@@ -32,9 +33,13 @@ class AuthController extends Controller
             'phone' => $request->phone,
         ]);
 
+        if (!$customer) {
+            return response()->json(['message' => 'Failed to create customer'], 500);
+        }
         $user = User::create([
-            'name' => $request->first_name . ' ' . $request->last_name,
-            'email' => $request->email,
+            'name' => $customer->first_name . ' ' . $customer->last_name,
+            'email' => $customer->email,
+            'vendor_id' => $vendorId,
             'password' => Hash::make($request->password),
         ]);
 

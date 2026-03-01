@@ -58,10 +58,14 @@ export const useAuthStore = defineStore("auth", () => {
     if (!tokenStore.getToken) return;
 
     try {
+      const storefrontStore = useStorefrontStore();
+      const vendorId = storefrontStore.vendorProfile?.user_id || 5;
+
       const data = await $fetch<any>(`${config.public.apiBase}/user`, {
         headers: {
           Accept: "application/json",
           Authorization: `Bearer ${tokenStore.getToken}`,
+          "X-Vendor-Id": vendorId.toString(),
         }
       });
       if (data) {
@@ -92,9 +96,15 @@ export const useAuthStore = defineStore("auth", () => {
 
     try {
       utilityStore.isLoading = true;
+      const storefrontStore = useStorefrontStore();
+      const vendorId = storefrontStore.vendorProfile?.user_id || 5;
+
       const res: any = await $fetch(`${config.public.apiBase}/login`, {
         method: "POST",
         body: form,
+        headers: {
+          "X-Vendor-Id": vendorId.toString(),
+        }
       });
 
       const token = res.access_token || res.token;
@@ -134,9 +144,15 @@ export const useAuthStore = defineStore("auth", () => {
 
     try {
       utilityStore.isLoading = true;
+      const storefrontStore = useStorefrontStore();
+      const vendorId = storefrontStore.vendorProfile?.user_id || 5;
+
       const res: any = await $fetch(`${config.public.apiBase}/register`, {
         method: "POST",
         body: form,
+        headers: {
+          "X-Vendor-Id": vendorId.toString(),
+        }
       });
 
       const token = res.access_token || res.token;
@@ -186,10 +202,14 @@ export const useAuthStore = defineStore("auth", () => {
 
     // 2. Inform server in background (non-blocking)
     if (token) {
+      const storefrontStore = useStorefrontStore();
+      const vendorId = storefrontStore.vendorProfile?.user_id || 5;
+
       $fetch(`${config.public.apiBase}/logout`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
+          "X-Vendor-Id": vendorId.toString(),
         },
       }).catch((error) => {
         console.error("Logout API error (background):", error);

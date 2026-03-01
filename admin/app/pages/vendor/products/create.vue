@@ -37,8 +37,13 @@
           <h2 class="text-lg font-medium text-gray-900 dark:text-white mb-6">Inventory Codes</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">SKU <span class="text-red-500">*</span></label>
-              <input v-model="form.sku" type="text" placeholder="Ex: UORLA-14464" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white" required />
+              <label class="text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5 flex justify-between items-center">
+                 <span>SKU <span class="text-red-500">*</span></span>
+                 <button @click="generateSKU" type="button" class="text-xs font-bold text-primary-600 dark:text-primary-400 hover:text-primary-700 hover:underline transition-all flex items-center">
+                   <RefreshCw class="w-3 h-3 mr-1" /> Generate SKU
+                 </button>
+              </label>
+              <input v-model="form.sku" type="text" placeholder="Ex: UORLA-14464" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white uppercase" required />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Product Code <span class="text-red-500">*</span></label>
@@ -108,6 +113,13 @@
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Stock Qty <span class="text-red-500">*</span></label>
                 <input v-model="form.stock_qty" type="number" placeholder="0" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white" required />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Weight (kg)</label>
+                <div class="relative">
+                    <input v-model="form.weight" type="number" step="0.01" min="0" placeholder="0.00" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white pr-10" />
+                    <span class="absolute right-3 top-2.5 text-gray-400 dark:text-slate-500 text-xs font-semibold">kg</span>
+                </div>
               </div>
            </div>
            
@@ -199,15 +211,14 @@
                                   <input type="text" v-model="variant.sku" class="w-full px-2 py-1.5 border border-gray-200 dark:border-slate-600 rounded bg-transparent focus:ring-1 focus:ring-primary-500 outline-none" placeholder="SKU">
                               </td>
                               <td class="px-4 py-3">
-                                  <div class="flex items-center space-x-2">
-                                     <div v-if="variant.imagePreview" class="relative group w-8 h-8 rounded border border-gray-200 dark:border-slate-600 overflow-hidden">
-                                         <img :src="variant.imagePreview" class="w-full h-full object-cover">
-                                     </div>
-                                     <label class="cursor-pointer text-gray-400 hover:text-primary-500 transition-colors">
-                                         <UploadCloud class="w-5 h-5"/>
-                                         <input type="file" @change="handleVariantImage($event, idx)" class="hidden" accept="image/*">
-                                     </label>
-                                  </div>
+                                   <div class="flex items-center space-x-2">
+                                      <div v-if="variant.imagePreview" class="relative group w-8 h-8 rounded border border-gray-200 dark:border-slate-600 overflow-hidden shadow-sm">
+                                          <img :src="variant.imagePreview" class="w-full h-full object-cover">
+                                      </div>
+                                      <button @click="openMediaLibrary('variant', idx)" type="button" class="text-gray-400 hover:text-primary-500 transition-colors p-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg">
+                                          <UploadCloud class="w-5 h-5"/>
+                                      </button>
+                                   </div>
                               </td>
                               <td class="px-4 py-3 text-center">
                                   <input type="checkbox" v-model="variant.is_active" class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600">
@@ -237,35 +248,39 @@
                   <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                      <!-- Thumbnail -->
                      <div class="col-span-1">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Thumbnail (Max 2MB | 400x400)</label>
-                        <div class="border-2 border-dashed border-gray-200 dark:border-slate-700 hover:border-primary-400 dark:hover:border-primary-500 bg-gray-50/50 dark:bg-slate-800/50 hover:bg-primary-50/10 dark:hover:bg-primary-900/10 rounded-xl h-64 flex flex-col items-center justify-center transition-all cursor-pointer relative overflow-hidden group">
-                           <input type="file" @change="handleThumbnailUpload" class="absolute inset-0 opacity-0 cursor-pointer z-10" accept="image/*" />
-                           <div v-if="thumbnailPreview" class="absolute inset-0 w-full h-full p-2">
-                              <img :src="thumbnailPreview" class="w-full h-full object-cover rounded-lg shadow-sm" />
-                              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg m-2">
-                                <span class="text-white text-sm font-medium">Change Image</span>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Thumbnail (Max 5MB)</label>
+                        <div 
+                          @click="openMediaLibrary('thumbnail')"
+                          class="border-2 border-dashed border-gray-200 dark:border-slate-700 hover:border-primary-400 dark:hover:border-primary-500 bg-gray-50/50 dark:bg-slate-800/50 hover:bg-primary-50/10 dark:hover:bg-primary-900/10 rounded-2xl h-64 flex flex-col items-center justify-center transition-all cursor-pointer relative overflow-hidden group shadow-sm"
+                        >
+                           <div v-if="thumbnailPreview" class="absolute inset-0 w-full h-full p-2 animate-in fade-in duration-300">
+                              <img :src="thumbnailPreview" class="w-full h-full object-cover rounded-xl shadow-md" />
+                              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-xl m-2">
+                                <span class="text-white text-[10px] font-black uppercase tracking-widest bg-primary-600 px-4 py-2 rounded-lg shadow-lg">Change Image</span>
                               </div>
                            </div>
                            <div v-else class="text-center p-6">
-                              <div class="w-12 h-12 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center mx-auto mb-3 group-hover:bg-primary-100 dark:group-hover:bg-primary-900/50 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
-                                <UploadCloud class="w-6 h-6 text-gray-400 dark:text-slate-500 group-hover:text-primary-500 dark:group-hover:text-primary-400" />
+                              <div class="w-16 h-16 rounded-2xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center mx-auto mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                                <UploadCloud class="w-8 h-8 text-primary-500" />
                               </div>
-                              <span class="text-sm font-medium text-gray-600 dark:text-slate-400 block mb-1">Click to Upload</span>
-                              <span class="text-xs text-gray-400 dark:text-slate-500">SVG, PNG, JPG or GIF</span>
+                              <span class="text-xs font-black text-gray-900 dark:text-white block mb-1 uppercase tracking-tight">Select from Gallery</span>
+                              <span class="text-[10px] text-gray-400 dark:text-slate-500 font-bold uppercase">400x400 Recommended</span>
                            </div>
                         </div>
                      </div>
                      <!-- Gallery -->
                      <div class="col-span-1 md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Gallery Images (Max 2MB per image)</label>
-                         <div class="border-2 border-dashed border-gray-200 dark:border-slate-700 hover:border-primary-400 dark:hover:border-primary-500 bg-gray-50/50 dark:bg-slate-800/50 hover:bg-primary-50/10 dark:hover:bg-primary-900/10 rounded-xl h-64 flex flex-col items-center justify-center transition-all cursor-pointer relative overflow-hidden group">
-                           <input type="file" @change="handleGalleryUpload" multiple class="absolute inset-0 opacity-0 cursor-pointer z-10" accept="image/*" />
+                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Gallery Images (Max 10 Images)</label>
+                         <div 
+                           @click="openMediaLibrary('gallery')"
+                           class="border-2 border-dashed border-gray-200 dark:border-slate-700 hover:border-primary-400 dark:hover:border-primary-500 bg-gray-50/50 dark:bg-slate-800/50 hover:bg-primary-50/10 dark:hover:bg-primary-900/10 rounded-2xl h-64 flex flex-col items-center justify-center transition-all cursor-pointer relative overflow-hidden group shadow-sm"
+                         >
                            <div class="text-center p-6">
-                              <div class="w-12 h-12 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center mx-auto mb-3 group-hover:bg-primary-100 dark:group-hover:bg-primary-900/50 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
-                                <UploadCloud class="w-6 h-6 text-gray-400 dark:text-slate-500 group-hover:text-primary-500 dark:group-hover:text-primary-400" />
+                              <div class="w-16 h-16 rounded-2xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center mx-auto mb-4 group-hover:scale-110 group-hover:-rotate-3 transition-all duration-300">
+                                <Library class="w-8 h-8 text-primary-500" />
                               </div>
-                              <span class="text-sm font-medium text-gray-600 dark:text-slate-400 block mb-1">Click here to select images</span>
-                              <span class="text-xs text-gray-400 dark:text-slate-500">Max 2MB per image, Limit: 10 images</span>
+                              <span class="text-xs font-black text-gray-900 dark:text-white block mb-1 uppercase tracking-tight">Open Media Gallery</span>
+                              <span class="text-[10px] text-gray-400 dark:text-slate-500 font-bold uppercase">Select multiple images</span>
                            </div>
                         </div>
                         <div v-if="galleryItems.length > 0" class="mt-6">
@@ -502,7 +517,36 @@
                  </label>
               </div>
            </div>
-        </div>
+
+            <div class="mt-6 pt-5 border-t border-gray-100 dark:border-slate-800">
+               <h4 class="text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-4">Stock Visibility</h4>
+               <div class="space-y-2">
+                  <label v-for="option in [
+                    { value: 'quantity', label: 'Show Stock Quantity', desc: 'Display exact numbers' },
+                    { value: 'text_only', label: 'Text Only', desc: 'Display In-Stock/Out-of-Stock' },
+                    { value: 'hide', label: 'Hide Stock', desc: 'Hide stock level from customers' }
+                  ]" :key="option.value" 
+                  class="flex items-center p-3 rounded-xl border border-gray-100 dark:border-slate-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-all group"
+                  :class="{'border-primary-500 bg-primary-50/30 dark:bg-primary-900/10': form.stock_visibility_state === option.value}">
+                     <input type="radio" v-model="form.stock_visibility_state" :value="option.value" class="sr-only">
+                     <div class="w-4 h-4 rounded-full border-2 border-gray-300 dark:border-slate-600 flex items-center justify-center mr-3 group-hover:border-primary-400"
+                     :class="{'border-primary-500 bg-primary-500': form.stock_visibility_state === option.value}">
+                        <div v-if="form.stock_visibility_state === option.value" class="w-1.5 h-1.5 rounded-full bg-white"></div>
+                     </div>
+                     <div>
+                        <div class="text-sm font-bold text-gray-900 dark:text-white">{{ option.label }}</div>
+                        <div class="text-[10px] text-gray-400 dark:text-slate-500">{{ option.desc }}</div>
+                     </div>
+                  </label>
+               </div>
+
+               <div class="mt-4">
+                  <label class="block text-xs font-bold text-gray-500 dark:text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Low Stock Warning Qty</label>
+                  <input v-model="form.low_stock_warning_qty" type="number" min="0" placeholder="e.g. 5" class="w-full px-4 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none text-sm font-bold text-gray-900 dark:text-white transition-all shadow-sm" />
+                  <p class="mt-1 text-[10px] text-gray-400 dark:text-slate-500">Alert me when stock falls below this level.</p>
+               </div>
+            </div>
+         </div>
 
         <!-- Product Discount -->
         <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm ring-1 ring-gray-200/50 dark:ring-slate-800 p-6 transition-colors">
@@ -610,6 +654,15 @@
           </div>
        </div>
     </div>
+
+    <!-- Media Library Component -->
+    <AppMediaLibrary 
+      :show="showMediaModal"
+      :multiple="mediaModalMode === 'gallery'"
+      :type-label="mediaModalMode === 'gallery' ? 'Gallery' : 'Selection'"
+      @close="showMediaModal = false"
+      @select="handleMediaSelection"
+    />
   </div>
 </template>
 
@@ -625,10 +678,12 @@ import {
   X,
   ListChecks,
   GripVertical,
-  Trash2
+  Trash2,
+  RefreshCw
 } from 'lucide-vue-next'
 import AppRichEditor from '~/components/AppRichEditor.vue'
 import AppSearchSelect from '~/components/AppSearchSelect.vue'
+import AppMediaLibrary from '~/components/AppMediaLibrary.vue'
 
 definePageMeta({
   middleware: 'auth',
@@ -654,6 +709,41 @@ const toggleAccordion = (key) => {
   sections[key] = !sections[key]
 }
 
+// Media Library State
+const showMediaModal = ref(false)
+const mediaModalMode = ref('thumbnail') // thumbnail, gallery, variant
+const targetVariantIndex = ref(null)
+
+const openMediaLibrary = (mode, index = null) => {
+    mediaModalMode.value = mode
+    targetVariantIndex.value = index
+    showMediaModal.value = true
+}
+
+const handleMediaSelection = (selected) => {
+    if (mediaModalMode.value === 'thumbnail') {
+        thumbnailPreview.value = selected.file_url
+        form.value.image = selected.file_path
+    } else if (mediaModalMode.value === 'gallery') {
+        const newImages = Array.isArray(selected) ? selected : [selected]
+        newImages.forEach(img => {
+            if (!galleryItems.value.some(item => item.path === img.file_path)) {
+                galleryItems.value.push({
+                    id: img.id,
+                    path: img.file_path,
+                    preview: img.file_url,
+                    source: 'existing'
+                })
+            }
+        })
+    } else if (mediaModalMode.value === 'variant') {
+        if (targetVariantIndex.value !== null) {
+            generatedVariants.value[targetVariantIndex.value].imagePreview = selected.file_url
+            generatedVariants.value[targetVariantIndex.value].imagePath = selected.file_path
+        }
+    }
+}
+
 // Form Data - Using refs for files, reactive for others
 const form = ref({
   name: '',
@@ -668,6 +758,7 @@ const form = ref({
   sale_price: '',
   discount_price: '',
   stock_qty: '',
+  weight: '',
   has_variants: false,
   is_featured: false,
   is_special: false,
@@ -675,6 +766,8 @@ const form = ref({
   is_buy_one_get_one: false,
   is_preorder: false,
   is_dropshipping: false,
+  stock_visibility_state: 'quantity',
+  low_stock_warning_qty: 1,
   dropshipping_url: '',
   dropshipping_sku: '',
   discount_value: '',
@@ -796,6 +889,24 @@ const generateSlug = () => {
     .toLowerCase()
     .replace(/[^\w ]+/g, '')
     .replace(/ +/g, '-')
+}
+
+const generateSKU = () => {
+    let prefix = '';
+    if (form.value.name) {
+        prefix = form.value.name
+            .split(' ')
+            .map(word => word[0])
+            .join('')
+            .toUpperCase()
+            .slice(0, 3);
+    } else {
+        prefix = 'SKU';
+    }
+    
+    const random = Math.floor(1000 + Math.random() * 9000);
+    const datePart = new Date().toISOString().slice(2, 4) + new Date().toISOString().slice(5, 7);
+    form.value.sku = `${prefix}-${datePart}-${random}`;
 }
 
 // Generate Breadcrumb Path
@@ -970,7 +1081,7 @@ const generateCombinations = () => {
         return {
             _key: comboKey,
             attributes: combo,
-            sku: existing ? existing.sku : form.value.sku ? `${form.value.sku}-${combo.map(c => c.value).join('-')}` : '',
+            sku: existing ? existing.sku : form.value.sku ? `${form.value.sku}-${combo.map(c => c.value).join('-')}` : null,
             price: existing ? existing.price : form.value.sale_price,
             stock_qty: existing ? existing.stock_qty : form.value.stock_qty || 0,
             imageFile: existing ? existing.imageFile : null,
@@ -1139,11 +1250,19 @@ const submitProduct = async () => {
   // Construct gallery items metadata for ordering
   const galleryMetadata = []
   galleryItems.value.forEach((item, index) => {
-      formData.append(`gallery[${index}]`, item.file)
-      galleryMetadata.push({
-          source: 'upload',
-          index: index
-      })
+      if (item.source === 'existing') {
+          galleryMetadata.push({
+              source: 'existing',
+              value: item.path,
+              index: index
+          })
+      } else {
+          formData.append(`gallery[${index}]`, item.file)
+          galleryMetadata.push({
+              source: 'upload',
+              index: index
+          })
+      }
   })
   formData.append('gallery_items', JSON.stringify(galleryMetadata))
 
@@ -1169,10 +1288,11 @@ const submitProduct = async () => {
               formData.append(`variants_image_${index}`, v.imageFile)
           }
           return {
-              sku: v.sku,
+              sku: v.sku || null,
               price: v.price,
               stock_qty: v.stock_qty,
               is_active: v.is_active,
+              image: v.imagePath || null,
               attributes: v.attributes.map(attr => attr.id)
           }
       })
@@ -1180,6 +1300,6 @@ const submitProduct = async () => {
   }
 
   await createItem('/vendor/products', formData, form)
-  router.push('/vendor/products')
+  navigateTo('/vendor/products')
 }
 </script>

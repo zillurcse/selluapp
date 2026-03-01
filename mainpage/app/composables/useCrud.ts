@@ -14,8 +14,12 @@ export default function useCrud() {
   else store.isEdit = true;
 
   const getHeaders = () => {
+    const storefrontStore = useStorefrontStore();
+    const vendorId = storefrontStore.vendorProfile?.user_id || 5;
+
     const headers: any = {
       Accept: "application/json",
+      "X-Vendor-Id": vendorId.toString(),
     };
     if (tokenStore.token) {
       headers.Authorization = `Bearer ${tokenStore.token}`;

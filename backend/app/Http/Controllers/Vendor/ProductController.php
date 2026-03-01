@@ -100,6 +100,11 @@ class ProductController extends Controller implements HasMiddleware
 
         $validated['vendor_id'] = auth()->id();
         $validated['slug'] = Str::slug($validated['name']) . '-' . Str::random(6);
+        
+        // Ensure SKU is null if empty string to avoid unique constraint issues
+        if (isset($validated['sku']) && empty($validated['sku'])) {
+            $validated['sku'] = null;
+        }
 
         // Handle File Uploads
         if ($request->hasFile('image')) {
@@ -124,10 +129,18 @@ class ProductController extends Controller implements HasMiddleware
                 if ($item['source'] === 'upload' && isset($newGalleryFiles[$item['index']])) {
                     $file = $newGalleryFiles[$item['index']];
                     $galleryPaths[] = $file->store('products/gallery', 'public');
+                } elseif ($item['source'] === 'existing' && isset($item['value'])) {
+                    $path = $item['value'];
+                    // Ensure it's a relative path
+                    if (str_contains($path, '/storage/')) {
+                        $path = Str::after($path, '/storage/');
+                    }
+                    $galleryPaths[] = $path;
                 }
             }
             $validated['gallery'] = $galleryPaths;
         } elseif ($request->hasFile('gallery')) {
+
             $galleryPaths = [];
             foreach ($request->file('gallery') as $file) {
                 $galleryPaths[] = $file->store('products/gallery', 'public');
@@ -154,7 +167,7 @@ class ProductController extends Controller implements HasMiddleware
                     }
 
                     $variant = $product->variants()->create([
-                        'sku' => $variantData['sku'] ?? null,
+                        'sku' => !empty($variantData['sku']) ? $variantData['sku'] : null,
                         'price' => $variantData['price'] ?? $product->sale_price,
                         'stock_qty' => $variantData['stock_qty'] ?? 0,
                         'image' => $variantImage,
@@ -230,6 +243,11 @@ class ProductController extends Controller implements HasMiddleware
 
         if (isset($validated['name'])) {
             $validated['slug'] = Str::slug($validated['name']) . '-' . Str::random(6);
+        }
+
+        // Ensure SKU is null if empty string
+        if (isset($validated['sku']) && empty($validated['sku'])) {
+            $validated['sku'] = null;
         }
 
         // Handle File Uploads with cleanup
@@ -324,7 +342,7 @@ class ProductController extends Controller implements HasMiddleware
                             
                             $oldVStock = $variant->stock_qty;
                             $variant->update([
-                                'sku' => $variantData['sku'] ?? $variant->sku,
+                                'sku' => !empty($variantData['sku']) ? $variantData['sku'] : null,
                                 'price' => $variantData['price'] ?? $variant->price,
                                 'stock_qty' => $variantData['stock_qty'] ?? $variant->stock_qty,
                                 'image' => $hasNewImage ? $variantImage : ($variantData['image'] ?? $variant->image),
@@ -338,7 +356,7 @@ class ProductController extends Controller implements HasMiddleware
                         }
                     } else {
                         $variant = $product->variants()->create([
-                            'sku' => $variantData['sku'] ?? null,
+                            'sku' => !empty($variantData['sku']) ? $variantData['sku'] : null,
                             'price' => $variantData['price'] ?? $product->sale_price,
                             'stock_qty' => $variantData['stock_qty'] ?? 0,
                             'image' => $variantImage,
