@@ -47,6 +47,7 @@ export const usePermissions = () => {
      */
     const hasFeature = (feature: string): boolean => {
         if (!authStore.user) return false
+        if (!feature) return false
 
         // Super admin has all features
         if (authStore.user.roles?.some((r: any) => r.name === 'super-admin')) return true
@@ -60,7 +61,7 @@ export const usePermissions = () => {
         if (feature === 'hrm') return !!pkg.hrm_access
 
         if (Array.isArray(pkg.features)) {
-            return pkg.features.some((f: string) => f.toLowerCase().includes(feature.toLowerCase()))
+            return pkg.features.some((f: string) => f != null && f.toLowerCase().includes(feature.toLowerCase()))
         }
 
         return false

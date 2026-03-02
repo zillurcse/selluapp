@@ -249,7 +249,8 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'select'])
 
-const { getAll, deleteItem, createItem } = useCrud()
+const { getAll, deleteItem, getHeaders } = useCrud()
+const config = useRuntimeConfig()
 
 // State
 const activeTab = ref('library')
@@ -308,35 +309,43 @@ watch(filterType, () => fetchFiles(1))
 const handleFilesUpload = async (event) => {
     const filesToUpload = Array.from(event.target.files)
     if (filesToUpload.length === 0) return
-    
+
     uploadingCount.value = filesToUpload.length
     uploadProgress.value = 10
-    
+
     let successCount = 0
     const totalFiles = filesToUpload.length
-    
+
     for (let i = 0; i < totalFiles; i++) {
         const file = filesToUpload[i]
         try {
             const formData = new FormData()
             formData.append('file', file)
-            
-            const res = await createItem('/vendor/media', formData, null, false)
+
+            // Always POST directly — bypasses global isEdit store state
+            const res = await $fetch('/vendor/media', {
+                baseURL: config.public.apiBase,
+                method: 'POST',
+                body: formData,
+                headers: getHeaders()
+            })
             if (res) {
                 successCount++
                 uploadProgress.value = 10 + Math.round((successCount / totalFiles) * 90)
             }
         } catch (e) {
-            toast.error(`Failed to upload ${file.name}`)
+            console.error('Upload error for', file.name, e)
+            const msg = e?.data?.message || e?.message || 'Server error'
+            toast.error(`Failed to upload "${file.name}": ${msg}`)
         }
     }
-    
+
     if (successCount > 0) {
-        toast.success(`Successfully uploaded ${successCount} files to library`)
+        toast.success(`Successfully uploaded ${successCount} file${successCount > 1 ? 's' : ''} to library`)
         activeTab.value = 'library'
         fetchFiles(1)
     }
-    
+
     uploadingCount.value = 0
     uploadProgress.value = 0
 }

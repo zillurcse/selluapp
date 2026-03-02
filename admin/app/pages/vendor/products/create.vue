@@ -1,18 +1,21 @@
-<template>
-  <div class="max-w-[1600px] mx-auto p-10 bg-[#f8fafc] dark:bg-slate-950 transition-colors duration-300">
-    <div class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">Add Product</h1>
-      <NuxtLink to="/vendor/products" class="px-4 py-2 bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 text-sm font-medium transition-colors shadow-sm">
+﻿<template>
+  <div class="max-w-[1600px] mx-auto p-6 lg:p-8 bg-slate-50 dark:bg-slate-950 min-h-screen transition-colors duration-300">
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <h1 class="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Add Product</h1>
+        <p class="text-sm text-slate-500 dark:text-slate-400">Create a new product for your catalog.</p>
+      </div>
+      <NuxtLink to="/vendor/products" class="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-semibold transition-all shadow-sm">
         Back to List
       </NuxtLink>
     </div>
 
-    <form @submit.prevent="submitProduct" class="grid grid-cols-12 gap-8">
+    <form @submit.prevent="submitProduct" class="grid grid-cols-12 gap-6 lg:gap-8">
       <!-- Left Column (Main Content) -->
-      <div class="col-span-12 lg:col-span-9 space-y-8">
+      <div class="col-span-12 lg:col-span-9 space-y-6 lg:space-y-8">
         
         <!-- Basic Info -->
-        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm ring-1 ring-gray-200/50 dark:ring-slate-800 p-8 transition-colors">
+        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 lg:p-8 transition-colors">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="col-span-1 md:col-span-2">
                 <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Product Name <span class="text-red-500">*</span></label>
@@ -33,28 +36,28 @@
         </div>
 
         <!-- Identifiers -->
-        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm ring-1 ring-gray-200/50 dark:ring-slate-800 p-8 transition-colors">
-          <h2 class="text-lg font-medium text-gray-900 dark:text-white mb-6">Inventory Codes</h2>
+        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 lg:p-8 transition-colors">
+          <h2 class="text-base font-bold text-slate-900 dark:text-white mb-6">Inventory Codes</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label class="text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5 flex justify-between items-center">
+              <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 flex justify-between items-center">
                  <span>SKU <span class="text-red-500">*</span></span>
-                 <button @click="generateSKU" type="button" class="text-xs font-bold text-primary-600 dark:text-primary-400 hover:text-primary-700 hover:underline transition-all flex items-center">
-                   <RefreshCw class="w-3 h-3 mr-1" /> Generate SKU
+                 <button @click="generateSKU" type="button" class="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 transition-all flex items-center">
+                   <RefreshCw class="w-3.5 h-3.5 mr-1" /> Generate SKU
                  </button>
               </label>
-              <input v-model="form.sku" type="text" placeholder="Ex: UORLA-14464" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white uppercase" required />
+              <input v-model="form.sku" type="text" placeholder="Ex: UORLA-14464" class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400 bg-white dark:bg-slate-900 text-slate-900 dark:text-white uppercase" required />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Product Code <span class="text-red-500">*</span></label>
-              <input v-model="form.product_code" type="text" placeholder="Ex: PRD-260219010119" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white" required />
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Product Code <span class="text-red-500">*</span></label>
+              <input v-model="form.product_code" type="text" placeholder="Ex: PRD-260219010119" class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400 bg-white dark:bg-slate-900 text-slate-900 dark:text-white" required />
             </div>
           </div>
         </div>
 
         <!-- Relations -->
-        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm ring-1 ring-gray-200/50 dark:ring-slate-800 p-8 transition-colors">
-            <h2 class="text-lg font-medium text-gray-900 dark:text-white mb-6">Organization</h2>
+        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 lg:p-8 transition-colors">
+            <h2 class="text-base font-bold text-slate-900 dark:text-white mb-6">Organization</h2>
            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
              <div>
                 <AppSearchSelect
@@ -86,8 +89,8 @@
         </div>
 
         <!-- Pricing & Inventory -->
-        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm ring-1 ring-gray-200/50 dark:ring-slate-800 p-8 transition-colors">
-            <h2 class="text-lg font-medium text-gray-900 dark:text-white mb-6">Pricing & Inventory</h2>
+        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 lg:p-8 transition-colors">
+            <h2 class="text-base font-bold text-slate-900 dark:text-white mb-6">Pricing & Inventory</h2>
            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Purchase Price</label>
@@ -123,52 +126,52 @@
               </div>
            </div>
            
-           <div class="mt-6 flex items-center p-4 bg-gray-50 dark:bg-slate-800/50 rounded-lg border border-gray-100 dark:border-slate-700 transition-colors">
+           <div class="mt-6 flex items-center p-4 bg-slate-50 dark:bg-slate-800/40 rounded-lg border border-slate-100 dark:border-slate-800 transition-colors">
              <label class="relative inline-flex items-center cursor-pointer">
                <input type="checkbox" v-model="form.has_variants" class="sr-only peer">
-               <div class="w-11 h-6 bg-gray-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 dark:after:border-slate-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600 transition-colors"></div>
-               <span class="ml-3 text-sm font-medium text-gray-700 dark:text-slate-300">Enable Product Variants</span>
+               <div class="w-10 h-5 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 dark:after:border-slate-600 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600 transition-colors"></div>
+               <span class="ml-3 text-sm font-semibold text-slate-700 dark:text-slate-300">Enable Product Variants</span>
              </label>
            </div>
 
            <!-- Variant Config UI -->
-           <div v-if="form.has_variants" class="mt-6 border-t border-gray-100 dark:border-slate-800 pt-6 animate-in fade-in slide-in-from-top-4 duration-500">
-              <h3 class="text-md font-semibold text-gray-900 dark:text-white mb-4">Product Variants Manager</h3>
+           <div v-if="form.has_variants" class="mt-6 border-t border-slate-100 dark:border-slate-800 pt-6 animate-in fade-in slide-in-from-top-2 duration-300">
+              <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-4">Product Variants Manager</h3>
               
               <div class="space-y-4 mb-6">
-                 <div v-for="(config, bgIndex) in selectedAttributesConfig" :key="bgIndex" class="p-4 bg-gray-50/50 dark:bg-slate-800/50 rounded-xl border border-gray-200 dark:border-slate-700 relative">
-                    <button @click="removeAttributeLine(bgIndex)" type="button" class="absolute top-4 right-4 text-red-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-1.5 rounded-lg transition-all">
+                 <div v-for="(config, bgIndex) in selectedAttributesConfig" :key="bgIndex" class="p-4 bg-slate-50/50 dark:bg-slate-800/30 rounded-lg border border-slate-200 dark:border-slate-800 relative">
+                    <button @click="removeAttributeLine(bgIndex)" type="button" class="absolute top-4 right-4 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-1.5 rounded-lg transition-all">
                         <X class="w-4 h-4" />
                     </button>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                        <div>
-                           <div class="flex items-center justify-between mb-1.5 border-b border-transparent">
-                               <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">Select Attribute</label>
-                               <button @click="showQuickAddAttributeModal = true" type="button" class="text-xs text-primary-600 dark:text-primary-400 font-bold hover:text-primary-700 dark:hover:text-primary-300 transition-colors flex items-center pr-1">
-                                    <Plus class="w-3.5 h-3.5 mr-0.5" />
+                           <div class="flex items-center justify-between mb-1.5">
+                               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Select Attribute</label>
+                               <button @click="showQuickAddAttributeModal = true" type="button" class="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold hover:text-indigo-700 transition-colors flex items-center">
+                                    <Plus class="w-3 h-3 mr-0.5" />
                                     New
                                </button>
                            </div>
-                           <select v-model="config.attribute_id" @change="generateCombinations" class="w-full px-4 py-2 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-white">
+                           <select v-model="config.attribute_id" @change="generateCombinations" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none bg-white dark:bg-slate-900 text-sm font-medium text-slate-900 dark:text-white">
                                <option value="" disabled>Select Attribute</option>
                                <option v-for="attr in productAttributesList" :key="attr.id" :value="attr.id">{{ attr.name }}</option>
                            </select>
                        </div>
                        <div v-if="config.attribute_id">
-                           <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Select Values</label>
+                           <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Select Values</label>
                            <div class="flex flex-wrap gap-2">
-                               <label v-for="val in productAttributesList.find(a => a.id === config.attribute_id)?.values" :key="val.id" class="inline-flex items-center p-2 rounded-lg border border-gray-100 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer ring-1 ring-transparent peer-checked:ring-primary-500">
-                                   <input type="checkbox" :value="val.id" v-model="config.value_ids" @change="generateCombinations" class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 dark:border-slate-600 peer">
+                               <label v-for="val in productAttributesList.find(a => a.id === config.attribute_id)?.values" :key="val.id" class="inline-flex items-center p-2 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-800 transition-colors cursor-pointer group">
+                                   <input type="checkbox" :value="val.id" v-model="config.value_ids" @change="generateCombinations" class="w-4 h-4 text-indigo-600 bg-white border-slate-300 rounded focus:ring-indigo-500 dark:bg-slate-700 dark:border-slate-600">
                                    <div v-if="productAttributesList.find(a => a.id === config.attribute_id)?.type === 'color'" 
-                                        class="w-4 h-4 rounded-full ml-2 shadow-sm border border-gray-200" 
+                                        class="w-3.5 h-3.5 rounded-full ml-2 border border-slate-200 shadow-sm" 
                                         :style="{ backgroundColor: val.meta }"></div>
-                                   <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">{{ val.value }}</span>
+                                   <span class="ml-2 text-xs font-medium text-slate-700 dark:text-slate-300">{{ val.value }}</span>
                                </label>
                            </div>
                        </div>
                     </div>
                  </div>
-                 <button @click="addAttributeLine" type="button" class="w-full py-3 bg-white dark:bg-slate-900 border border-dashed border-gray-300 dark:border-slate-700 text-gray-600 dark:text-slate-400 font-medium rounded-xl hover:border-primary-500 hover:text-primary-600 transition-all flex items-center justify-center gap-2">
+                 <button @click="addAttributeLine" type="button" class="w-full py-2.5 bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-semibold text-sm rounded-lg hover:border-indigo-500 hover:text-indigo-600 transition-all flex items-center justify-center gap-2">
                     <Plus class="w-4 h-4" />
                     Add Another Attribute
                  </button>
@@ -233,59 +236,59 @@
         <!-- Accordions -->
         <div class="space-y-4">
            <!-- Product Images -->
-           <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm ring-1 ring-gray-200/50 dark:ring-slate-800 overflow-hidden transition-colors">
-               <button type="button" @click="toggleAccordion('images')" class="w-full px-8 py-5 flex items-center justify-between hover:bg-gray-50/50 dark:hover:bg-slate-800/50 bg-white dark:bg-slate-900 transition-colors">
-                  <div class="flex items-center font-medium text-gray-900 dark:text-white group">
-                     <span class="mr-3 p-1 rounded-md bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/30 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+           <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden transition-colors">
+               <button type="button" @click="toggleAccordion('images')" class="w-full px-8 py-5 flex items-center justify-between hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                  <div class="flex items-center font-bold text-slate-800 dark:text-slate-100 group">
+                     <span class="mr-3 p-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/30 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                         <Plus v-if="!sections.images" class="w-4 h-4" />
                         <Minus v-else class="w-4 h-4" />
                      </span>
                      Product Images
                   </div>
-                  <ChevronDown class="w-5 h-5 text-gray-400 dark:text-slate-500 transition-transform duration-300" :class="{'rotate-180': sections.images}" />
+                  <ChevronDown class="w-5 h-5 text-slate-400 dark:text-slate-500 transition-transform duration-300" :class="{'rotate-180': sections.images}" />
                </button>
-               <div v-show="sections.images" class="p-8 border-t border-gray-100 dark:border-slate-800">
+               <div v-show="sections.images" class="p-8 border-t border-slate-100 dark:border-slate-800/60">
                   <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                      <!-- Thumbnail -->
                      <div class="col-span-1">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Thumbnail (Max 5MB)</label>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Thumbnail (Max 5MB)</label>
                         <div 
                           @click="openMediaLibrary('thumbnail')"
-                          class="border-2 border-dashed border-gray-200 dark:border-slate-700 hover:border-primary-400 dark:hover:border-primary-500 bg-gray-50/50 dark:bg-slate-800/50 hover:bg-primary-50/10 dark:hover:bg-primary-900/10 rounded-2xl h-64 flex flex-col items-center justify-center transition-all cursor-pointer relative overflow-hidden group shadow-sm"
+                          class="border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-500 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-indigo-50/10 rounded-xl h-64 flex flex-col items-center justify-center transition-all cursor-pointer relative overflow-hidden group shadow-sm"
                         >
-                           <div v-if="thumbnailPreview" class="absolute inset-0 w-full h-full p-2 animate-in fade-in duration-300">
-                              <img :src="thumbnailPreview" class="w-full h-full object-cover rounded-xl shadow-md" />
-                              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-xl m-2">
-                                <span class="text-white text-[10px] font-black uppercase tracking-widest bg-primary-600 px-4 py-2 rounded-lg shadow-lg">Change Image</span>
+                           <div v-if="thumbnailPreview" class="absolute inset-0 w-full h-full p-2">
+                              <img :src="thumbnailPreview" class="w-full h-full object-cover rounded-lg shadow-sm" />
+                              <div class="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg m-2">
+                                <span class="text-white text-[10px] font-bold uppercase tracking-widest bg-indigo-600 px-4 py-2 rounded-lg shadow-lg">Change Image</span>
                               </div>
                            </div>
                            <div v-else class="text-center p-6">
-                              <div class="w-16 h-16 rounded-2xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center mx-auto mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
-                                <UploadCloud class="w-8 h-8 text-primary-500" />
+                              <div class="w-14 h-14 rounded-xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                                <UploadCloud class="w-7 h-7 text-indigo-500" />
                               </div>
-                              <span class="text-xs font-black text-gray-900 dark:text-white block mb-1 uppercase tracking-tight">Select from Gallery</span>
-                              <span class="text-[10px] text-gray-400 dark:text-slate-500 font-bold uppercase">400x400 Recommended</span>
+                              <span class="text-xs font-bold text-slate-700 dark:text-slate-200 block mb-1 uppercase tracking-tight">Select from Gallery</span>
+                              <span class="text-[10px] text-slate-400 font-bold uppercase">400x400 Recommended</span>
                            </div>
                         </div>
                      </div>
                      <!-- Gallery -->
                      <div class="col-span-1 md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Gallery Images (Max 10 Images)</label>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Gallery Images (Max 10 Images)</label>
                          <div 
                            @click="openMediaLibrary('gallery')"
-                           class="border-2 border-dashed border-gray-200 dark:border-slate-700 hover:border-primary-400 dark:hover:border-primary-500 bg-gray-50/50 dark:bg-slate-800/50 hover:bg-primary-50/10 dark:hover:bg-primary-900/10 rounded-2xl h-64 flex flex-col items-center justify-center transition-all cursor-pointer relative overflow-hidden group shadow-sm"
+                           class="border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-500 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-indigo-50/10 rounded-xl h-64 flex flex-col items-center justify-center transition-all cursor-pointer relative overflow-hidden group shadow-sm"
                          >
                            <div class="text-center p-6">
-                              <div class="w-16 h-16 rounded-2xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center mx-auto mb-4 group-hover:scale-110 group-hover:-rotate-3 transition-all duration-300">
-                                <Library class="w-8 h-8 text-primary-500" />
+                              <div class="w-14 h-14 rounded-xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                                <Library class="w-7 h-7 text-indigo-500" />
                               </div>
-                              <span class="text-xs font-black text-gray-900 dark:text-white block mb-1 uppercase tracking-tight">Open Media Gallery</span>
-                              <span class="text-[10px] text-gray-400 dark:text-slate-500 font-bold uppercase">Select multiple images</span>
+                              <span class="text-xs font-bold text-slate-700 dark:text-slate-200 block mb-1 uppercase tracking-tight">Open Media Gallery</span>
+                              <span class="text-[10px] text-slate-400 font-bold uppercase">Select multiple images</span>
                            </div>
                         </div>
                         <div v-if="galleryItems.length > 0" class="mt-6">
-                            <h4 class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3">Selected Images (Drag to reorder)</h4>
-                            <div class="flex flex-wrap gap-4">
+                            <h4 class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Selected Images (Drag to reorder)</h4>
+                            <div class="flex flex-wrap gap-3">
                                <div 
                                  v-for="(item, idx) in galleryItems" 
                                  :key="item.id" 
@@ -293,18 +296,15 @@
                                  @dragstart="onDragStart(idx)"
                                  @dragover.prevent="onDragOver($event, idx)"
                                  @drop="onDrop(idx)"
-                                 class="w-24 h-24 border-2 border-transparent hover:border-primary-500 dark:hover:border-primary-400 rounded-lg overflow-hidden relative group shadow-sm bg-white dark:bg-slate-800 cursor-move transition-all active:scale-95 active:shadow-lg"
+                                 class="w-20 h-20 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden relative group shadow-sm bg-white dark:bg-slate-800 cursor-move transition-all active:scale-95"
                                >
                                   <img :src="item.preview" class="w-full h-full object-cover pointer-events-none" />
-                                  <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                                     <GripVertical class="w-6 h-6 text-white" />
+                                  <div class="absolute inset-0 bg-slate-900/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                                     <GripVertical class="w-5 h-5 text-white" />
                                   </div>
                                   <button @click.stop="removeGalleryImage(idx)" type="button" class="absolute top-1 right-1 bg-white/90 dark:bg-slate-900/90 text-red-500 dark:text-red-400 rounded-full p-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 dark:hover:bg-red-900/50 shadow-sm z-10">
-                                     <X class="w-3.5 h-3.5" />
+                                     <X class="w-3 h-3" />
                                   </button>
-                                  <div class="absolute bottom-1 left-1 bg-black/50 text-white text-[8px] px-1.5 py-0.5 rounded font-bold uppercase transition-opacity opacity-0 group-hover:opacity-100">
-                                     Item #{{ idx + 1 }}
-                                  </div>
                                </div>
                             </div>
                         </div>
@@ -314,42 +314,36 @@
            </div>
 
            <!-- Product Description & SEO -->
-           <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm ring-1 ring-gray-200/50 dark:ring-slate-800 overflow-hidden transition-colors">
-               <button type="button" @click="toggleAccordion('seo')" class="w-full px-8 py-5 flex items-center justify-between hover:bg-gray-50/50 dark:hover:bg-slate-800/50 bg-white dark:bg-slate-900 transition-colors">
-                  <div class="flex items-center font-medium text-gray-900 dark:text-white group">
-                     <span class="mr-3 p-1 rounded-md bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/30 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+           <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden transition-colors">
+               <button type="button" @click="toggleAccordion('seo')" class="w-full px-8 py-5 flex items-center justify-between hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                  <div class="flex items-center font-bold text-slate-800 dark:text-slate-100 group">
+                     <span class="mr-3 p-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/30 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                         <Plus v-if="!sections.seo" class="w-4 h-4" />
                         <Minus v-else class="w-4 h-4" />
                      </span>
                      Product Description & SEO Settings
                   </div>
-                  <ChevronDown class="w-5 h-5 text-gray-400 dark:text-slate-500 transition-transform duration-300" :class="{'rotate-180': sections.seo}" />
+                  <ChevronDown class="w-5 h-5 text-slate-400 dark:text-slate-500 transition-transform duration-300" :class="{'rotate-180': sections.seo}" />
                </button>
-               <div v-show="sections.seo" class="p-8 border-t border-gray-100 dark:border-slate-800 space-y-8">
+               <div v-show="sections.seo" class="p-8 border-t border-slate-100 dark:border-slate-800 space-y-8">
                   <!-- Description with Toolbar Dummy -->
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Product Description <span class="text-red-500">*</span></label>
+                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Detailed Description <span class="text-red-500">*</span></label>
                      <div class="prose dark:prose-invert max-w-none">
                         <AppRichEditor v-model="form.description" placeholder="Enter detailed product description..." />
                      </div>
                   </div>
 
                   <!-- SEO Fields -->
-                  <div class="space-y-6 pt-6 border-t border-gray-100 dark:border-slate-800">
-                      <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Search Engine Optimization</h3>
+                  <div class="space-y-6 pt-6 border-t border-slate-100 dark:border-slate-800">
+                      <h3 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Search Engine Optimization</h3>
                      <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Meta Title (optional)</label>
-                        <input v-model="form.seo_title" type="text" placeholder="Best Product Name | Brand" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white" />
-                        <p class="mt-1 text-xs text-gray-500 dark:text-slate-400">Recommended length: 50-60 characters</p>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Meta Title</label>
+                        <input v-model="form.seo_title" type="text" placeholder="Best Product Name | Brand" class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400 bg-white dark:bg-slate-900 text-sm font-medium text-slate-900 dark:text-white" />
                      </div>
                      <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Meta Description (optional)</label>
-                        <textarea v-model="form.seo_description" rows="3" placeholder="Short description for SEO (max 160 characters)" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white"></textarea>
-                        <p class="mt-1 text-xs text-gray-500 dark:text-slate-400">Recommended length: 150-160 characters</p>
-                     </div>
-                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Meta Keywords (optional)</label>
-                        <input v-model="form.seo_keywords" type="text" placeholder="keyword1, keyword2, keyword3" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white" />
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Meta Description</label>
+                        <textarea v-model="form.seo_description" rows="3" placeholder="Short description for SEO" class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400 bg-white dark:bg-slate-900 text-sm font-medium text-slate-900 dark:text-white"></textarea>
                      </div>
                   </div>
                </div>
@@ -478,85 +472,101 @@
 
       </div>
 
-      <!-- Right Column (Sidebar) -->
+       <!-- Right Column (Sidebar) -->
       <div class="col-span-12 lg:col-span-3 space-y-6">
         
         <!-- Actions -->
-        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm ring-1 ring-gray-200/50 dark:ring-slate-800 p-6 sticky top-6 z-20 transition-colors">
-           <h3 class="font-medium text-gray-900 dark:text-white mb-4 pb-2 border-b border-gray-100 dark:border-slate-800">Publish</h3>
-           <div class="space-y-4">
-              <div class="grid grid-cols-2 gap-3">
-                 <button type="button" class="col-span-1 px-4 py-2 border border-gray-300 dark:border-slate-700 rounded-lg text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 font-medium text-sm transition-colors shadow-sm">Save Draft</button>
-                 <button type="button" class="col-span-1 px-4 py-2 border border-gray-300 dark:border-slate-700 rounded-lg text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 font-medium text-sm transition-colors shadow-sm">Preview</button>
+        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 lg:sticky lg:top-6 z-20 transition-colors">
+           <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-4 pb-2 border-b border-slate-100 dark:border-slate-800">Publish Changes</h3>
+           <div class="space-y-3">
+              <div class="grid grid-cols-2 gap-2">
+                 <button type="button" class="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-xs transition-colors">Save Draft</button>
+                 <button type="button" class="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-xs transition-colors">Preview</button>
               </div>
-              <button type="submit" class="w-full px-4 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium shadow-md shadow-primary-500/20 transition-all flex items-center justify-center">
-                 Save Changes
+              <button type="submit" class="w-full px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-bold text-sm shadow-sm transition-all flex items-center justify-center">
+                 Save Product
               </button>
            </div>
         </div>
 
         <!-- Product Status -->
-        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm ring-1 ring-gray-200/50 dark:ring-slate-800 p-6 transition-colors">
-           <h3 class="font-medium text-gray-900 dark:text-white mb-4">Status & Visibility</h3>
-           <select v-model="form.status" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all bg-gray-50/50 dark:bg-slate-800/50 text-gray-900 dark:text-white">
-              <option value="published">Published</option>
-              <option value="draft">Draft</option>
-              <option value="pending">Pending</option>
-           </select>
-        </div>
+         <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 transition-colors">
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-3">Status &amp; Visibility</h3>
+            <div class="grid grid-cols-3 gap-2">
+               <button
+                  v-for="s in ['published','draft','pending']"
+                  :key="s"
+                  type="button"
+                  @click="form.status = s"
+                  :class="[
+                    'flex flex-col items-center gap-1.5 px-2 py-3 rounded-lg border text-[10px] font-bold uppercase tracking-wider transition-all',
+                    form.status === s && s === 'published' ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-400 dark:border-emerald-600 text-emerald-700 dark:text-emerald-400' :
+                    form.status === s && s === 'draft'     ? 'bg-slate-100 dark:bg-slate-800 border-slate-400 dark:border-slate-500 text-slate-700 dark:text-slate-300' :
+                    form.status === s && s === 'pending'   ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-400 dark:border-amber-600 text-amber-700 dark:text-amber-400' :
+                    'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:border-slate-300'
+                  ]"
+               >
+                  <span :class="[
+                    'w-2 h-2 rounded-full',
+                    s === 'published' ? 'bg-emerald-500' : s === 'draft' ? 'bg-slate-400' : 'bg-amber-500'
+                  ]"></span>
+                  {{ s }}
+               </button>
+            </div>
+         </div>
 
         <!-- Product Attributes -->
-        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm ring-1 ring-gray-200/50 dark:ring-slate-800 p-6 transition-colors">
-           <h3 class="font-medium text-gray-900 dark:text-white mb-4 pb-2 border-b border-gray-100 dark:border-slate-800">Product Attributes</h3>
-           <div class="space-y-3">
-              <div v-for="(label, key) in attributeToggles" :key="key" class="flex items-center justify-between py-1">
-                 <span class="text-sm text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white transition-colors">{{ label }}</span>
-                 <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" v-model="form[key]" class="sr-only peer">
-                    <div class="w-9 h-5 bg-gray-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 dark:after:border-slate-600 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-600"></div>
-                 </label>
-              </div>
-           </div>
+         <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 transition-colors">
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-4 pb-2 border-b border-slate-100 dark:border-slate-800">Product Attributes</h3>
+            <div class="space-y-3">
+               <div v-for="(label, key) in attributeToggles" :key="key" class="flex items-center justify-between py-1">
+                  <span class="text-sm text-slate-600 dark:text-slate-300">{{ label }}</span>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                     <input type="checkbox" v-model="form[key]" class="sr-only peer">
+                     <div class="w-9 h-5 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 dark:after:border-slate-600 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                  </label>
+               </div>
+            </div>
 
-            <div class="mt-6 pt-5 border-t border-gray-100 dark:border-slate-800">
-               <h4 class="text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-4">Stock Visibility</h4>
+            <div class="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800">
+               <h4 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">Stock Visibility</h4>
                <div class="space-y-2">
                   <label v-for="option in [
-                    { value: 'quantity', label: 'Show Stock Quantity', desc: 'Display exact numbers' },
-                    { value: 'text_only', label: 'Text Only', desc: 'Display In-Stock/Out-of-Stock' },
-                    { value: 'hide', label: 'Hide Stock', desc: 'Hide stock level from customers' }
+                    { value: 'quantity', label: 'Show Quantity', desc: 'Display exact numbers' },
+                    { value: 'text_only', label: 'Text Only', desc: 'In-Stock / Out-of-Stock' },
+                    { value: 'hide', label: 'Hide Stock', desc: 'Hidden from customers' }
                   ]" :key="option.value" 
-                  class="flex items-center p-3 rounded-xl border border-gray-100 dark:border-slate-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-all group"
-                  :class="{'border-primary-500 bg-primary-50/30 dark:bg-primary-900/10': form.stock_visibility_state === option.value}">
+                  class="flex items-center p-3 rounded-lg border cursor-pointer transition-all"
+                  :class="form.stock_visibility_state === option.value ? 'border-indigo-300 dark:border-indigo-700 bg-indigo-50/40 dark:bg-indigo-900/10' : 'border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50'">
                      <input type="radio" v-model="form.stock_visibility_state" :value="option.value" class="sr-only">
-                     <div class="w-4 h-4 rounded-full border-2 border-gray-300 dark:border-slate-600 flex items-center justify-center mr-3 group-hover:border-primary-400"
-                     :class="{'border-primary-500 bg-primary-500': form.stock_visibility_state === option.value}">
+                     <div class="w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center mr-3 transition-all"
+                     :class="form.stock_visibility_state === option.value ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300 dark:border-slate-600'">
                         <div v-if="form.stock_visibility_state === option.value" class="w-1.5 h-1.5 rounded-full bg-white"></div>
                      </div>
                      <div>
-                        <div class="text-sm font-bold text-gray-900 dark:text-white">{{ option.label }}</div>
-                        <div class="text-[10px] text-gray-400 dark:text-slate-500">{{ option.desc }}</div>
+                        <div class="text-xs font-bold text-slate-800 dark:text-white">{{ option.label }}</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5">{{ option.desc }}</div>
                      </div>
                   </label>
                </div>
 
                <div class="mt-4">
-                  <label class="block text-xs font-bold text-gray-500 dark:text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Low Stock Warning Qty</label>
-                  <input v-model="form.low_stock_warning_qty" type="number" min="0" placeholder="e.g. 5" class="w-full px-4 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none text-sm font-bold text-gray-900 dark:text-white transition-all shadow-sm" />
-                  <p class="mt-1 text-[10px] text-gray-400 dark:text-slate-500">Alert me when stock falls below this level.</p>
+                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Low Stock Warning Qty</label>
+                  <input v-model="form.low_stock_warning_qty" type="number" min="0" placeholder="e.g. 5" class="w-full px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none text-sm text-slate-900 dark:text-white transition-all" />
+                  <p class="mt-1.5 text-[10px] text-slate-400 dark:text-slate-500">Alert when stock falls below this level.</p>
                </div>
             </div>
          </div>
 
         <!-- Product Discount -->
-        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm ring-1 ring-gray-200/50 dark:ring-slate-800 p-6 transition-colors">
-           <h3 class="font-medium text-gray-900 dark:text-white mb-4">Product Discount</h3>
-           <div class="space-y-4">
+        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 transition-colors">
+           <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-4">Product Discount</h3>
+           <div class="space-y-3">
               <div class="relative">
-                 <span class="absolute left-3 top-2.5 text-gray-500 dark:text-slate-400 text-sm font-semibold">%</span>
-                 <input v-model="form.discount_value" type="number" placeholder="Discount Value" class="w-full pl-8 pr-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white" />
+                 <span class="absolute left-3 top-2.5 text-slate-400 text-xs font-semibold">%</span>
+                 <input v-model="form.discount_value" type="number" placeholder="Discount Value" class="w-full pl-8 pr-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm" />
               </div>
-              <select v-model="form.discount_type" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all bg-gray-50/50 dark:bg-slate-800/50 text-gray-900 dark:text-white">
+              <select v-model="form.discount_type" class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm">
                  <option value="" disabled>Select Type</option>
                  <option value="percent">Percent (%)</option>
                  <option value="fixed">Fixed Amount</option>
@@ -565,18 +575,18 @@
         </div>
 
         <!-- Note -->
-        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm ring-1 ring-gray-200/50 dark:ring-slate-800 p-6 transition-colors">
-           <h3 class="font-medium text-gray-900 dark:text-white mb-4">Internal Note</h3>
-           <textarea v-model="form.note" rows="3" placeholder="Add a private note..." class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white text-sm"></textarea>
+        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 transition-colors">
+           <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-3">Internal Note</h3>
+           <textarea v-model="form.note" rows="3" placeholder="Add a private note..." class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm"></textarea>
         </div>
 
 
         <!-- Product Video -->
-        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm ring-1 ring-gray-200/50 dark:ring-slate-800 p-6 transition-colors">
-           <h3 class="font-medium text-gray-900 dark:text-white mb-4">Product Video</h3>
+        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 transition-colors">
+           <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-3">Product Video</h3>
            <div class="relative">
-              <input v-model="form.video_url" type="text" placeholder="YouTube / Vimeo link" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all pr-10 placeholder:text-gray-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white" />
-              <div class="absolute right-3 top-2.5 text-gray-400 dark:text-slate-500">
+              <input v-model="form.video_url" type="text" placeholder="YouTube / Vimeo link" class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all pr-10 placeholder:text-slate-400 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm" />
+              <div class="absolute right-3 top-2.5 text-slate-400">
                  <PlayCircle class="w-5 h-5" />
               </div>
            </div>
@@ -586,39 +596,46 @@
     </form>
 
     <!-- Quick Add Attribute Modal -->
-    <div v-if="showQuickAddAttributeModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 transition-opacity">
-       <div class="bg-white dark:bg-slate-900 rounded-xl max-w-md w-full p-6 shadow-xl animate-in zoom-in-95 duration-200">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Add Quick Attribute</h3>
+    <div v-if="showQuickAddAttributeModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+       <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" @click="showQuickAddAttributeModal = false"></div>
+       <div class="relative bg-white dark:bg-slate-900 rounded-xl max-w-md w-full p-6 shadow-xl border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+          <div class="flex items-center justify-between mb-6">
+              <h3 class="text-lg font-bold text-slate-900 dark:text-white">Quick Add Attribute</h3>
+              <button @click="showQuickAddAttributeModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                  <X class="w-5 h-5" />
+              </button>
+          </div>
+          
           <div class="space-y-4">
              <div>
-                 <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Attribute Name</label>
-                 <input type="text" v-model="quickAttributeForm.name" placeholder="e.g. Color" class="w-full px-4 py-2 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-primary-500 outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-white">
+                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Attribute Name</label>
+                 <input type="text" v-model="quickAttributeForm.name" placeholder="e.g. Size" class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm">
              </div>
              
              <div>
-                 <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Attribute Type</label>
-                 <select v-model="quickAttributeForm.type" class="w-full px-4 py-2 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-primary-500 outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-white">
+                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Attribute Type</label>
+                 <select v-model="quickAttributeForm.type" class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm">
                      <option value="button">Standard Button / Label</option>
                      <option value="color">Color Swatch</option>
                  </select>
              </div>
 
              <div v-if="quickAttributeForm.type !== 'color'">
-                 <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Values (Comma separated)</label>
-                 <input type="text" v-model="quickAttributeForm.values" placeholder="e.g. Cotton, Polyester, Silk" class="w-full px-4 py-2 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-primary-500 outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-white">
+                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Values (Comma separated)</label>
+                 <input type="text" v-model="quickAttributeForm.values" placeholder="e.g. S, M, L, XL" class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm">
              </div>
 
              <div v-if="quickAttributeForm.type === 'color'" class="space-y-3">
                  <div class="flex items-center justify-between">
-                     <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">Add Colors</label>
-                     <button @click="addColorToQuickForm" type="button" class="text-xs flex items-center text-primary-600 hover:text-primary-700 dark:text-primary-400 font-medium">
+                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Add Colors</label>
+                     <button @click="addColorToQuickForm" type="button" class="text-xs flex items-center text-indigo-600 dark:text-indigo-400 font-bold hover:text-indigo-700 transition-colors">
                          <Plus class="w-3 h-3 mr-1" /> Add Color
                      </button>
                  </div>
                  <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
                      <div v-for="(colItem, idx) in quickAttributeForm.colorValues" :key="idx" class="flex gap-2 items-center">
-                         <input type="text" v-model="colItem.value" placeholder="Color Name (e.g. Red)" class="flex-1 px-3 py-1.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-primary-500 outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-white text-sm">
-                         <input type="color" v-model="colItem.meta" class="w-10 h-8 rounded shrink-0 cursor-pointer border border-gray-200 dark:border-slate-700">
+                         <input type="text" v-model="colItem.value" placeholder="Color Name" class="flex-1 px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs">
+                         <input type="color" v-model="colItem.meta" class="w-10 h-8 rounded shrink-0 cursor-pointer border border-slate-200 dark:border-slate-700 bg-transparent">
                          <button @click="quickAttributeForm.colorValues.splice(idx, 1)" type="button" class="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors shrink-0">
                              <X class="w-4 h-4"/>
                          </button>
@@ -626,28 +643,28 @@
                  </div>
              </div>
 
-             <div class="pt-4 border-t border-gray-100 dark:border-slate-800 space-y-4">
+             <div class="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-4">
                  <div>
-                     <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Guide Description (Optional)</label>
-                     <textarea v-model="quickAttributeForm.description" rows="2" placeholder="e.g. Size guide for international shirts" class="w-full px-4 py-2 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-primary-500 outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-white text-sm"></textarea>
+                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Guide Description (Optional)</label>
+                     <textarea v-model="quickAttributeForm.description" rows="2" placeholder="e.g. Size guide..." class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm"></textarea>
                  </div>
                  <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Guide Image (Optional)</label>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Guide Image</label>
                     <div class="flex items-center gap-4">
-                        <div v-if="quickAttributeForm.guidePreview" class="w-16 h-16 rounded border overflow-hidden shrink-0 bg-gray-50">
+                        <div v-if="quickAttributeForm.guidePreview" class="w-12 h-12 rounded border border-slate-200 dark:border-slate-700 overflow-hidden shrink-0 bg-slate-50 shadow-sm">
                             <img :src="quickAttributeForm.guidePreview" class="w-full h-full object-cover">
                         </div>
-                        <label class="flex-1 border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-lg px-4 py-3 text-center cursor-pointer hover:border-primary-500 transition-all">
+                        <label class="flex-1 border border-dashed border-slate-300 dark:border-slate-700 rounded-lg px-4 py-2.5 text-center cursor-pointer hover:border-indigo-500 hover:bg-indigo-50/10 transition-all group">
                             <input type="file" @change="handleGuideImageUpload" class="hidden" accept="image/*">
-                            <span class="text-xs text-gray-500 dark:text-slate-400">Apply Guide Image / Size Chart</span>
+                            <span class="text-xs text-slate-500 group-hover:text-indigo-600 transition-colors">Choose Image</span>
                         </label>
                     </div>
                  </div>
              </div>
           </div>
-          <div class="mt-6 flex justify-end gap-3">
-             <button @click="showQuickAddAttributeModal = false" type="button" class="px-4 py-2 text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-lg transition-colors text-sm font-medium">Cancel</button>
-             <button @click="submitQuickAttribute" type="button" :disabled="isSubmittingAttribute" class="px-4 py-2 text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors text-sm font-medium flex items-center disabled:opacity-50">
+          <div class="mt-8 flex justify-end gap-3">
+             <button @click="showQuickAddAttributeModal = false" type="button" class="px-5 py-2 text-slate-600 dark:text-slate-400 font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors text-sm">Cancel</button>
+             <button @click="submitQuickAttribute" type="button" :disabled="isSubmittingAttribute" class="px-5 py-2 text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-all text-sm font-bold shadow-sm shadow-indigo-600/20 flex items-center disabled:opacity-50">
                 <span v-if="isSubmittingAttribute" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></span>
                 Save Attribute
              </button>

@@ -11,7 +11,7 @@
     ></div>
 
     <!-- Main Content Wrapper -->
-    <div class="flex-1 flex flex-col lg:ml-80 transition-all duration-500 w-full overflow-hidden">
+    <div class="flex-1 flex flex-col lg:ml-60 transition-all duration-500 w-full overflow-hidden">
       <!-- Header -->
       <Header />
 

@@ -10,7 +10,10 @@ return new class extends Migration
     {
         Schema::create('business_settings', function (Blueprint $table) {
             $table->id();
-            $table->string('type')->unique();
+            $table->string('group')->nullable();
+            $table->foreignId('vendor_id')->constrained('users')->cascadeOnDelete();
+            $table->string('type');
+            $table->unique(['vendor_id', 'type']);
             $table->longText('value')->nullable();
             $table->timestamps();
         });

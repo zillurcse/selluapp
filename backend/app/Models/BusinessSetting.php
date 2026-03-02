@@ -6,5 +6,5 @@ use Illuminate\Database\Eloquent\Model;
 
 class BusinessSetting extends Model
 {
-    protected $fillable = ['type', 'value'];
+    protected $fillable = ['vendor_id', 'group', 'type', 'value'];
 }

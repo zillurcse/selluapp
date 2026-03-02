@@ -83,6 +83,14 @@ const shippingCards = [
     iconBg: 'bg-sky-500 shadow-sky-200 dark:shadow-sky-900/20',
     glowColor: 'bg-sky-500',
     to: '/vendor/managed-shop/shipping/cities'
+  },
+  {
+    title: 'Shipping Method',
+    description: 'Manage your shipping methods.',
+    icon: Building2,
+    iconBg: 'bg-sky-500 shadow-sky-200 dark:shadow-sky-900/20',
+    glowColor: 'bg-sky-500',
+    to: '/vendor/managed-shop/shipping/shipping-method'
   }
 ]
 

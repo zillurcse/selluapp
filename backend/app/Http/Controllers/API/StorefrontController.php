@@ -550,10 +550,41 @@ class StorefrontController extends Controller
 
         \Log::info("Total calculation result: $total_shipping");
 
+        // Determine if any vendor in the cart uses carrier_wise or other special methods
+        $methods = [];
+        $carriers = [];
+        foreach ($carts as $item) {
+            $item_p = \App\Models\Product::find($item['product_id']);
+            if ($item_p) {
+                $vId = $item_p->vendor_id;
+                $m = get_vendor_business_setting($vId, 'shipping_method', 'flat_rate');
+                $methods[] = $m;
+                if ($m === 'carrier_wise') {
+                    $c_prices = get_vendor_business_setting($vId, 'carrier_prices', []);
+                    if (is_array($c_prices)) {
+                        foreach ($c_prices as $c_key => $c_price) {
+                            if ($c_price > 0) {
+                                $carriers[$c_key] = ucfirst($c_key);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        $shipping_method = count(array_unique($methods)) === 1 ? $methods[0] : 'mixed';
+
+        $available_carriers = [];
+        foreach ($carriers as $id => $name) {
+            $available_carriers[] = ['id' => $id, 'name' => $name];
+        }
+
         return response()->json([
             'status'    => 1,
             'cost'      => (float)$total_shipping,
             'formatted' => format_price(convert_price($total_shipping)),
+            'method'    => $shipping_method,
+            'available_carriers' => $available_carriers
         ]);
     }
 }

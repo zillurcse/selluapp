@@ -1,0 +1,124 @@
+/* Shared form styles for all attribute create/edit pages */
+
+/* ─── Layout ─────────────────────────────────────────────────────────────────── */
+.page-wrapper { padding: 28px 28px 60px; min-height: 100vh; background-color: #f8fafc; }
+.dark .page-wrapper { background-color: #090d14; }
+.form-container { max-width: 800px; }
+
+/* ─── Page Header ────────────────────────────────────────────────────────────── */
+.page-header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+.back-btn { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: 1px solid #e5e7eb; border-radius: 7px; background-color: #fff; color: #6b7280; cursor: pointer; flex-shrink: 0; transition: background-color 0.15s, color 0.15s; }
+.back-btn:hover { background-color: #f3f4f6; color: #111827; }
+.dark .back-btn { background-color: #1a1f2e; border-color: #1e2330; color: #6b7280; }
+.dark .back-btn:hover { background-color: #252b3b; color: #d1d5db; }
+.page-title { font-size: 18px; font-weight: 700; color: #111827; margin: 0; line-height: 1.2; }
+.dark .page-title { color: #f9fafb; }
+.page-subtitle { font-size: 12.5px; color: #9ca3af; margin: 2px 0 0; }
+
+/* ─── Form Card ──────────────────────────────────────────────────────────────── */
+.form-card { background-color: #fff; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden; }
+.dark .form-card { background-color: #161b27; border-color: #1e2330; }
+
+/* ─── Form Section ───────────────────────────────────────────────────────────── */
+.form-section { padding: 20px 24px; border-bottom: 1px solid #f3f4f6; }
+.dark .form-section { border-bottom-color: #1e2330; }
+
+.section-head { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+.section-icon { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 6px; flex-shrink: 0; }
+.section-icon--indigo { background-color: #eff6ff; color: #4f46e5; }
+.section-icon--amber { background-color: #fffbeb; color: #d97706; }
+.dark .section-icon--indigo { background-color: rgba(79,70,229,0.12); color: #818cf8; }
+.dark .section-icon--amber { background-color: rgba(217,119,6,0.12); color: #fbbf24; }
+.section-title { font-size: 13.5px; font-weight: 600; color: #111827; margin: 0; }
+.dark .section-title { color: #f9fafb; }
+
+/* ─── Form Grid ──────────────────────────────────────────────────────────────── */
+.form-grid { display: grid; grid-template-columns: 1fr; gap: 14px; margin-bottom: 14px; }
+@media (min-width: 640px) { .form-grid { grid-template-columns: 1fr 1fr; } }
+
+/* ─── Fields ─────────────────────────────────────────────────────────────────── */
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field-label { font-size: 12.5px; font-weight: 600; color: #374151; }
+.dark .field-label { color: #d1d5db; }
+.required { color: #ef4444; }
+.field-hint { font-size: 11px; font-weight: 400; color: #9ca3af; margin-left: 4px; }
+
+.field-input {
+  width: 100%;
+  padding: 9px 12px;
+  font-size: 13.5px;
+  color: #111827;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  box-sizing: border-box;
+}
+.field-input:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,0.08); background-color: #fff; }
+.dark .field-input { background-color: #1a1f2e; border-color: #1e2330; color: #f9fafb; }
+.dark .field-input:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,0.12); background-color: #1e2330; }
+
+.field-textarea { resize: vertical; min-height: 80px; }
+
+.select-wrap { position: relative; }
+.field-select { appearance: none; padding-right: 36px; cursor: pointer; }
+.select-arrow { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; pointer-events: none; }
+
+/* ─── Upload Box ─────────────────────────────────────────────────────────────── */
+.upload-box {
+  position: relative;
+  border: 1.5px dashed #e5e7eb;
+  border-radius: 8px;
+  background-color: #f9fafb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.upload-box:hover { border-color: #4f46e5; background-color: #f5f3ff; }
+.dark .upload-box { background-color: #1a1f2e; border-color: #1e2330; }
+.dark .upload-box:hover { border-color: #4f46e5; background-color: rgba(79,70,229,0.06); }
+
+.upload-box--square { height: 140px; max-width: 140px; }
+.upload-box--wide { height: 140px; }
+
+.upload-input { position: absolute; inset: 0; opacity: 0; cursor: pointer; z-index: 2; }
+.upload-preview { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
+
+.upload-placeholder { display: flex; flex-direction: column; align-items: center; gap: 6px; color: #9ca3af; font-size: 12px; font-weight: 500; }
+.upload-icon { color: #9ca3af; }
+
+/* ─── Toggle ─────────────────────────────────────────────────────────────────── */
+.toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.toggle-info { flex: 1; }
+.toggle-label { font-size: 13.5px; font-weight: 600; color: #111827; margin: 0; }
+.dark .toggle-label { color: #f9fafb; }
+.toggle-desc { font-size: 12px; color: #9ca3af; margin: 2px 0 0; }
+
+.toggle { position: relative; width: 40px; height: 22px; border-radius: 11px; border: none; background-color: #d1d5db; cursor: pointer; transition: background-color 0.2s; flex-shrink: 0; }
+.toggle--on { background-color: #4f46e5; }
+.dark .toggle { background-color: #374151; }
+.toggle-thumb { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background-color: #fff; transition: transform 0.2s; display: block; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+.toggle--on .toggle-thumb { transform: translateX(18px); }
+
+/* ─── Form Actions ───────────────────────────────────────────────────────────── */
+.form-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 16px 24px; background-color: #f9fafb; border-top: 1px solid #f3f4f6; }
+.dark .form-actions { background-color: #1a1f2e; border-top-color: #1e2330; }
+
+.btn-cancel { padding: 8px 16px; font-size: 13px; font-weight: 500; color: #6b7280; background-color: #fff; border: 1px solid #e5e7eb; border-radius: 7px; cursor: pointer; transition: background-color 0.15s, color 0.15s; }
+.btn-cancel:hover { background-color: #f3f4f6; color: #374151; }
+.dark .btn-cancel { background-color: #1e2330; border-color: #252b3b; color: #9ca3af; }
+.dark .btn-cancel:hover { background-color: #252b3b; color: #d1d5db; }
+
+.btn-submit { display: flex; align-items: center; gap: 6px; padding: 8px 18px; font-size: 13px; font-weight: 600; color: #fff; background-color: #4f46e5; border: none; border-radius: 7px; cursor: pointer; transition: background-color 0.15s; }
+.btn-submit:hover { background-color: #4338ca; }
+.btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* ─── Loading State ──────────────────────────────────────────────────────────── */
+.loading-state { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 80px 20px; color: #9ca3af; font-size: 13px; }

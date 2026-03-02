@@ -37,11 +37,11 @@ class BrandController extends Controller implements HasMiddleware
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'name'        => 'required|string|max:255',
             'description' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'is_active' => 'boolean',
-            'sort_order' => 'integer',
+            'image'       => 'nullable|string',
+            'is_active'   => 'boolean',
+            'sort_order'  => 'integer',
         ]);
 
         // Generate slug
@@ -55,20 +55,18 @@ class BrandController extends Controller implements HasMiddleware
         }
         $validated['slug'] = $slug;
 
+        // image: accept file upload OR path string from media library
         if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('brands', 'public');
-            $validated['image'] = $imagePath;
+            $validated['image'] = $request->file('image')->store('brands', 'public');
+        } elseif ($request->filled('image')) {
+            $validated['image'] = $request->input('image');
         }
-
-        // if (auth()->check()) {
-        //    $validated['vendor_id'] = auth()->id();
-        // }
 
         $brand = Brand::create($validated);
         return response()->json([
             'message' => 'Brand created successfully',
-            'data' => $brand,
-            'status' => 201
+            'data'    => $brand,
+            'status'  => 201
         ]);
     }
 
@@ -83,11 +81,11 @@ class BrandController extends Controller implements HasMiddleware
     public function update(Request $request, Brand $brand)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'name'        => 'required|string|max:255',
             'description' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'is_active' => 'boolean',
-            'sort_order' => 'integer',
+            'image'       => 'nullable|string',
+            'is_active'   => 'boolean',
+            'sort_order'  => 'integer',
         ]);
 
         if ($request->has('name') && $request->name !== $brand->name) {
@@ -102,19 +100,21 @@ class BrandController extends Controller implements HasMiddleware
             $validated['slug'] = $slug;
         }
 
+        // image: accept file upload OR path string from media library
         if ($request->hasFile('image')) {
-            if ($brand->image) {
+            if ($brand->image && !str_starts_with($brand->image, 'uploads/')) {
                 Storage::delete('public/' . $brand->image);
             }
-            $imagePath = $request->file('image')->store('brands', 'public');
-            $validated['image'] = $imagePath;
+            $validated['image'] = $request->file('image')->store('brands', 'public');
+        } elseif ($request->filled('image')) {
+            $validated['image'] = $request->input('image');
         }
 
         $brand->update($validated);
         return response()->json([
             'message' => 'Brand updated successfully',
-            'data' => $brand,
-            'status' => 200
+            'data'    => $brand,
+            'status'  => 200
         ]);
     }
 

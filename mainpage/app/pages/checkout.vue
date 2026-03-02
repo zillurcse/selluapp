@@ -82,6 +82,28 @@
                     />
                   </div>
                 </div>
+
+                <!-- Carrier Selection (Visible if any vendor uses carrier_wise) -->
+                <div v-if="availableCarriers.length > 0" class="sm:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700 mb-3">Select Shipping Carrier</label>
+                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <button 
+                      v-for="carrier in availableCarriers" 
+                      :key="carrier.id"
+                      type="button"
+                      @click="form.carrier = carrier.id; handleCityChange()"
+                      :class="[
+                        'px-4 py-3 rounded-xl border-2 text-sm font-bold transition-all flex flex-col items-center gap-2',
+                        form.carrier === carrier.id 
+                          ? 'border-black bg-black text-white px-8' 
+                          : 'border-gray-100 bg-gray-50 text-gray-600 hover:border-gray-200'
+                      ]"
+                    >
+                      {{ carrier.name }}
+                    </button>
+                  </div>
+                </div>
+
                 <div class="sm:col-span-2">
                   <label class="block text-sm font-medium text-gray-700 mb-1.5">Full Address</label>
                   <textarea v-model="form.address" rows="2" placeholder="House #, Road #, Area details..." class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black focus:border-transparent text-sm transition-shadow reseize-none"></textarea>
@@ -242,6 +264,13 @@ const loadingGateways = ref(false)
 const paymentMethod = ref('')
 const loading = ref(false)
 
+const states = ref([])
+const cities = ref([])
+const loadingCities = ref(false)
+const shippingCost = ref(0)
+const selectedCity = ref(null)
+const availableCarriers = ref([])
+
 const form = ref({
   email: '',
   first_name: '',
@@ -253,14 +282,9 @@ const form = ref({
   postal_code: '',
   card_number: '',
   expiry_date: '',
-  cvc: ''
+  cvc: '',
+  carrier: 'personal'
 })
-
-const states = ref([])
-const cities = ref([])
-const loadingCities = ref(false)
-const shippingCost = ref(0)
-const selectedCity = ref(null)
 
 const fetchStates = async () => {
   try {
@@ -309,18 +333,31 @@ const handleCityChange = async () => {
         method: 'POST',
         body: { 
           city_id: city.id,
-          items: cart.value
+          items: cart.value,
+          carrier: form.value.carrier
         }
       })
       if (response.status === 1) {
         shippingCost.value = response.cost
+        availableCarriers.value = response.available_carriers || []
+        // If current carrier is not in available carriers, select first or default
+        if (availableCarriers.value.length > 0) {
+           const exists = availableCarriers.value.find(c => c.id === form.value.carrier)
+           if (!exists) {
+             form.value.carrier = availableCarriers.value[0].id
+             // Recalculate if we switched carrier
+             handleCityChange()
+           }
+        }
       } else {
         // Fallback to local cost if API fails or returns error
         shippingCost.value = parseFloat(city.cost || 0)
+        availableCarriers.value = []
       }
     } catch (error) {
       console.error('Failed to estimate shipping:', error)
       shippingCost.value = parseFloat(city.cost || 0)
+      availableCarriers.value = []
     }
   } else {
     selectedCity.value = null

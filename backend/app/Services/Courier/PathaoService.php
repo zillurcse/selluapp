@@ -12,35 +12,51 @@ class PathaoService
     protected $token;
     protected $config;
 
-    public function __construct()
+    public function __construct($vendorId = null)
     {
         // Load config from individual settings OR consolidated 'pathao' JSON
-        $consolidated = get_setting('pathao', []);
-        
-        $this->config = [
-            'client_id' => get_setting('pathao_client_id', $consolidated['clientId'] ?? ($consolidated['client_id'] ?? null)),
-            'client_secret' => get_setting('pathao_client_secret', $consolidated['clientSecret'] ?? ($consolidated['client_secret'] ?? null)),
-            'username' => get_setting('pathao_username', $consolidated['email'] ?? ($consolidated['username'] ?? null)),
-            'password' => get_setting('pathao_password', $consolidated['password'] ?? null),
-            'store_id' => get_setting('pathao_store_id', $consolidated['storeId'] ?? ($consolidated['store_id'] ?? null)),
-            'sandbox' => get_setting('pathao_sandbox', $consolidated['sandbox'] ?? 0),
-        ];
+        // If vendorId is provided, look into shop_settings/business_settings for that vendor
+        if ($vendorId) {
+            $consolidated = get_vendor_setting($vendorId, 'pathao', []);
+            $this->config = [
+                'client_id' => get_vendor_setting($vendorId, 'pathao_client_id', $consolidated['clientId'] ?? ($consolidated['client_id'] ?? null)),
+                'client_secret' => get_vendor_setting($vendorId, 'pathao_client_secret', $consolidated['clientSecret'] ?? ($consolidated['client_secret'] ?? null)),
+                'username' => get_vendor_setting($vendorId, 'pathao_username', $consolidated['email'] ?? ($consolidated['username'] ?? null)),
+                'password' => get_vendor_setting($vendorId, 'pathao_password', $consolidated['password'] ?? null),
+                'store_id' => get_vendor_setting($vendorId, 'pathao_store_id', $consolidated['storeId'] ?? ($consolidated['store_id'] ?? null)),
+                'sandbox' => get_vendor_setting($vendorId, 'pathao_sandbox', $consolidated['sandbox'] ?? 0),
+            ];
+        } else {
+            $consolidated = get_setting('pathao', []);
+            $this->config = [
+                'client_id' => get_setting('pathao_client_id', $consolidated['clientId'] ?? ($consolidated['client_id'] ?? null)),
+                'client_secret' => get_setting('pathao_client_secret', $consolidated['clientSecret'] ?? ($consolidated['client_secret'] ?? null)),
+                'username' => get_setting('pathao_username', $consolidated['email'] ?? ($consolidated['username'] ?? null)),
+                'password' => get_setting('pathao_password', $consolidated['password'] ?? null),
+                'store_id' => get_setting('pathao_store_id', $consolidated['storeId'] ?? ($consolidated['store_id'] ?? null)),
+                'sandbox' => get_setting('pathao_sandbox', $consolidated['sandbox'] ?? 0),
+            ];
+        }
 
         $this->baseUrl = $this->config['sandbox'] == 1 
             ? 'https://courier-api-sandbox.pathao.com' 
             : 'https://api-hermes.pathao.com';
 
-        // Add version path if not present but needed by API
-        // For Pathao, endpoints like /cities are under /aladdin/api/v1/
         $this->apiBaseUrl = $this->baseUrl . '/aladdin/api/v1';
 
-        $this->token = $this->getToken();
+        $this->token = $this->getToken($vendorId);
     }
 
-    protected function getToken()
+    protected function getToken($vendorId = null)
     {
-        $token = cache('pathao_token');
+        $cacheKey = $vendorId ? "pathao_token_{$vendorId}" : "pathao_token";
+        $token = cache($cacheKey);
         if ($token) return $token;
+
+        if (empty($this->config['client_id']) || empty($this->config['client_secret']) || empty($this->config['username']) || empty($this->config['password'])) {
+            \Log::error("Pathao credentials missing for vendor: " . ($vendorId ?? 'SYSTEM'));
+            return null;
+        }
 
         $payload = [
             'client_id' => $this->config['client_id'],
@@ -50,19 +66,23 @@ class PathaoService
             'grant_type' => 'password',
         ];
 
-        \Log::info("Pathao getToken request to: " . $this->baseUrl . '/aladdin/api/v1/issue-token');
+        \Log::info("Pathao getToken request for " . ($vendorId ?? 'SYSTEM') . " to: " . $this->baseUrl . '/aladdin/api/v1/issue-token');
         
-        $response = Http::post($this->baseUrl . '/aladdin/api/v1/issue-token', $payload);
+        try {
+            $response = Http::post($this->baseUrl . '/aladdin/api/v1/issue-token', $payload);
 
-        if ($response->successful()) {
-            $data = $response->json();
-            \Log::info("Pathao getToken success.");
-            cache(['pathao_token' => $data['access_token']], $data['expires_in'] - 60);
-            return $data['access_token'];
+            if ($response->successful()) {
+                $data = $response->json();
+                \Log::info("Pathao getToken success for " . ($vendorId ?? 'SYSTEM'));
+                cache([$cacheKey => $data['access_token']], $data['expires_in'] - 60);
+                return $data['access_token'];
+            }
+
+            \Log::error("Pathao getToken failed. Status: " . $response->status());
+            \Log::error("Pathao getToken response: " . $response->body());
+        } catch (\Exception $e) {
+            \Log::error("Pathao getToken exception: " . $e->getMessage());
         }
-
-        \Log::error("Pathao getToken failed. Status: " . $response->status());
-        \Log::error("Pathao getToken response: " . $response->body());
 
         return null;
     }

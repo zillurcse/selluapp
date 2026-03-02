@@ -123,9 +123,14 @@
         <NuxtLink to="/about" class="nav-link-tailwind">Our Story</NuxtLink>
       </div>
 
+      <!-- Desktop Search Bar -->
+      <div class="hidden lg:flex flex-1 max-w-xl mx-8">
+        <TheGlobalSearch />
+      </div>
+
       <!-- Actions -->
       <div class="flex items-center gap-2 md:gap-4">
-        <button class="p-2.5 rounded-full hover:bg-gray-100 transition-all active:scale-95 text-gray-900">
+        <button class="lg:hidden p-2.5 rounded-full hover:bg-gray-100 transition-all active:scale-95 text-gray-900">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
         </button>
         

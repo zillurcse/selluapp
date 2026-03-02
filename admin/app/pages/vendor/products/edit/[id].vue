@@ -1,34 +1,34 @@
 <template>
-  <div v-if="isListView" class="max-w-[1600px] mx-auto p-10 bg-[#f8fafc]">
+  <div v-if="isListView" class="max-w-[1600px] mx-auto p-6 lg:p-8 bg-slate-50 dark:bg-slate-950 min-h-screen">
     <!-- LIST VIEW CONTENT -->
     <!-- Header Section -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-      <div class="flex items-center gap-4">
-        <button @click="$router.back()" class="p-2.5 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all shadow-sm active:scale-95 group">
-          <ChevronLeft class="w-5 h-5 text-slate-600 group-hover:-translate-x-0.5 transition-transform" />
+      <div class="flex items-center gap-3">
+        <button @click="$router.back()" class="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm">
+          <ChevronLeft class="w-4 h-4 text-slate-600 dark:text-slate-400" />
         </button>
         <div>
-          <h1 class="text-2xl font-black text-slate-900 leading-tight tracking-tight">Products</h1>
-          <p class="text-sm text-slate-500 font-semibold opacity-80">Manage and track your product inventory efficiently.</p>
+          <h1 class="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Products</h1>
+          <p class="text-sm text-slate-500 dark:text-slate-400">Manage and track your product inventory.</p>
         </div>
       </div>
-      <NuxtLink to="/vendor/products/create" class="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl transition-all shadow-lg shadow-indigo-600/20 active:scale-95 group">
-        <Plus class="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
+      <NuxtLink to="/vendor/products/create" class="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-all shadow-sm text-sm">
+        <Plus class="w-4 h-4" />
         Add Product
       </NuxtLink>
     </div>
 
     <!-- Status Tabs -->
-    <div class="flex flex-wrap items-center gap-2 mb-8">
+    <div class="flex flex-wrap items-center gap-2 mb-6">
       <NuxtLink 
         v-for="tab in tabs" 
         :key="tab.value"
         :to="tab.value === 'all' ? '/vendor/products' : `/vendor/products/${tab.value}`"
         :class="[
-          'px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 border',
+          'px-4 py-2 rounded-lg font-semibold text-sm transition-all border',
           activeStatus === tab.value 
-            ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-600/20' 
-            : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+            ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' 
+            : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-slate-300 hover:bg-slate-50'
         ]"
       >
         {{ tab.label }}
@@ -36,41 +36,41 @@
     </div>
 
     <!-- Filter Section Area -->
-    <div class="bg-white rounded-[24px] shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] border border-slate-200/60 mb-8 p-8">
-      <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 flex-grow">
+    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 mb-6 p-6">
+      <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 flex-grow">
           <!-- Product Name -->
-          <div class="flex flex-col gap-2">
-            <label class="text-xs font-black text-slate-400 uppercase tracking-[0.1em] ml-1">Product Name</label>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Product Name</label>
             <div class="relative">
               <input 
                 v-model="searchQuery"
                 type="text" 
                 placeholder="Search products..." 
-                class="w-full h-12 pl-5 pr-10 bg-slate-50/50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400 text-slate-700 font-semibold"
+                class="w-full h-10 pl-4 pr-10 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400 text-slate-700 dark:text-slate-300 text-sm font-medium"
               >
             </div>
           </div>
 
           <!-- Category -->
-          <div class="flex flex-col gap-2">
-            <label class="text-xs font-black text-slate-400 uppercase tracking-[0.1em] ml-1">Category</label>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Category</label>
             <div class="relative">
-              <select v-model="selectedCategory" class="w-full h-12 pl-5 pr-10 bg-slate-50/50 border border-slate-200 rounded-2xl appearance-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all text-slate-700 font-semibold cursor-pointer">
+              <select v-model="selectedCategory" class="w-full h-10 pl-4 pr-10 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg appearance-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all text-slate-700 dark:text-slate-300 text-sm font-medium cursor-pointer">
                 <option value="">All Categories</option>
                 <option v-for="cat in listCategories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
               </select>
-              <ChevronDown class="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              <ChevronDown class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
             </div>
           </div>
 
           <!-- Action Buttons -->
-          <div class="flex gap-3 lg:items-end">
-            <button @click="fetchProducts" class="h-12 px-8 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-2xl transition-all shadow-xl shadow-slate-900/10 active:scale-95 flex items-center justify-center gap-2">
+          <div class="flex gap-2 lg:items-end">
+            <button @click="fetchProducts" class="h-10 px-5 bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 dark:hover:bg-slate-600 text-white font-semibold rounded-lg transition-all shadow-sm flex items-center justify-center gap-2 text-sm">
               <Search class="w-4 h-4" />
               Filter
             </button>
-            <button @click="clearFilters" class="h-12 px-6 bg-slate-100 hover:bg-slate-200 text-slate-600 font-black rounded-2xl transition-all flex items-center justify-center gap-2 active:scale-95">
+            <button @click="clearFilters" class="h-10 px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 font-semibold rounded-lg transition-all flex items-center justify-center gap-2 text-sm">
               <X class="w-4 h-4" />
               Clear
             </button>
@@ -79,10 +79,10 @@
 
         <div class="flex lg:items-end">
           <button @click="bulkDelete" :disabled="selectedItems.length === 0" :class="[
-            'h-12 px-8 font-black rounded-2xl transition-all flex items-center gap-2 group whitespace-nowrap active:scale-95 shadow-lg',
-            selectedItems.length > 0 ? 'bg-red-50 text-red-600 border border-red-100 hover:bg-red-600 hover:text-white shadow-red-600/5' : 'bg-slate-50 text-slate-300 border border-slate-100 cursor-not-allowed shadow-none'
+            'h-10 px-5 font-semibold rounded-lg transition-all flex items-center gap-2 whitespace-nowrap text-sm',
+            selectedItems.length > 0 ? 'bg-red-50 dark:bg-red-900/20 text-red-600 border border-red-100 dark:border-red-900/30 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 dark:hover:text-white' : 'bg-slate-50 dark:bg-slate-800 text-slate-300 dark:text-slate-600 border border-slate-100 dark:border-slate-700 cursor-not-allowed'
           ]">
-            <Trash2 class="w-4 h-4" :class="{ 'group-hover:animate-bounce': selectedItems.length > 0 }" />
+            <Trash2 class="w-4 h-4" />
             Bulk Delete
           </button>
         </div>
@@ -90,102 +90,100 @@
     </div>
 
     <!-- Products Table Container -->
-    <div class="bg-white rounded-[24px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.06)] border border-slate-200/60 group overflow-hidden">
-      <div class="overflow-x-auto custom-scrollbar">
+    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+      <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
           <thead>
-            <tr class="bg-slate-900 border-b border-slate-800">
-              <th class="py-6 px-8 font-black text-[10px] uppercase tracking-[0.2em] text-slate-400">
-                <div class="flex items-center gap-4">
-                  <span class="text-white">#</span>
-                  <input type="checkbox" @change="toggleAll" :checked="isAllSelected" class="w-4 h-4 rounded border-slate-700 bg-transparent text-indigo-600 focus:ring-indigo-500/50 cursor-pointer">
+            <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
+              <th class="py-4 px-6 font-semibold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <div class="flex items-center gap-3">
+                  <input type="checkbox" @change="toggleAll" :checked="isAllSelected" class="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500/30 cursor-pointer">
+                  <span>#</span>
                 </div>
               </th>
-              <th class="py-6 px-8 font-black text-[10px] uppercase tracking-[0.2em] text-[#f8fafc]">Product</th>
-              <th class="py-6 px-8 font-black text-[10px] uppercase tracking-[0.2em] text-[#f8fafc]">Category</th>
-              <th class="py-6 px-8 font-black text-[10px] uppercase tracking-[0.2em] text-[#f8fafc]">Price</th>
-              <th class="py-6 px-8 font-black text-[10px] uppercase tracking-[0.2em] text-[#f8fafc]">Status</th>
-              <th class="py-6 px-8 font-black text-[10px] uppercase tracking-[0.2em] text-[#f8fafc] text-right">Actions</th>
+              <th class="py-4 px-6 font-semibold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">Product</th>
+              <th class="py-4 px-6 font-semibold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">Category</th>
+              <th class="py-4 px-6 font-semibold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">Price</th>
+              <th class="py-4 px-6 font-semibold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">Status</th>
+              <th class="py-4 px-6 font-semibold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             <!-- Empty State -->
             <tr v-if="products.length === 0">
-              <td colspan="6" class="py-32 px-8 text-center">
-                <div class="flex flex-col items-center justify-center gap-8 max-w-sm mx-auto animate-in fade-in zoom-in duration-700">
-                  <div class="w-28 h-28 bg-slate-50 rounded-[40px] flex items-center justify-center border-4 border-white shadow-2xl rotate-3 transition-transform hover:rotate-0 duration-500">
-                    <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center border border-slate-100 shadow-inner">
-                      <Box class="w-8 h-8 text-slate-300" />
-                    </div>
+              <td colspan="6" class="py-24 px-8 text-center">
+                <div class="flex flex-col items-center justify-center gap-5 max-w-xs mx-auto">
+                  <div class="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center">
+                    <Box class="w-9 h-9 text-slate-400 dark:text-slate-600" />
                   </div>
                   <div>
-                    <h3 class="text-2xl font-black text-slate-800 mb-3 tracking-tight">No products found</h3>
-                    <p class="text-slate-500 font-semibold leading-relaxed px-4">
-                      Try adjusting your filters or add your first product to get started.
+                    <h3 class="text-lg font-bold text-slate-800 dark:text-slate-200 mb-1">No products found</h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">
+                      Try adjusting your filters or add your first product.
                     </p>
                   </div>
-                  <button @click="fetchProducts" class="flex items-center gap-3 px-10 py-4 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-[20px] transition-all shadow-2xl shadow-slate-900/20 active:scale-95 group">
-                    <RefreshCw class="w-5 h-5 group-hover:rotate-180 transition-transform duration-700" />
-                    Reload Page
+                  <button @click="fetchProducts" class="flex items-center gap-2 px-5 py-2 bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 dark:hover:bg-slate-600 text-white font-semibold rounded-lg transition-all shadow-sm text-sm">
+                    <RefreshCw class="w-4 h-4" />
+                    Reload
                   </button>
                 </div>
               </td>
             </tr>
             <!-- Products Rows -->
-            <tr v-else v-for="(product, index) in products" :key="product.id" class="border-b border-slate-50 hover:bg-slate-50 transition-colors group/row">
-              <td class="px-8 py-5">
-                <div class="flex items-center gap-4">
-                  <span class="text-xs font-bold text-slate-400">#{{ index + 1 }}</span>
-                  <input type="checkbox" v-model="selectedItems" :value="product.id" class="w-4 h-4 rounded border-slate-200 text-indigo-600 focus:ring-indigo-500/50 cursor-pointer">
+            <tr v-else v-for="(product, index) in products" :key="product.id" class="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group/row">
+              <td class="px-6 py-4">
+                <div class="flex items-center gap-3">
+                  <span class="text-xs font-medium text-slate-400">{{ index + 1 }}</span>
+                  <input type="checkbox" v-model="selectedItems" :value="product.id" class="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500/30 cursor-pointer">
                 </div>
               </td>
-              <td class="px-8 py-5">
+              <td class="px-6 py-4">
                 <div class="flex items-center">
-                  <div class="h-12 w-12 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden flex-shrink-0 shadow-sm">
+                  <div class="h-11 w-11 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 overflow-hidden flex-shrink-0 shadow-sm">
                     <img v-if="product.image" :src="product.image" class="h-full w-full object-cover">
-                    <div v-else class="h-full w-full flex items-center justify-center text-slate-400 bg-slate-50">
-                      <Image class="w-5 h-5 opacity-40" />
+                    <div v-else class="h-full w-full flex items-center justify-center text-slate-400 bg-slate-50 dark:bg-slate-900">
+                      <Image class="w-4 h-4 opacity-40" />
                     </div>
                   </div>
-                  <div class="ml-4">
-                    <div class="text-sm font-black text-slate-900">{{ product.name }}</div>
-                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">SKU: {{ product.sku || 'N/A' }}</div>
+                  <div class="ml-3">
+                    <div class="text-sm font-semibold text-slate-900 dark:text-white">{{ product.name }}</div>
+                    <div class="text-xs text-slate-400 dark:text-slate-500 font-medium mt-0.5">SKU: {{ product.sku || 'N/A' }}</div>
                   </div>
                 </div>
               </td>
-              <td class="px-8 py-5">
+              <td class="px-6 py-4">
                 <div class="flex flex-wrap gap-1.5">
-                  <span v-for="cat in product.categories" :key="cat.id" class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-black uppercase tracking-wider">
+                  <span v-for="cat in product.categories" :key="cat.id" class="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded text-xs font-medium">
                     {{ cat.name }}
                   </span>
-                  <span v-if="!product.categories?.length || product.categories?.length === 0" class="text-xs text-slate-400 font-mediumitalic">Uncategorized</span>
+                  <span v-if="!product.categories?.length || product.categories?.length === 0" class="text-xs text-slate-400 italic">Uncategorized</span>
                 </div>
               </td>
-              <td class="px-8 py-5">
-                <div class="text-sm font-black text-slate-900">৳{{ product.sale_price }}</div>
-                <div v-if="product.purchase_price" class="text-[10px] font-bold text-slate-400 line-through opacity-60 mt-0.5">৳{{ product.purchase_price }}</div>
+              <td class="px-6 py-4">
+                <div class="text-sm font-bold text-slate-900 dark:text-white">৳{{ product.sale_price }}</div>
+                <div v-if="product.purchase_price" class="text-xs text-slate-400 dark:text-slate-500 line-through mt-0.5">৳{{ product.purchase_price }}</div>
               </td>
-              <td class="px-8 py-5">
+              <td class="px-6 py-4">
                 <span :class="[
-                  'px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1.5',
-                  product.status === 'published' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 
-                  product.status === 'draft' ? 'bg-slate-50 text-slate-500 border border-slate-100' :
-                  'bg-amber-50 text-amber-600 border border-amber-100'
+                  'px-2.5 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1.5',
+                  product.status === 'published' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30' : 
+                  product.status === 'draft' ? 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700' :
+                  'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30'
                 ]">
                   <span class="w-1.5 h-1.5 rounded-full" :class="[
-                    product.status === 'published' ? 'bg-emerald-600' : 
-                    product.status === 'draft' ? 'bg-slate-500' :
-                    'bg-amber-600'
+                    product.status === 'published' ? 'bg-emerald-500' : 
+                    product.status === 'draft' ? 'bg-slate-400' :
+                    'bg-amber-500'
                   ]"></span>
                   {{ product.status }}
                 </span>
               </td>
-              <td class="px-8 py-5 text-right">
-                <div class="flex justify-end gap-2 opacity-0 group-hover/row:opacity-100 transition-all duration-300 translate-x-4 group-hover/row:translate-x-0">
-                  <NuxtLink :to="`/vendor/products/${product.id}`" class="p-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white rounded-lg transition-all shadow-sm">
+              <td class="px-6 py-4 text-right">
+                <div class="flex justify-end gap-1.5">
+                  <NuxtLink :to="`/vendor/products/${product.id}`" class="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-all">
                     <Pencil class="w-4 h-4" />
                   </NuxtLink>
-                  <button @click="deleteProduct(product.id)" class="p-2 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white rounded-lg transition-all shadow-sm">
+                  <button @click="deleteProduct(product.id)" class="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all">
                     <Trash2 class="w-4 h-4" />
                   </button>
                 </div>
@@ -197,11 +195,14 @@
     </div>
   </div>
 
-  <div v-else class="max-w-[1600px] mx-auto p-10 bg-[#f8fafc] dark:bg-slate-950 transition-colors duration-300">
+  <div v-else class="max-w-[1600px] mx-auto p-6 lg:p-8 bg-slate-50 dark:bg-slate-950 min-h-screen transition-colors duration-300">
     <!-- EDIT VIEW CONTENT -->
-    <div class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-semibold text-gray-800 dark:text-white">Edit Product</h1>
-      <NuxtLink to="/vendor/products" class="px-4 py-2 bg-gray-100 dark:bg-slate-800 border border-transparent dark:border-slate-700 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 text-sm font-medium transition-colors">
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <h1 class="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Edit Product</h1>
+        <p class="text-sm text-slate-500 dark:text-slate-400">Update the details of your product.</p>
+      </div>
+      <NuxtLink to="/vendor/products" class="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-semibold transition-all shadow-sm">
         Back to List
       </NuxtLink>
     </div>
@@ -211,12 +212,12 @@
        <p class="text-gray-500">Loading product details...</p>
     </div>
 
-    <form v-else @submit.prevent="updateProduct" class="grid grid-cols-12 gap-6">
+    <form v-else @submit.prevent="updateProduct" class="grid grid-cols-12 gap-6 lg:gap-8">
       <!-- Left Column (Main Content) -->
-      <div class="col-span-12 lg:col-span-9 space-y-6">
+      <div class="col-span-12 lg:col-span-9 space-y-6 lg:space-y-8">
         
         <!-- Basic Info -->
-        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm ring-1 ring-gray-200/50 dark:ring-slate-800 p-6 transition-colors">
+        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 lg:p-8 transition-colors">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Product Name <span class="text-red-500">*</span></label>
@@ -234,7 +235,8 @@
         </div>
 
         <!-- Identifiers -->
-        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm ring-1 ring-gray-200/50 dark:ring-slate-800 p-6 transition-colors">
+        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 lg:p-8 transition-colors">
+          <h2 class="text-base font-bold text-slate-900 dark:text-white mb-4">Inventory Codes</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5 uppercase tracking-tighter font-black opacity-60">SKU (Stock Keeping Unit)</label>
@@ -331,14 +333,14 @@
         </div>
 
         <!-- Product Variants Configuration -->
-        <div v-if="form.has_variants" class="bg-white dark:bg-slate-900 rounded-xl shadow-sm ring-1 ring-gray-200/50 dark:ring-slate-800 p-6 transition-colors space-y-6">
+        <div v-if="form.has_variants" class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 transition-colors space-y-6">
             <div class="flex items-center justify-between">
-                <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                    <Box class="w-5 h-5 text-primary-500" />
+                <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Box class="w-4 h-4 text-indigo-500" />
                     Product Variants
                 </h3>
-                <button type="button" @click="addAttributeLine" class="flex items-center gap-2 px-4 py-2 bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/50 text-sm font-bold transition-all">
-                    <Plus class="w-4 h-4" />
+                <button type="button" @click="addAttributeLine" class="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/40 text-xs font-bold transition-all">
+                    <Plus class="w-3.5 h-3.5" />
                     Add Attribute
                 </button>
             </div>
@@ -438,53 +440,53 @@
         <!-- Accordions -->
         <div class="space-y-4">
            <!-- Product Images -->
-           <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm ring-1 ring-gray-200/50 dark:ring-slate-800 overflow-hidden transition-colors">
-               <button type="button" @click="toggleAccordion('images')" class="w-full px-8 py-5 flex items-center justify-between hover:bg-gray-50/50 dark:hover:bg-slate-800/50 bg-white dark:bg-slate-900 transition-colors">
-                  <div class="flex items-center font-medium text-blue-700 dark:text-blue-400 group">
-                    <span class="mr-3 p-1 rounded-md bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/50 transition-colors">
+           <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden transition-colors">
+               <button type="button" @click="toggleAccordion('images')" class="w-full px-8 py-5 flex items-center justify-between hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                  <div class="flex items-center font-bold text-slate-800 dark:text-slate-100 group">
+                    <span class="mr-3 p-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/30 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                          <Image class="w-4 h-4" />
                      </span>
                      Product Images
                   </div>
-                  <ChevronDown class="w-5 h-5 text-gray-400 dark:text-slate-500 transition-transform duration-300" :class="{'rotate-180': sections.images}" />
+                  <ChevronDown class="w-5 h-5 text-slate-400 dark:text-slate-500 transition-transform duration-300" :class="{'rotate-180': sections.images}" />
                </button>
-               <div v-show="sections.images" class="p-8 border-t border-gray-100 dark:border-slate-800">
+               <div v-show="sections.images" class="p-8 border-t border-slate-100 dark:border-slate-800">
                   <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                      <!-- Thumbnail -->
                      <div class="col-span-1">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Thumbnail (Max 5MB)</label>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Thumbnail (Max 5MB)</label>
                         <div 
                            @click="openMediaLibrary('thumbnail')" 
-                           class="border-2 border-dashed border-gray-200 dark:border-slate-700 hover:border-primary-400 dark:hover:border-primary-500 bg-gray-50/50 dark:bg-slate-800/50 hover:bg-primary-50/10 dark:hover:bg-primary-900/10 rounded-2xl h-64 flex flex-col items-center justify-center transition-all cursor-pointer relative overflow-hidden group shadow-sm"
+                           class="border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-500 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-indigo-50/10 rounded-xl h-64 flex flex-col items-center justify-center transition-all cursor-pointer relative overflow-hidden group shadow-sm"
                         >
-                           <div v-if="thumbnailPreview" class="absolute inset-0 w-full h-full p-2 animate-in fade-in duration-300">
-                              <img :src="thumbnailPreview" class="w-full h-full object-cover rounded-xl shadow-md" />
-                              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-xl m-2">
-                                <span class="text-white text-[10px] font-black uppercase tracking-widest bg-primary-600 px-4 py-2 rounded-lg shadow-lg">Change Image</span>
+                           <div v-if="thumbnailPreview" class="absolute inset-0 w-full h-full p-2">
+                              <img :src="thumbnailPreview" class="w-full h-full object-cover rounded-lg shadow-sm" />
+                              <div class="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg m-2">
+                                <span class="text-white text-[10px] font-bold uppercase tracking-widest bg-indigo-600 px-4 py-2 rounded-lg shadow-lg">Change Image</span>
                               </div>
                            </div>
                            <div v-else class="text-center p-6">
-                              <div class="w-16 h-16 rounded-2xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center mx-auto mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
-                                <UploadCloud class="w-8 h-8 text-primary-500" />
+                              <div class="w-14 h-14 rounded-xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                                <UploadCloud class="w-7 h-7 text-indigo-500" />
                               </div>
-                              <span class="text-xs font-black text-gray-900 dark:text-white block mb-1 uppercase tracking-tight">Select from Gallery</span>
-                              <span class="text-[10px] text-gray-400 dark:text-slate-500 font-bold uppercase">400x400 Recommended</span>
+                              <span class="text-xs font-bold text-slate-700 dark:text-slate-200 block mb-1 uppercase tracking-tight">Select from Gallery</span>
+                              <span class="text-[10px] text-slate-400 font-bold uppercase">400x400 Recommended</span>
                            </div>
                         </div>
                      </div>
                      <!-- Gallery -->
                       <div class="col-span-1 md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Gallery Images (Max 10 Images)</label>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Gallery Images (Max 10 Images)</label>
                          <div 
                            @click="openMediaLibrary('gallery')"
-                           class="border-2 border-dashed border-gray-200 dark:border-slate-700 hover:border-primary-400 dark:hover:border-primary-500 bg-gray-50/50 dark:bg-slate-800/50 hover:bg-primary-50/10 dark:hover:bg-primary-900/10 rounded-2xl h-64 flex flex-col items-center justify-center transition-all cursor-pointer relative overflow-hidden group shadow-sm"
+                           class="border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-500 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-indigo-50/10 rounded-xl h-64 flex flex-col items-center justify-center transition-all cursor-pointer relative overflow-hidden group shadow-sm"
                          >
                            <div class="text-center p-6">
-                              <div class="w-16 h-16 rounded-2xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center mx-auto mb-4 group-hover:scale-110 group-hover:-rotate-3 transition-all duration-300">
-                                <Library class="w-8 h-8 text-primary-500" />
+                              <div class="w-14 h-14 rounded-xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center mx-auto mb-4 group-hover:scale-110 group-hover:-rotate-3 transition-all duration-300">
+                                <Library class="w-7 h-7 text-indigo-500" />
                               </div>
-                              <span class="text-xs font-black text-gray-900 dark:text-white block mb-1 uppercase tracking-tight">Open Media Gallery</span>
-                              <span class="text-[10px] text-gray-400 dark:text-slate-500 font-bold uppercase">Select multiple images</span>
+                              <span class="text-xs font-bold text-slate-700 dark:text-slate-200 block mb-1 uppercase tracking-tight">Open Media Gallery</span>
+                              <span class="text-[10px] text-slate-400 font-bold uppercase">Select multiple images</span>
                            </div>
                         </div>
                      </div>
@@ -515,15 +517,15 @@
            </div>
 
            <!-- Product Description & SEO -->
-           <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm ring-1 ring-gray-200/50 dark:ring-slate-800 overflow-hidden transition-colors">
-               <button type="button" @click="toggleAccordion('seo')" class="w-full px-8 py-5 flex items-center justify-between hover:bg-gray-50/50 dark:hover:bg-slate-800/50 bg-white dark:bg-slate-900 transition-colors">
-                  <div class="flex items-center font-medium text-orange-700 dark:text-orange-400 group">
-                    <span class="mr-3 p-1 rounded-md bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 group-hover:bg-orange-100 dark:group-hover:bg-orange-900/50 transition-colors">
+           <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden transition-colors">
+               <button type="button" @click="toggleAccordion('seo')" class="w-full px-8 py-5 flex items-center justify-between hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                  <div class="flex items-center font-bold text-slate-800 dark:text-slate-100 group">
+                    <span class="mr-3 p-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/30 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                         <Pencil class="w-4 h-4" />
                      </span>
                      Product Description & SEO Settings
                   </div>
-                  <ChevronDown class="w-5 h-5 text-gray-400 dark:text-slate-500 transition-transform duration-300" :class="{'rotate-180': sections.seo}" />
+                  <ChevronDown class="w-5 h-5 text-slate-400 dark:text-slate-500 transition-transform duration-300" :class="{'rotate-180': sections.seo}" />
                </button>
                <div v-show="sections.seo" class="p-8 border-t border-gray-100 dark:border-slate-800 space-y-8">
                   <!-- Description -->
@@ -558,15 +560,15 @@
            </div>
 
            <!-- FAQ -->
-           <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm ring-1 ring-gray-200/50 dark:ring-slate-800 overflow-hidden transition-colors">
-               <button type="button" @click="toggleAccordion('faq')" class="w-full px-8 py-5 flex items-center justify-between hover:bg-gray-50/50 dark:hover:bg-slate-800/50 bg-white dark:bg-slate-900 transition-colors">
-                  <div class="flex items-center font-medium text-gray-900 dark:text-white group">
-                     <span class="mr-3 p-1 rounded-md bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/30 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+           <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden transition-colors">
+               <button type="button" @click="toggleAccordion('faq')" class="w-full px-8 py-5 flex items-center justify-between hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                  <div class="flex items-center font-bold text-slate-800 dark:text-slate-100 group">
+                     <span class="mr-3 p-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/30 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                         <HelpCircle class="w-4 h-4" />
                      </span>
                      FAQ (Questions & Answers)
                   </div>
-                  <ChevronDown class="w-5 h-5 text-gray-400 dark:text-slate-500 transition-transform duration-300" :class="{'rotate-180': sections.faq}" />
+                  <ChevronDown class="w-5 h-5 text-slate-400 dark:text-slate-500 transition-transform duration-300" :class="{'rotate-180': sections.faq}" />
                </button>
                <div v-show="sections.faq" class="p-8 border-t border-gray-100 dark:border-slate-800 space-y-4">
                   <div v-for="(faq, index) in localFaqs" :key="index" class="border border-gray-200 dark:border-slate-700 rounded-xl p-5 bg-gray-50/50 dark:bg-slate-800/50 relative group hover:border-gray-300 dark:hover:border-slate-600 transition-colors">
@@ -591,15 +593,15 @@
            </div>
 
            <!-- Specifications -->
-           <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm ring-1 ring-gray-200/50 dark:ring-slate-800 overflow-hidden transition-colors border border-gray-100 dark:border-slate-800">
-               <button type="button" @click="toggleAccordion('specifications')" class="w-full px-8 py-5 flex items-center justify-between hover:bg-gray-50/50 dark:hover:bg-slate-800/50 bg-white dark:bg-slate-900 transition-colors">
-                  <div class="flex items-center font-medium text-gray-900 dark:text-white group">
-                     <span class="mr-3 p-1 rounded-md bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/30 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+           <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden transition-colors">
+               <button type="button" @click="toggleAccordion('specifications')" class="w-full px-8 py-5 flex items-center justify-between hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                  <div class="flex items-center font-bold text-slate-800 dark:text-slate-100 group">
+                     <span class="mr-3 p-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/30 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                         <ListChecks class="w-4 h-4" />
                      </span>
                      Specifications & Key Features
                   </div>
-                  <ChevronDown class="w-5 h-5 text-gray-400 dark:text-slate-500 transition-transform duration-300" :class="{'rotate-180': sections.specifications}" />
+                  <ChevronDown class="w-5 h-5 text-slate-400 dark:text-slate-500 transition-transform duration-300" :class="{'rotate-180': sections.specifications}" />
                </button>
                 <div v-show="sections.specifications" class="p-8 border-t border-gray-100 dark:border-slate-800 space-y-8">
                    <!-- Grouped Dynamic Specifications -->
@@ -684,8 +686,8 @@
       <div class="col-span-12 lg:col-span-3 space-y-6">
         
         <!-- Product Attributes -->
-        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm ring-1 ring-gray-200/50 dark:ring-slate-800 p-6 transition-colors">
-           <h3 class="font-medium text-gray-900 dark:text-white mb-4 pb-2 border-b border-gray-100 dark:border-slate-800">Product Attributes</h3>
+        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 transition-colors">
+           <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-4 pb-2 border-b border-slate-100 dark:border-slate-800">Product Attributes</h3>
            <div class="space-y-4">
               <div v-for="(label, key) in attributeToggles" :key="key" class="flex items-center justify-between">
                  <span class="text-sm text-gray-700 dark:text-slate-300">{{ label }}</span>
@@ -697,7 +699,7 @@
            </div>
 
            <!-- Stock Visibility (New Section) -->
-           <h3 class="font-medium text-gray-900 dark:text-white mt-6 mb-4 pb-2 border-b border-gray-100 dark:border-slate-800">Stock Visibility State</h3>
+           <h3 class="text-sm font-bold text-slate-900 dark:text-white mt-6 mb-4 pb-2 border-b border-slate-100 dark:border-slate-800">Stock Visibility</h3>
            <div class="space-y-4">
               <div class="grid grid-cols-1 gap-3">
                  <label v-for="state in ['quantity', 'text', 'hide']" :key="state" class="flex items-center p-3 rounded-xl border border-gray-100 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group" :class="{'ring-2 ring-primary-500/20 border-primary-500 bg-primary-50/5': form.stock_visibility_state === state}">
@@ -718,11 +720,11 @@
         </div>
 
         <!-- Product Discount -->
-        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm ring-1 ring-gray-200/50 dark:ring-slate-800 p-6 transition-colors">
-           <h3 class="font-medium text-gray-900 dark:text-white mb-4">Product Discount</h3>
-           <div class="space-y-4">
-              <input v-model="form.discount_value" type="number" placeholder="Discount" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all bg-white dark:bg-slate-900 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500" />
-              <select v-model="form.discount_type" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all bg-gray-50/50 dark:bg-slate-800/50 text-gray-900 dark:text-white">
+        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 transition-colors">
+           <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-4">Product Discount</h3>
+           <div class="space-y-3">
+              <input v-model="form.discount_value" type="number" placeholder="Discount" class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 text-sm" />
+              <select v-model="form.discount_type" class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm">
                  <option value="" disabled>Select Type</option>
                  <option value="flat">Fixed</option>
                  <option value="percent">Percent (%)</option>
@@ -731,15 +733,15 @@
         </div>
 
         <!-- Note -->
-        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm ring-1 ring-gray-200/50 dark:ring-slate-800 p-6 transition-colors">
-           <h3 class="font-medium text-gray-900 dark:text-white mb-4">Note</h3>
-           <textarea v-model="form.note" rows="3" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all bg-white dark:bg-slate-900 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 text-sm"></textarea>
+        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 transition-colors">
+           <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-3">Internal Note</h3>
+           <textarea v-model="form.note" rows="3" class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm"></textarea>
         </div>
 
         <!-- Product Status -->
-        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm ring-1 ring-gray-200/50 dark:ring-slate-800 p-6 transition-colors">
-           <h3 class="font-medium text-gray-900 dark:text-white mb-4">Product Status</h3>
-           <select v-model="form.status" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all bg-gray-50/50 dark:bg-slate-800/50 text-gray-900 dark:text-white">
+        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 transition-colors">
+           <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-3">Product Status</h3>
+           <select v-model="form.status" class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm">
               <option value="published">Published</option>
               <option value="draft">Draft</option>
               <option value="pending">Pending</option>
@@ -747,20 +749,23 @@
         </div>
 
         <!-- Product Video -->
-        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm ring-1 ring-gray-200/50 dark:ring-slate-800 p-6 transition-colors">
-           <h3 class="font-medium text-gray-900 dark:text-white mb-4">Product Video</h3>
+        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 transition-colors">
+           <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-3">Product Video</h3>
            <div class="relative">
-              <input v-model="form.video_url" type="text" placeholder="Paste YouTube / Vimeo link here" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all pr-10 bg-white dark:bg-slate-900 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500" />
-              <div class="absolute right-3 top-2.5 text-gray-400 dark:text-slate-500 cursor-pointer">
+              <input v-model="form.video_url" type="text" placeholder="Paste YouTube / Vimeo link here" class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all pr-10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 text-sm" />
+              <div class="absolute right-3 top-2.5 text-slate-400">
                  <PlayCircle class="w-5 h-5" />
               </div>
            </div>
         </div>
 
         <!-- Actions -->
-        <div class="grid grid-cols-2 gap-4">
-           <button type="button" @click="$router.push('/vendor/products')" class="px-4 py-2.5 border border-gray-300 dark:border-slate-700 rounded-lg text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 font-medium text-center shadow-sm transition-colors">Cancel</button>
-           <button type="submit" class="px-4 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium shadow-md shadow-primary-500/20 transition-all flex items-center justify-center">Update Product</button>
+        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 transition-colors">
+           <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-4 pb-2 border-b border-slate-100 dark:border-slate-800">Save Changes</h3>
+           <div class="space-y-3">
+              <button type="submit" class="w-full px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-bold text-sm shadow-sm transition-all">Update Product</button>
+              <button type="button" @click="$router.push('/vendor/products')" class="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-sm transition-colors text-center">Cancel</button>
+           </div>
         </div>
 
       </div>

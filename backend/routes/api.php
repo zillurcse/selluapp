@@ -185,6 +185,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('settings', [App\Http\Controllers\Vendor\SettingController::class, 'index']);
         Route::post('settings', [App\Http\Controllers\Vendor\SettingController::class, 'update']);
 
+        // Business Settings
+        Route::get('business-settings', [App\Http\Controllers\Vendor\BusinessSettingController::class, 'index']);
+        Route::post('business-settings', [App\Http\Controllers\Vendor\BusinessSettingController::class, 'update']);
+
         // Reports Routes
         Route::prefix('reports')->group(function () {
             Route::get('overview', [\App\Http\Controllers\Vendor\ReportController::class, 'overview']);

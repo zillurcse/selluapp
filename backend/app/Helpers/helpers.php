@@ -30,6 +30,39 @@ if (!function_exists('get_setting')) {
     }
 }
 
+if (!function_exists('get_vendor_business_setting')) {
+    function get_vendor_business_setting($vendorId, $type, $default = null)
+    {
+        $setting = \App\Models\BusinessSetting::where('vendor_id', $vendorId)
+            ->where('type', $type)
+            ->first();
+
+        if ($setting) {
+            $val = $setting->value;
+            $decoded = json_decode($val, true);
+            return (json_last_error() == JSON_ERROR_NONE && (is_array($decoded) || is_object($decoded))) ? $decoded : $val;
+        }
+
+        return $default;
+    }
+}
+
+if (!function_exists('get_vendor_setting')) {
+    function get_vendor_setting($vendorId, $key, $default = null)
+    {
+        $setting = \App\Models\ShopSetting::where('user_id', $vendorId)
+            ->where('key', $key)
+            ->first();
+        if ($setting) {
+            $val = $setting->value;
+            $decoded = json_decode($val, true);
+            return (json_last_error() == JSON_ERROR_NONE && (is_array($decoded) || is_object($decoded))) ? $decoded : $val;
+        }
+
+        return get_vendor_business_setting($vendorId, $key, $default);
+    }
+}
+
 if (!function_exists('translate')) {
     function translate($text)
     {
@@ -62,110 +95,98 @@ if (!function_exists('convert_price')) {
 if (!function_exists('getShippingCost')) {
     function getShippingCost($carts, $index, $shipping_info = '')
     {
-        $shipping_type = get_setting('shipping_type', 'flat_rate');
-        \Log::info("getShippingCost starting. Type: $shipping_type, City ID: " . ($shipping_info['city_id'] ?? 'N/A'));
-
-        $admin_products = array();
-        $seller_products = array();
-
         $cartItem = $carts[$index];
         $product = \App\Models\Product::find($cartItem['product_id']);
 
         if (!$product) {
-            \Log::warning("Product not found for cart item ID: " . $cartItem['product_id']);
             return 0;
         }
 
-        if ($product->digital == 1) {
-            \Log::info("Product is digital, shipping cost 0.");
-            return 0;
+        $vendorId = $product->vendor_id;
+        $shipping_type = get_vendor_business_setting($vendorId, 'shipping_method');
+        
+        \Log::info("getShippingCost debug: Product ID {$product->id}, Vendor ID: " . ($vendorId ?? 'NULL') . ", Type: " . ($shipping_type ?? 'NONE'));
+
+        if (!$shipping_type) {
+            return (float)($product->shipping_cost ?? 0);
         }
 
-        foreach ($carts as $key => $cart_item) {
-            $item_product = \App\Models\Product::find($cart_item['product_id']);
-            if (!$item_product) continue;
-
-            if ($item_product->added_by == 'admin') {
-                array_push($admin_products, $cart_item['product_id']);
-            } else {
-                $product_ids = $seller_products[$item_product->user_id] ?? [];
-                array_push($product_ids, $cart_item['product_id']);
-                $seller_products[$item_product->user_id] = $product_ids;
+        // Prepare grouping by vendor
+        $vendor_products_count = [];
+        foreach ($carts as $item) {
+            $p_id = $item['product_id'] ?? $item['id'] ?? null;
+            $item_p = \App\Models\Product::find($p_id);
+            if ($item_p) {
+                $vId = $item_p->vendor_id;
+                $vendor_products_count[$vId] = ($vendor_products_count[$vId] ?? 0) + 1;
             }
         }
 
         if ($shipping_type == 'flat_rate') {
-            $cost = (float)get_setting('flat_rate_shipping_cost', 0) / count($carts);
-            \Log::info("Flat rate cost: $cost");
+            $flat_rate_price = get_vendor_business_setting($vendorId, 'flat_rate_price', 0);
+            $cost = (float)$flat_rate_price / ($vendor_products_count[$vendorId] ?: 1);
             return $cost;
-        } elseif ($shipping_type == 'seller_wise_shipping') {
-            if ($product->added_by == 'admin') {
-                $cost = (float)get_setting('shipping_cost_admin', 0) / count($admin_products);
-            } else {
-                $vendor_shipping = get_setting('vendor_shipping_cost', 0); 
-                $cost = (float)$vendor_shipping / count($seller_products[$product->user_id]);
-            }
-            \Log::info("Seller wise cost: $cost");
-            return $cost;
-        } elseif ($shipping_type == 'area_wise_shipping') {
-            $city = \App\Models\City::where('id', $shipping_info['city_id'])->first();
-            if ($city != null) {
-                \Log::info("Area wise. City: {$city->name}, Cost: {$city->cost}");
-                if ($product->added_by == 'admin') {
-                    $cost = (float)$city->cost / max(1, count($admin_products));
-                } else {
-                    $cost = (float)$city->cost / max(1, count($seller_products[$product->user_id] ?? [1]));
-                }
+        } elseif ($shipping_type == 'product_wise') {
+            $default_cost = get_vendor_business_setting($vendorId, 'product_wise_shipping_cost', 0);
+            return (float)($product->shipping_cost ?? $default_cost);
+        } elseif ($shipping_type == 'area_wise_flat') {
+            $city = \App\Models\City::find($shipping_info['city_id'] ?? null);
+            if ($city) {
+                $cost = (float)$city->cost / ($vendor_products_count[$vendorId] ?: 1);
                 return $cost;
             }
-            \Log::info("Area wise. City not found.");
-            return 0;
-        } elseif ($shipping_type == 'courier_wise_shipping') {
-            \Log::info("Courier wise checking...");
-            $pathao_active = get_setting('pathao_courier_activation') == 1;
-            if (!$pathao_active) {
-                $pathao_settings = get_setting('pathao');
-                $pathao_active = isset($pathao_settings['active']) && $pathao_settings['active'];
-            }
-
-            if ($pathao_active) {
-                $city = \App\Models\City::find($shipping_info['city_id']);
-                \Log::info("Pathao block. City: " . ($city ? $city->name : 'No'));
+            return (float)($product->shipping_cost ?? 0);
+        } elseif ($shipping_type == 'carrier_wise') {
+             $carrier = $shipping_info['carrier'] ?? 'personal';
+             $carrier_prices = get_vendor_business_setting($vendorId, 'carrier_prices', []);
+             $cost = (float)($carrier_prices[$carrier] ?? 0) / ($vendor_products_count[$vendorId] ?: 1);
+             return $cost > 0 ? $cost : (float)($product->shipping_cost ?? 0);
+        } elseif ($shipping_type == 'courier_wise') {
+            $selected_courier = get_vendor_business_setting($vendorId, 'selected_courier', 'pathao');
+            $courier_settings = get_vendor_business_setting($vendorId, 'courier_settings', []);
+            
+            if ($selected_courier == 'pathao') {
+                $city = \App\Models\City::find($shipping_info['city_id'] ?? null);
                 if ($city && $city->pathao_city_id && $city->pathao_zone_id) {
-                    $pathao = new \App\Services\Courier\PathaoService();
+                    $pathao = new \App\Services\Courier\PathaoService($vendorId);
                     $weight = 0;
                     foreach ($carts as $item) {
-                        $item_p = \App\Models\Product::find($item['product_id']);
-                        $weight += (($item_p->weight ?? 0) * $item['quantity']);
+                       $p_id = $item['product_id'] ?? $item['id'] ?? null;
+                       $item_p = \App\Models\Product::find($p_id);
+                       if ($item_p && $item_p->vendor_id == $vendorId) {
+                           $weight += (($item_p->weight ?? 0) * $item['quantity']);
+                       }
                     }
                     $weight = $weight > 0 ? $weight : 0.5;
 
-                    static $pathao_cost_cache = [];
-                    $cache_id = $city->pathao_city_id . '_' . $city->pathao_zone_id . '_' . $weight;
-                    
-                    if (isset($pathao_cost_cache[$cache_id])) {
-                        $cost = $pathao_cost_cache[$cache_id];
-                        \Log::info("Pathao cost from cache: $cost");
-                    } else {
-                        \Log::info("Calling Pathao API for weight: $weight");
+                    try {
+                        // Use vendor's store_id if available, otherwise sandbox check
+                        $store_id = $courier_settings['pathao_store_id'] ?? null;
+                        
+                        // If sandbox is active and no store_id set, use user requested sandbox store id
+                        $is_sandbox = get_vendor_setting($vendorId, 'pathao_sandbox', 0);
+                        if ($is_sandbox && !$store_id) {
+                            $store_id = '150036';
+                        }
+                        
                         $cost = $pathao->calculateCost([
-                            'store_id' => $pathao->getStoreId(),
+                            'store_id' => $store_id ?: $pathao->getStoreId(),
                             'recipient_city' => $city->pathao_city_id,
                             'recipient_zone' => $city->pathao_zone_id,
                             'delivery_type' => 48,
                             'item_type' => 2,
                             'item_weight' => $weight,
                         ]);
-                        $pathao_cost_cache[$cache_id] = $cost;
-                        \Log::info("Pathao API returned: " . ($cost ?: 'NULL'));
+                        return (float)($cost ?: (float)($product->shipping_cost ?? 0)) / ($vendor_products_count[$vendorId] ?: 1);
+                    } catch (\Exception $e) {
+                        \Log::error("Pathao calculation failed: " . $e->getMessage());
                     }
-                    return (float)($cost ?: 0) / count($carts);
                 }
+            } elseif ($selected_courier == 'steadfast') {
+                return (float)($product->shipping_cost ?? 60) / ($vendor_products_count[$vendorId] ?: 1);
             }
-            \Log::info("Courier wise returned 0.");
-            return 0;
+            return (float)($product->shipping_cost ?? 0);
         } else {
-            \Log::info("Default shipping cost returned: " . ($product->shipping_cost ?? 0));
             return (float)($product->shipping_cost ?? 0);
         }
     }

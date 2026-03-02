@@ -1,107 +1,101 @@
 <template>
-  <div class="p-10 bg-[#f8fafc] dark:bg-slate-950 min-h-screen transition-colors duration-300">
-    <!-- Header Section -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-      <div class="flex items-center gap-4">
-        <button @click="$router.back()" class="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm active:scale-95 group">
-          <ChevronLeft class="w-5 h-5 text-slate-600 dark:text-slate-300 group-hover:-translate-x-0.5 transition-transform" />
+  <div class="page-wrapper">
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="page-header-left">
+        <button class="back-btn" @click="$router.back()">
+          <ChevronLeft :size="16" />
         </button>
         <div>
-          <h1 class="text-2xl font-black text-slate-900 dark:text-white leading-tight tracking-tight">Units</h1>
-          <p class="text-sm text-slate-500 dark:text-slate-400 font-semibold opacity-80">Manage measurement units for your products.</p>
+          <h1 class="page-title">Units</h1>
+          <p class="page-subtitle">Manage measurement units for your products.</p>
         </div>
       </div>
-      <NuxtLink to="/vendor/attributes/units/create" class="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl transition-all shadow-lg shadow-indigo-600/20 active:scale-95 group">
-        <Plus class="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
+      <NuxtLink to="/vendor/attributes/units/create" class="btn-primary">
+        <Plus :size="15" />
         Add Unit
       </NuxtLink>
     </div>
-    
-    <!-- Units Table Container -->
-    <div class="bg-white dark:bg-slate-900 rounded-[24px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.06)] dark:shadow-none border border-slate-200/60 dark:border-slate-800 group overflow-hidden transition-colors duration-300">
-      <div class="overflow-x-auto custom-scrollbar">
-        <table class="w-full text-left border-collapse">
+
+    <!-- Table Card -->
+    <div class="table-card">
+      <div class="table-scroll">
+        <table class="data-table">
           <thead>
-            <tr class="bg-slate-900 dark:bg-slate-800 border-b border-slate-800 dark:border-slate-700">
-              <th class="py-6 px-8 font-black text-[10px] uppercase tracking-[0.2em] text-[#f8fafc] dark:text-slate-200">Unit Name</th>
-              <th class="py-6 px-8 font-black text-[10px] uppercase tracking-[0.2em] text-[#f8fafc] dark:text-slate-200">Symbol</th>
-              <th class="py-6 px-8 font-black text-[10px] uppercase tracking-[0.2em] text-[#f8fafc] dark:text-slate-200">Slug</th>
-              <th class="py-6 px-8 font-black text-[10px] uppercase tracking-[0.2em] text-[#f8fafc] dark:text-slate-200">Status</th>
-              <th class="py-6 px-8 font-black text-[10px] uppercase tracking-[0.2em] text-[#f8fafc] dark:text-slate-200 text-right">Actions</th>
+            <tr>
+              <th>Unit Name</th>
+              <th>Symbol</th>
+              <th>Slug</th>
+              <th>Status</th>
+              <th class="col-actions">Actions</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-50 dark:divide-slate-800/50">
-            <tr v-for="unit in units" :key="unit.id" class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group/row">
-              <td class="px-8 py-5 whitespace-nowrap">
-                <div class="flex items-center">
-                  <div class="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center flex-shrink-0 shadow-sm transition-transform group-hover/row:scale-105 duration-300">
-                      <Ruler class="w-5 h-5 text-slate-400 dark:text-slate-500" />
+          <tbody>
+            <tr v-for="unit in units" :key="unit.id">
+              <td>
+                <div class="cell-entity">
+                  <div class="entity-thumb">
+                    <Ruler :size="14" />
                   </div>
-                  <div class="ml-4">
-                    <div class="text-sm font-black text-slate-900 dark:text-white">{{ unit.name }}</div>
-                    <div v-if="unit.description" class="text-[10px] font-medium text-slate-500 dark:text-slate-400 max-w-[200px] truncate">{{ unit.description }}</div>
+                  <div>
+                    <div class="entity-name">{{ unit.name }}</div>
+                    <div v-if="unit.description" class="entity-sub">{{ unit.description }}</div>
                   </div>
                 </div>
               </td>
-              <td class="px-8 py-5 whitespace-nowrap">
-                <span class="text-xs font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1 rounded-lg border border-indigo-100 dark:border-indigo-500/20">{{ unit.symbol }}</span>
-              </td>
-              <td class="px-8 py-5 whitespace-nowrap">
-                <span class="text-xs font-bold text-slate-600 dark:text-slate-400">{{ unit.slug }}</span>
-              </td>
-              <td class="px-8 py-5 whitespace-nowrap">
-                <span :class="[
-                  'px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1.5',
-                  unit.is_active ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20' : 
-                  'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-500/20'
-                ]">
-                  <span class="w-1.5 h-1.5 rounded-full" :class="unit.is_active ? 'bg-emerald-600 dark:bg-emerald-400' : 'bg-red-600 dark:bg-red-400'"></span>
+              <td><span class="badge-symbol">{{ unit.symbol }}</span></td>
+              <td><span class="badge-slug">{{ unit.slug }}</span></td>
+              <td>
+                <span class="status-badge" :class="unit.is_active ? 'status-active' : 'status-inactive'">
+                  <span class="status-dot"></span>
                   {{ unit.is_active ? 'Active' : 'Inactive' }}
                 </span>
               </td>
-              <td class="px-8 py-5 whitespace-nowrap text-right">
-                <div class="flex justify-end gap-2 opacity-0 group-hover/row:opacity-100 transition-all duration-300 translate-x-4 group-hover/row:translate-x-0">
-                  <NuxtLink :to="`/vendor/attributes/units/${unit.id}`" class="p-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 dark:hover:bg-indigo-500 hover:text-white rounded-lg transition-all shadow-sm border border-indigo-100 dark:border-indigo-500/20">
-                    <Pencil class="w-4 h-4" />
+              <td class="col-actions">
+                <div class="row-actions">
+                  <NuxtLink :to="`/vendor/attributes/units/${unit.id}`" class="action-btn action-btn--edit" title="Edit">
+                    <Pencil :size="14" />
                   </NuxtLink>
-                  <button @click="deleteUnit(unit.id)" class="p-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-600 dark:hover:bg-red-500 hover:text-white rounded-lg transition-all shadow-sm border border-red-100 dark:border-red-500/20">
-                    <Trash2 class="w-4 h-4" />
+                  <button @click="deleteUnit(unit.id)" class="action-btn action-btn--delete" title="Delete">
+                    <Trash2 :size="14" />
                   </button>
                 </div>
               </td>
             </tr>
+
+            <!-- Empty state -->
             <tr v-if="units.length === 0">
-                <td colspan="5" class="py-32 px-8 text-center">
-                  <div class="flex flex-col items-center justify-center gap-4 animate-in fade-in zoom-in duration-700">
-                    <div class="w-20 h-20 bg-slate-50 dark:bg-slate-800 rounded-3xl flex items-center justify-center border border-slate-100 dark:border-slate-700 shadow-inner">
-                       <Ruler class="w-10 h-10 text-slate-300 dark:text-slate-500" />
-                    </div>
-                    <div class="text-center">
-                      <h3 class="text-lg font-black text-slate-800 dark:text-slate-200">No units found</h3>
-                      <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">Start by adding your first unit.</p>
-                    </div>
-                  </div>
-                </td>
+              <td colspan="5">
+                <div class="empty-state">
+                  <div class="empty-icon"><Ruler :size="24" /></div>
+                  <p class="empty-label">No units found.</p>
+                  <NuxtLink to="/vendor/attributes/units/create" class="btn-primary btn-sm">
+                    <Plus :size="13" /> Add your first unit
+                  </NuxtLink>
+                </div>
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
     </div>
+
   </div>
 </template>
 
 <script setup>
-import { 
-  ChevronLeft, 
-  Plus, 
-  Pencil, 
-  Trash2, 
-  Ruler 
+import {
+  ChevronLeft,
+  Plus,
+  Pencil,
+  Trash2,
+  Ruler,
 } from 'lucide-vue-next'
 
 definePageMeta({
   middleware: 'auth',
-  permissions: 'units.view'
+  permissions: 'units.view',
 })
 
 const config = useRuntimeConfig()
@@ -109,57 +103,109 @@ const auth = useAuthStore()
 const units = ref([])
 const { deleteItem, getAll } = useCrud()
 
-// Fetch units
 const fetchUnits = async () => {
-    try {
-        const res = await getAll('/vendor/attributes/units')
-        if (res) {
-            units.value = res.data || res
-        }
-    } catch (e) {
-        console.error('Failed to fetch units')
-    }
+  try {
+    const res = await getAll('/vendor/attributes/units')
+    units.value = res?.data || res || []
+  } catch (e) {
+    console.error('Failed to fetch units')
+  }
 }
 
 await fetchUnits()
 
 const deleteUnit = async (id) => {
-    if (!confirm('Are you sure you want to delete this unit?')) return
-
-    try {
-        await deleteItem(id, '/vendor/attributes/units')
-        await fetchUnits()
-    } catch (error) {
-        console.error('Failed to delete unit', error)
-    }
+  if (!confirm('Are you sure you want to delete this unit?')) return
+  try {
+    await deleteItem(id, '/vendor/attributes/units')
+    await fetchUnits()
+  } catch (error) {
+    console.error('Failed to delete unit', error)
+  }
 }
 </script>
 
 <style scoped>
-.custom-scrollbar::-webkit-scrollbar {
-  height: 8px;
-  width: 8px;
+.page-wrapper { padding: 28px 28px 40px; min-height: 100vh; background-color: #f8fafc; }
+.dark .page-wrapper { background-color: #090d14; }
+
+.page-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 20px; }
+.page-header-left { display: flex; align-items: center; gap: 14px; }
+
+.back-btn { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: 1px solid #e5e7eb; border-radius: 7px; background-color: #fff; color: #6b7280; cursor: pointer; flex-shrink: 0; transition: background-color 0.15s, color 0.15s; }
+.back-btn:hover { background-color: #f3f4f6; color: #111827; }
+.dark .back-btn { background-color: #1a1f2e; border-color: #1e2330; color: #6b7280; }
+.dark .back-btn:hover { background-color: #252b3b; color: #d1d5db; }
+
+.page-title { font-size: 18px; font-weight: 700; color: #111827; margin: 0; line-height: 1.2; }
+.dark .page-title { color: #f9fafb; }
+.page-subtitle { font-size: 12.5px; color: #9ca3af; margin: 2px 0 0; }
+
+.btn-primary { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; font-size: 13px; font-weight: 600; color: #fff; background-color: #4f46e5; border: none; border-radius: 8px; text-decoration: none; cursor: pointer; transition: background-color 0.15s; white-space: nowrap; }
+.btn-primary:hover { background-color: #4338ca; }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+
+.table-card { background-color: #fff; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden; }
+.dark .table-card { background-color: #161b27; border-color: #1e2330; }
+.table-scroll { overflow-x: auto; }
+
+.data-table { width: 100%; border-collapse: collapse; text-align: left; }
+.data-table thead tr { background-color: #f9fafb; border-bottom: 1px solid #e5e7eb; }
+.dark .data-table thead tr { background-color: #1a1f2e; border-bottom-color: #1e2330; }
+.data-table th { padding: 11px 16px; font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
+.dark .data-table th { color: #4b5563; }
+.data-table tbody tr { border-bottom: 1px solid #f3f4f6; transition: background-color 0.12s; }
+.dark .data-table tbody tr { border-bottom-color: #1e2330; }
+.data-table tbody tr:last-child { border-bottom: none; }
+.data-table tbody tr:hover { background-color: #f9fafb; }
+.dark .data-table tbody tr:hover { background-color: #1a1f2e; }
+.data-table td { padding: 12px 16px; font-size: 13px; color: #374151; white-space: nowrap; }
+.dark .data-table td { color: #9ca3af; }
+.col-actions { text-align: right; }
+
+.cell-entity { display: flex; align-items: center; gap: 10px; }
+.entity-thumb { width: 32px; height: 32px; border-radius: 7px; background-color: #f3f4f6; border: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: center; color: #9ca3af; flex-shrink: 0; }
+.dark .entity-thumb { background-color: #1e2330; border-color: #252b3b; }
+.entity-name { font-size: 13px; font-weight: 600; color: #111827; }
+.dark .entity-name { color: #f9fafb; }
+.entity-sub { font-size: 11px; color: #9ca3af; max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
+
+.badge-symbol { display: inline-block; padding: 2px 8px; font-size: 12px; font-weight: 600; color: #4f46e5; background-color: #eff6ff; border: 1px solid #c7d2fe; border-radius: 5px; font-family: ui-monospace, monospace; }
+.dark .badge-symbol { background-color: rgba(79,70,229,0.1); border-color: rgba(79,70,229,0.2); color: #818cf8; }
+.badge-slug { display: inline-block; padding: 2px 8px; font-size: 11.5px; font-weight: 500; color: #6b7280; background-color: #f3f4f6; border-radius: 5px; font-family: ui-monospace, monospace; }
+.dark .badge-slug { background-color: #1e2330; color: #6b7280; }
+
+.status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; font-size: 11px; font-weight: 600; border-radius: 5px; border: 1px solid transparent; }
+.status-active { background-color: #ecfdf5; color: #059669; border-color: #a7f3d0; }
+.status-inactive { background-color: #fef2f2; color: #dc2626; border-color: #fecaca; }
+.dark .status-active { background-color: rgba(5,150,105,0.1); border-color: rgba(5,150,105,0.2); color: #34d399; }
+.dark .status-inactive { background-color: rgba(220,38,38,0.1); border-color: rgba(220,38,38,0.2); color: #f87171; }
+.status-dot { width: 5px; height: 5px; border-radius: 50%; background-color: currentColor; flex-shrink: 0; }
+
+.row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
 }
 
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 10px;
+.data-table tbody tr:hover .row-actions {
+  opacity: 1;
 }
+.action-btn { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 6px; border: 1px solid transparent; cursor: pointer; transition: background-color 0.15s, color 0.15s; text-decoration: none; }
+.action-btn--edit { background-color: #eff6ff; color: #3b82f6; border-color: #bfdbfe; }
+.action-btn--edit:hover { background-color: #3b82f6; color: #fff; border-color: transparent; }
+.dark .action-btn--edit { background-color: rgba(59,130,246,0.1); border-color: rgba(59,130,246,0.2); color: #60a5fa; }
+.dark .action-btn--edit:hover { background-color: #3b82f6; color: #fff; border-color: transparent; }
+.action-btn--delete { background-color: #fef2f2; color: #ef4444; border-color: #fecaca; }
+.action-btn--delete:hover { background-color: #ef4444; color: #fff; border-color: transparent; }
+.dark .action-btn--delete { background-color: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.2); color: #f87171; }
+.dark .action-btn--delete:hover { background-color: #ef4444; color: #fff; border-color: transparent; }
 
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 10px;
-  border: 2px solid #f1f5f9;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-  border-radius: 10px;
-}
-
-.custom-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 #f1f5f9;
-}
+.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 60px 20px; text-align: center; }
+.empty-icon { width: 48px; height: 48px; border-radius: 10px; background-color: #f3f4f6; border: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: center; color: #9ca3af; }
+.dark .empty-icon { background-color: #1e2330; border-color: #252b3b; }
+.empty-label { font-size: 13px; font-weight: 500; color: #6b7280; margin: 0; }
 </style>
-

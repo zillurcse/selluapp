@@ -1,33 +1,33 @@
 <template>
-  <div class="p-10 bg-[#f8fafc] dark:bg-slate-950 transition-colors duration-300">
+  <div class="p-6 lg:p-8 bg-slate-50 dark:bg-slate-950 min-h-screen transition-colors duration-300">
     <!-- Header Section -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
       <div class="flex items-center gap-4">
-        <button @click="$router.back()" class="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm active:scale-95 group">
-          <ChevronLeft class="w-5 h-5 text-slate-600 dark:text-slate-300 group-hover:-translate-x-0.5 transition-transform" />
+        <button @click="$router.back()" class="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm group">
+          <ChevronLeft class="w-5 h-5 text-slate-500 dark:text-slate-400 group-hover:-translate-x-0.5 transition-transform" />
         </button>
         <div>
-          <h1 class="text-2xl font-black text-slate-900 dark:text-white leading-tight tracking-tight">Products</h1>
-          <p class="text-sm text-slate-500 dark:text-slate-400 font-semibold opacity-80">Manage and track your product inventory efficiently.</p>
+          <h1 class="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Products</h1>
+          <p class="text-sm text-slate-500 dark:text-slate-400">Manage and track your product inventory.</p>
         </div>
       </div>
-      <NuxtLink to="/vendor/products/create" class="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl transition-all shadow-lg shadow-indigo-600/20 active:scale-95 group">
-        <Plus class="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
+      <NuxtLink to="/vendor/products/create" class="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-all shadow-sm active:scale-[0.98]">
+        <Plus class="w-4 h-4" />
         Add Product
       </NuxtLink>
     </div>
 
     <!-- Status Tabs -->
-    <div class="flex flex-wrap items-center gap-2 mb-8">
+    <div class="flex flex-wrap items-center gap-2 mb-6">
       <NuxtLink 
         v-for="tab in tabs" 
         :key="tab.value"
         :to="tab.value === 'all' ? '/vendor/products' : `/vendor/products/${tab.value}`"
         :class="[
-          'px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 border',
+          'px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 border',
           activeStatus === tab.value 
-            ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-600/20' 
-            : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+            ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/30' 
+            : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
         ]"
       >
         {{ tab.label }}
@@ -41,15 +41,17 @@
       v-model:brand="selectedBrand"
       :categories="categories"
       :brands="brands"
-      @filter="fetchProducts"
+      @filter="handleFilter"
       @clear="clearFilters"
     >
       <template #actions>
         <button @click="bulkDelete" :disabled="selectedItems.length === 0" :class="[
-          'h-12 px-8 font-black rounded-2xl transition-all flex items-center gap-2 group whitespace-nowrap active:scale-95 shadow-lg',
-          selectedItems.length > 0 ? 'bg-red-50 text-red-600 border border-red-100 hover:bg-red-600 hover:text-white shadow-red-600/5' : 'bg-slate-50 text-slate-300 border border-slate-100 cursor-not-allowed shadow-none'
+          'h-10 px-4 text-sm font-semibold rounded-lg transition-all flex items-center gap-2 shadow-sm border',
+          selectedItems.length > 0 
+            ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-600 hover:text-white' 
+            : 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
         ]">
-          <Trash2 class="w-4 h-4" :class="{ 'group-hover:animate-bounce': selectedItems.length > 0 }" />
+          <Trash2 class="w-4 h-4" />
           Bulk Delete
         </button>
       </template>
@@ -67,106 +69,100 @@
     />
 
     <!-- Products Table Container -->
-    <div class="bg-white dark:bg-slate-900 rounded-[24px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.06)] dark:shadow-none border border-slate-200/60 dark:border-slate-800 group overflow-hidden transition-colors duration-300">
-      <div class="overflow-x-auto custom-scrollbar">
+    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden transition-colors duration-300">
+      <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
           <thead>
-            <tr class="bg-slate-900 dark:bg-slate-800 border-b border-slate-800 dark:border-slate-700">
-              <th class="py-6 px-8 font-black text-[10px] uppercase tracking-[0.2em] text-slate-400">
-                <div class="flex items-center gap-4">
-                  <span class="text-white">#</span>
-                  <input type="checkbox" @change="toggleAll" :checked="isAllSelected" class="w-4 h-4 rounded border-slate-700 dark:border-slate-600 bg-transparent dark:bg-slate-700 text-indigo-600 focus:ring-indigo-500/50 cursor-pointer">
+            <tr class="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+              <th class="py-4 px-6 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <div class="flex items-center gap-3">
+                  <input type="checkbox" @change="toggleAll" :checked="isAllSelected" class="w-4 h-4 rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-indigo-600 focus:ring-indigo-500 cursor-pointer">
                 </div>
               </th>
-              <th class="py-6 px-8 font-black text-[10px] uppercase tracking-[0.2em] text-[#f8fafc] dark:text-slate-200">Product</th>
-              <th class="py-6 px-8 font-black text-[10px] uppercase tracking-[0.2em] text-[#f8fafc] dark:text-slate-200">Category</th>
-              <th class="py-6 px-8 font-black text-[10px] uppercase tracking-[0.2em] text-[#f8fafc] dark:text-slate-200">Brand</th>
-              <th class="py-6 px-8 font-black text-[10px] uppercase tracking-[0.2em] text-[#f8fafc] dark:text-slate-200">Price</th>
-              <th class="py-6 px-8 font-black text-[10px] uppercase tracking-[0.2em] text-[#f8fafc] dark:text-slate-200">Status</th>
-              <th class="py-6 px-8 font-black text-[10px] uppercase tracking-[0.2em] text-[#f8fafc] dark:text-slate-200 text-right">Actions</th>
+              <th class="py-4 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Product</th>
+              <th class="py-4 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Category</th>
+              <th class="py-4 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Brand</th>
+              <th class="py-4 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Price</th>
+              <th class="py-4 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Status</th>
+              <th class="py-4 px-6 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800/50">
             <!-- Empty State -->
             <tr v-if="products.length === 0">
-              <td colspan="7" class="py-32 px-8 text-center">
-                <div class="flex flex-col items-center justify-center gap-8 max-w-sm mx-auto animate-in fade-in zoom-in duration-700">
-                  <div class="w-28 h-28 bg-slate-50 dark:bg-slate-800 rounded-[40px] flex items-center justify-center border-4 border-white dark:border-slate-700 shadow-2xl rotate-3 transition-transform hover:rotate-0 duration-500">
-                    <div class="w-16 h-16 bg-white dark:bg-slate-900 rounded-full flex items-center justify-center border border-slate-100 dark:border-slate-700 shadow-inner">
-                      <Box class="w-8 h-8 text-slate-300 dark:text-slate-500" />
-                    </div>
+              <td colspan="7" class="py-24 px-6 text-center">
+                <div class="flex flex-col items-center justify-center gap-4 max-w-sm mx-auto">
+                  <div class="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-400">
+                    <Box class="w-8 h-8" />
                   </div>
                   <div>
-                    <h3 class="text-2xl font-black text-slate-800 dark:text-slate-200 mb-3 tracking-tight">No products found</h3>
-                    <p class="text-slate-500 dark:text-slate-400 font-semibold leading-relaxed px-4">
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">No products found</h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
                       Try adjusting your filters or add your first product to get started.
                     </p>
                   </div>
-                  <button @click="fetchProducts" class="flex items-center gap-3 px-10 py-4 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-[20px] transition-all shadow-2xl shadow-slate-900/20 active:scale-95 group">
-                    <RefreshCw class="w-5 h-5 group-hover:rotate-180 transition-transform duration-700" />
+                  <button @click="fetchProducts" class="mt-2 flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-slate-800 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition-colors">
+                    <RefreshCw class="w-4 h-4" />
                     Reload Page
                   </button>
                 </div>
               </td>
             </tr>
             <!-- Products Rows -->
-            <tr v-else v-for="(product, index) in products" :key="product.id" class="border-b border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group/row">
-              <td class="px-8 py-5">
-                <div class="flex items-center gap-4">
-                  <span class="text-xs font-bold text-slate-400 dark:text-slate-500">#{{ index + 1 }}</span>
-                  <input type="checkbox" v-model="selectedItems" :value="product.id" class="w-4 h-4 rounded border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-indigo-600 focus:ring-indigo-500/50 cursor-pointer">
-                </div>
+            <tr v-else v-for="(product, index) in products" :key="product.id" class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group">
+              <td class="px-6 py-4">
+                <input type="checkbox" v-model="selectedItems" :value="product.id" class="w-4 h-4 rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-indigo-600 focus:ring-indigo-500 cursor-pointer">
               </td>
-              <td class="px-8 py-5">
+              <td class="px-4 py-4">
                 <div class="flex items-center">
-                  <div class="h-12 w-12 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 overflow-hidden flex-shrink-0 shadow-sm">
+                  <div class="h-10 w-10 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 overflow-hidden flex-shrink-0 shadow-sm">
                     <img v-if="product.image" :src="product.image" class="h-full w-full object-cover">
-                    <div v-else class="h-full w-full flex items-center justify-center text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-800">
-                      <Image class="w-5 h-5 opacity-40" />
+                    <div v-else class="h-full w-full flex items-center justify-center text-slate-400 bg-slate-50 dark:bg-slate-800">
+                      <Image class="w-4 h-4 opacity-40" />
                     </div>
                   </div>
-                  <div class="ml-4">
-                    <div class="text-sm font-black text-slate-900 dark:text-slate-100">{{ product.name }}</div>
-                    <div class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">SKU: {{ product.sku || 'N/A' }}</div>
+                  <div class="ml-3">
+                    <div class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ product.name }}</div>
+                    <div class="text-[10px] font-medium text-slate-400 dark:text-slate-500 tracking-wide">SKU: {{ product.sku || 'N/A' }}</div>
                   </div>
                 </div>
               </td>
-              <td class="px-8 py-5">
-                <div class="flex flex-wrap gap-1.5">
-                  <span v-for="cat in product.categories" :key="cat.id" class="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg text-[10px] font-black uppercase tracking-wider">
+              <td class="px-4 py-4">
+                <div class="flex flex-wrap gap-1">
+                  <span v-for="cat in product.categories" :key="cat.id" class="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded text-[10px] font-semibold uppercase tracking-tight">
                     {{ cat.name }}
                   </span>
-                  <span v-if="!product.categories?.length || product.categories?.length === 0" class="text-xs text-slate-400 dark:text-slate-500 font-medium italic">Uncategorized</span>
+                  <span v-if="!product.categories?.length" class="text-xs text-slate-400 font-medium italic">Uncategorized</span>
                 </div>
               </td>
-              <td class="px-8 py-5">
-                <span class="text-xs font-bold text-slate-600 dark:text-slate-400">{{ product.brand?.name || '—' }}</span>
+              <td class="px-4 py-4">
+                <span class="text-xs font-medium text-slate-600 dark:text-slate-400">{{ product.brand?.name || '—' }}</span>
               </td>
-              <td class="px-8 py-5">
-                <div class="text-sm font-black text-slate-900 dark:text-white">৳{{ product.sale_price }}</div>
-                <div v-if="product.purchase_price" class="text-[10px] font-bold text-slate-400 line-through opacity-60 mt-0.5">৳{{ product.purchase_price }}</div>
+              <td class="px-4 py-4">
+                <div class="text-sm font-semibold text-slate-900 dark:text-white">৳{{ product.sale_price }}</div>
+                <div v-if="product.purchase_price" class="text-[10px] text-slate-400 line-through opacity-60">৳{{ product.purchase_price }}</div>
               </td>
-              <td class="px-8 py-5">
+              <td class="px-4 py-4">
                 <span :class="[
-                  'px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1.5',
-                  product.status === 'published' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20' : 
-                  product.status === 'draft' ? 'bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-100 dark:border-slate-700' :
-                  'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-500/20'
+                  'px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide inline-flex items-center gap-1.5 border',
+                  product.status === 'published' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20' : 
+                  product.status === 'draft' ? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700' :
+                  'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-100 dark:border-amber-500/20'
                 ]">
                   <span class="w-1.5 h-1.5 rounded-full" :class="[
-                    product.status === 'published' ? 'bg-emerald-600 dark:bg-emerald-400' : 
-                    product.status === 'draft' ? 'bg-slate-500 dark:bg-slate-400' :
-                    'bg-amber-600 dark:bg-amber-400'
+                    product.status === 'published' ? 'bg-emerald-500' : 
+                    product.status === 'draft' ? 'bg-slate-400' :
+                    'bg-amber-500'
                   ]"></span>
                   {{ product.status }}
                 </span>
               </td>
-              <td class="px-8 py-5 text-right">
-                <div class="flex justify-end gap-2 opacity-0 group-hover/row:opacity-100 transition-all duration-300 translate-x-4 group-hover/row:translate-x-0">
-                  <NuxtLink :to="`/vendor/products/edit/${product.id}`" class="p-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 dark:hover:bg-indigo-500 hover:text-white rounded-lg transition-all shadow-sm border border-indigo-100 dark:border-indigo-500/20">
+              <td class="px-6 py-4 text-right">
+                <div class="flex justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                  <NuxtLink :to="`/vendor/products/edit/${product.id}`" class="p-1.5 bg-white dark:bg-slate-800 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 border border-slate-200 dark:border-slate-700 rounded-lg transition-all shadow-sm">
                     <Pencil class="w-4 h-4" />
                   </NuxtLink>
-                  <button @click="openDeleteModal(product.id)" class="p-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-600 dark:hover:bg-red-500 hover:text-white rounded-lg transition-all shadow-sm border border-red-100 dark:border-red-500/20">
+                  <button @click="openDeleteModal(product.id)" class="p-1.5 bg-white dark:bg-slate-800 text-slate-400 hover:text-red-600 dark:hover:text-red-400 border border-slate-200 dark:border-slate-700 rounded-lg transition-all shadow-sm">
                     <Trash2 class="w-4 h-4" />
                   </button>
                 </div>
@@ -176,12 +172,55 @@
         </table>
       </div>
     </div>
+    
+    <!-- Modern Pagination Component -->
+    <div v-if="totalPages > 1" class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 px-2">
+      <div class="text-sm text-slate-500 dark:text-slate-400">
+        Showing <span class="font-semibold text-slate-900 dark:text-white">{{ pagination.from }}</span> to 
+        <span class="font-semibold text-slate-900 dark:text-white">{{ pagination.to }}</span> of 
+        <span class="font-semibold text-slate-900 dark:text-white">{{ pagination.total }}</span> results
+      </div>
+      <div class="flex items-center gap-1.5">
+        <button 
+          @click="changePage(pagination.current_page - 1)" 
+          :disabled="pagination.current_page === 1"
+          class="p-2 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-500 hover:bg-white hover:text-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all bg-white dark:bg-slate-900 shadow-sm"
+        >
+          <ChevronLeft class="w-4 h-4" />
+        </button>
+        <div class="flex items-center gap-1">
+          <button 
+            v-for="page in visiblePages" 
+            :key="page"
+            @click="page !== '...' && changePage(page)"
+            :class="[
+              'w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all shadow-sm',
+              page === pagination.current_page 
+                ? 'bg-indigo-600 text-white border-indigo-600 shadow-indigo-200' 
+                : page === '...' 
+                  ? 'text-slate-400 cursor-default bg-transparent shadow-none' 
+                  : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
+            ]"
+          >
+            {{ page }}
+          </button>
+        </div>
+        <button 
+          @click="changePage(pagination.current_page + 1)" 
+          :disabled="pagination.current_page === pagination.last_page"
+          class="p-2 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-500 hover:bg-white hover:text-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all bg-white dark:bg-slate-900 shadow-sm"
+        >
+          <ChevronRight class="w-4 h-4" />
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { 
   ChevronLeft, 
+  ChevronRight,
   ChevronDown, 
   Search, 
   X, 
@@ -195,6 +234,8 @@ import {
 } from 'lucide-vue-next'
 import AppProductFilter from '~/components/AppProductFilter.vue'
 import AppConfirmationModal from '~/components/AppConfirmationModal.vue'
+import { toast } from 'vue-sonner'
+import { useAuthStore } from '~/stores/useAuthStore'
 
 definePageMeta({
   middleware: 'auth',
@@ -205,6 +246,8 @@ definePageMeta({
 })
 
 const route = useRoute()
+const router = useRouter()
+const authStore = useAuthStore()
 const { deleteItem, getAll } = useCrud()
 const products = ref([])
 const categories = ref([])
@@ -228,6 +271,47 @@ const tabs = [
   { label: 'Pending', value: 'pending' }
 ]
 
+const handleAddProduct = () => {
+  const user = authStore.user
+  const packageDetails = user?.vendor_profile?.package || user?.owner?.vendorProfile?.package
+  const limit = packageDetails?.product_limit
+
+  if (limit !== undefined && limit !== -1 && pagination.value.total >= limit) {
+    toast.error(`Product limit reached (${pagination.value.total}/${limit}). Please upgrade your plan.`, {
+      description: 'You cannot add more products with your current subscription.'
+    })
+  } else {
+    router.push('/vendor/products/create')
+  }
+}
+
+const pagination = ref({
+  current_page: 1,
+  last_page: 1,
+  total: 0,
+  per_page: 10,
+  from: 0,
+  to: 0
+})
+
+const totalPages = computed(() => pagination.value.last_page)
+
+const changePage = (page) => {
+  if (page < 1 || page > pagination.value.last_page) return
+  pagination.value.current_page = page
+  fetchProducts()
+}
+
+const visiblePages = computed(() => {
+  const current = pagination.value.current_page
+  const last = pagination.value.last_page
+  
+  if (last <= 7) return Array.from({ length: last }, (_, i) => i + 1)
+  if (current <= 4) return [1, 2, 3, 4, 5, '...', last]
+  if (current >= last - 3) return [1, '...', last - 4, last - 3, last - 2, last - 1, last]
+  return [1, '...', current - 1, current, current + 1, '...', last]
+})
+
 const deleteModalMessage = computed(() => {
   return deleteMode.value === 'bulk'
     ? `Are you sure you want to delete ${selectedItems.value.length} selected products? This action cannot be undone.`
@@ -250,10 +334,16 @@ const toggleAll = () => {
   }
 }
 
+const handleFilter = () => {
+  pagination.value.current_page = 1
+  fetchProducts()
+}
+
 const clearFilters = () => {
   searchQuery.value = ''
   selectedCategory.value = ''
   selectedBrand.value = ''
+  pagination.value.current_page = 1
   fetchProducts()
 }
 
@@ -262,14 +352,33 @@ const fetchProducts = async () => {
   if (searchQuery.value) queryParams.append('search', searchQuery.value)
   if (selectedCategory.value) queryParams.append('category_id', selectedCategory.value)
   if (selectedBrand.value) queryParams.append('brand_id', selectedBrand.value)
-  if (activeStatus.value) queryParams.append('status', activeStatus.value)
+  if (activeStatus.value && activeStatus.value !== 'all') queryParams.append('status', activeStatus.value)
   
+  queryParams.append('per_page', pagination.value.per_page)
+  queryParams.append('page', pagination.value.current_page)
+
   const [productsRes] = await Promise.all([
     getAll(`/vendor/products?${queryParams.toString()}`),
   ])
 
   if (productsRes) {
-    products.value = productsRes
+    if (productsRes.data && productsRes.current_page !== undefined) {
+      products.value = productsRes.data
+      pagination.value = {
+        current_page: productsRes.current_page,
+        last_page: productsRes.last_page,
+        total: productsRes.total,
+        per_page: productsRes.per_page,
+        from: productsRes.from || 0,
+        to: productsRes.to || 0
+      }
+    } else {
+      products.value = productsRes.data || productsRes
+      pagination.value.total = products.value.length
+      pagination.value.from = products.value.length > 0 ? 1 : 0
+      pagination.value.to = products.value.length
+      pagination.value.last_page = 1
+    }
   }
 }
 

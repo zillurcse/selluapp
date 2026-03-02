@@ -30,36 +30,57 @@ class UploadController extends Controller
 
     public function store(Request $request)
     {
-        if ($request->hasFile('file')) {
+        $request->validate([
+            'file' => 'required|file|max:10240', // max 10MB
+        ]);
+
+        if (!$request->hasFile('file')) {
+            return response()->json(['message' => 'No file uploaded'], 400);
+        }
+
+        try {
             $file = $request->file('file');
             $originalName = $file->getClientOriginalName();
             $extension = $file->getClientOriginalExtension();
             $size = $file->getSize();
             $type = $this->getFileType($extension);
-            
+
             // Store under vendor directory
             $path = $file->store('uploads/' . auth()->id(), 'public');
+
+            if (!$path) {
+                return response()->json(['message' => 'Failed to save file to storage. Check storage permissions.'], 500);
+            }
+
             $url = Storage::disk('public')->url($path);
-            
+
             $upload = Upload::create([
-                'vendor_id' => auth()->id(),
-                'file_name' => basename($path),
+                'vendor_id'          => auth()->id(),
+                'file_name'          => basename($path),
                 'file_original_name' => $originalName,
-                'extension' => $extension,
-                'type' => $type,
-                'file_size' => $size,
-                'file_path' => $path,
-                'file_url' => $url,
+                'extension'          => $extension,
+                'type'               => $type,
+                'file_size'          => $size,
+                'file_path'          => $path,
+                'file_url'           => $url,
             ]);
 
             return response()->json([
                 'message' => 'File uploaded successfully',
-                'data' => $upload,
-                'status' => 201
+                'data'    => $upload,
+                'status'  => 201
             ], 201);
-        }
 
-        return response()->json(['message' => 'No file uploaded'], 400);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Upload failed: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function update(Request $request, $id)
+    {
+        return response()->json(['message' => 'Media files cannot be updated. Please delete and re-upload.'], 405);
     }
 
     public function destroy($id)

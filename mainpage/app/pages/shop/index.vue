@@ -295,6 +295,12 @@ const initFiltersFromQuery = () => {
   } else if (route.query.categories) {
     filters.categories = route.query.categories.split(',')
   }
+
+  if (route.query.brand) {
+    filters.brands = [route.query.brand]
+  } else if (route.query.brands) {
+    filters.brands = route.query.brands.split(',')
+  }
   
   if (route.query.search) filters.search = route.query.search
   if (route.query.sort) filters.sort = route.query.sort

@@ -7,13 +7,13 @@
       <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
         <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
           <!-- Modal Panel -->
-          <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-md border border-slate-100 dark:border-slate-800 p-6">
+          <div class="relative transform overflow-hidden rounded-xl bg-white dark:bg-slate-900 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-md border border-slate-100 dark:border-slate-800 p-6">
             <div class="flex flex-col items-center text-center gap-4">
-              <div class="w-16 h-16 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center border-4 border-red-100 dark:border-red-900/30">
+              <div class="w-16 h-16 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center border border-red-100 dark:border-red-900/30">
                 <Trash2 class="w-8 h-8 text-red-500 dark:text-red-400" />
               </div>
               
-              <h3 class="text-xl font-black text-slate-800 dark:text-slate-100 leading-6" id="modal-title">
+              <h3 class="text-xl font-bold text-slate-800 dark:text-slate-100 leading-6" id="modal-title">
                 {{ title }}
               </h3>
               
@@ -26,18 +26,23 @@
               <div class="mt-6 flex flex-col sm:flex-row gap-3 w-full">
                 <button
                   type="button"
-                  class="inline-flex flex-1 justify-center rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-100 dark:focus:ring-slate-800 transition-all"
+                  class="inline-flex flex-1 justify-center rounded-lg border border-slate-200 dark:border-slate-700 px-4 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 focus:outline-none transition-all"
                   @click="close"
                 >
                   {{ cancelText }}
                 </button>
                 <button
                   type="button"
-                  class="inline-flex flex-1 justify-center rounded-xl border border-transparent bg-red-600 px-4 py-3 text-sm font-bold text-white hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-500/20 shadow-lg shadow-red-600/20 transition-all"
+                  class="inline-flex flex-1 justify-center rounded-lg border border-transparent bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 focus:outline-none transition-all shadow-sm"
                   :disabled="isLoading"
                   @click="confirm"
                 >
-                  <span v-if="isLoading" class="animate-spin mr-2">⏳</span>
+                  <span v-if="isLoading" class="animate-spin mr-2">
+                    <svg class="h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  </span>
                   {{ confirmText }}
                 </button>
               </div>
