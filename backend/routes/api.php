@@ -25,6 +25,8 @@ Route::get('/storefront/states', [StorefrontController::class, 'states']);
 Route::get('/storefront/cities', [StorefrontController::class, 'cities']);
 
 Route::post('/checkout/estimate-shipping', [StorefrontController::class, 'estimateShipping']);
+Route::post('/storefront/checkout', [\App\Http\Controllers\API\CheckoutController::class, 'placeOrder']);
+Route::post('/storefront/checkout/payment-methods', [\App\Http\Controllers\API\CheckoutController::class, 'getPaymentMethods']);
 
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -38,9 +40,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/cart/{product}', [\App\Http\Controllers\CartController::class, 'update']);
     Route::delete('/cart/{product}', [\App\Http\Controllers\CartController::class, 'destroy']);
 
-    // Checkout Routes
-    Route::post('/storefront/checkout', [\App\Http\Controllers\API\CheckoutController::class, 'placeOrder']);
-    Route::post('/storefront/checkout/payment-methods', [\App\Http\Controllers\API\CheckoutController::class, 'getPaymentMethods']);
+
 
     // Customer Panel Routes
     Route::prefix('customer')->group(function () {

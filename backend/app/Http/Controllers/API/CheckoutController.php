@@ -9,8 +9,10 @@ use App\Models\Product;
 use App\Models\Customer;
 use App\Models\ShopSetting;
 use App\Models\FraudCheck;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class CheckoutController extends Controller
@@ -82,13 +84,15 @@ class CheckoutController extends Controller
             'email' => 'required|email',
             'first_name' => 'required|string',
             'last_name' => 'required|string',
-            'address' => 'required|string',
+            'phone' => 'required|string',
+            'full_address' => 'required|string',
             'city_id' => 'required|exists:cities,id',
-            'postal_code' => 'nullable|string',
             'payment_method' => 'required|string',
             'items' => 'required|array|min:1',
             'items.*.id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|integer|min:1',
+            'note' => 'nullable|string',
+            'carrier' => 'nullable|string',
         ]);
 
         $city = \App\Models\City::findOrFail($validated['city_id']);
@@ -112,30 +116,77 @@ class CheckoutController extends Controller
             $orders = [];
             $shippingApplied = false;
             foreach ($itemsByVendor as $vendorId => $vendorItems) {
-                // Find or create customer for this vendor
-                $customer = Customer::where('vendor_id', $vendorId)
-                    ->where('email', $validated['email'])
-                    ->first();
+                // Handle guest account creation or lookup
+                $user = User::where('email', $validated['email'])->first();
+                
+                if (!$user) {
+                    // Create new User and Customer if not exists
+                    $password = Str::random(12);
+                    $user = User::create([
+                        'name' => $validated['first_name'] . ' ' . $validated['last_name'],
+                        'email' => $validated['email'],
+                        'password' => Hash::make($password),
+                        'vendor_id' => $vendorId,
+                    ]);
+                    $user->assignRole('customer');
 
-                if (!$customer) {
                     $customer = Customer::create([
                         'vendor_id' => $vendorId,
                         'first_name' => $validated['first_name'],
                         'last_name' => $validated['last_name'],
                         'email' => $validated['email'],
+                        'phone' => $validated['phone'],
                     ]);
+                } else {
+                    // User exists, find or create associated customer record
+                    $customer = Customer::where('vendor_id', $vendorId)
+                        ->where('email', $validated['email'])
+                        ->first();
+
+                    if (!$customer) {
+                        $customer = Customer::create([
+                            'vendor_id' => $vendorId,
+                            'first_name' => $validated['first_name'],
+                            'last_name' => $validated['last_name'],
+                            'email' => $validated['email'],
+                            'phone' => $validated['phone'],
+                        ]);
+                    } else {
+                        // Update existing customer phone if provided
+                        $customer->update(['phone' => $validated['phone']]);
+                    }
                 }
 
                 $subtotal = 0;
-                foreach ($vendorItems as $vi) {
-                    $price = $vi['product']->discount_price ?: $vi['product']->sale_price;
-                    $subtotal += $price * $vi['quantity'];
+                // Prepare carts collection for getShippingCost helper
+                $carts = collect();
+                foreach ($validated['items'] as $item) {
+                    $carts->push([
+                        'product_id' => $item['id'],
+                        'quantity' => $item['quantity'],
+                    ]);
                 }
 
-                $shippingCost = !$shippingApplied ? (float)$city->cost : 0.00; // Charge shipping only once
+                $shipping_info = [
+                    'city_id' => $validated['city_id'],
+                    'carrier' => $validated['carrier'] ?? 'personal'
+                ];
+
+                $total_shipping = 0;
+                // Calculate shipping for only this vendor's items in the cart
+                // Note: getShippingCost usually takes the full cart but we can pass current vendor's items if needed,
+                // however most methods (flat_rate, area_wise) in helpers.php expect a relative index.
+                // Let's find the indices for this vendor's items.
+                foreach ($carts as $idx => $cItem) {
+                    if (\App\Models\Product::find($cItem['product_id'])->vendor_id == $vendorId) {
+                        $total_shipping += getShippingCost($carts, $idx, $shipping_info);
+                    }
+                }
+
+                $shippingCost = !$shippingApplied ? (float)$total_shipping : 0.00; // Charge shipping only once per order group if needed, but here it's per vendor order. Actually, usually it's per vendor.
                 $shippingApplied = true;
                 
-                $totalAmount = $subtotal + $shippingCost;
+                $totalAmount = $subtotal + (float)$shippingCost;
 
                 // Check Spider Intelligence Settings
                 $spiderIntelligenceSettings = ShopSetting::where('user_id', $vendorId)
@@ -181,11 +232,12 @@ class CheckoutController extends Controller
                         'first_name' => $validated['first_name'],
                         'last_name' => $validated['last_name'],
                         'email' => $validated['email'],
-                        'address' => $validated['address'],
+                        'phone' => $validated['phone'],
+                        'address' => $validated['full_address'],
                         'city' => $city->name,
                         'city_id' => $city->id,
-                        'postal_code' => $validated['postal_code'] ?? '',
                     ]),
+                    'notes' => $validated['note'] ?? null,
                 ]);
 
                 if ($requiresManualReview) {
@@ -207,9 +259,6 @@ class CheckoutController extends Controller
                         'unit_price' => $price,
                         'total_price' => $price * $vi['quantity'],
                     ]);
-                    
-                    // Deduct stock
-                    $vi['product']->decrement('stock_qty', $vi['quantity']);
                 }
 
                 $orders[] = $order;

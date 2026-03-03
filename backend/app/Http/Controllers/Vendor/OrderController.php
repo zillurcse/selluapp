@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller implements HasMiddleware
 {
@@ -263,10 +264,29 @@ class OrderController extends Controller implements HasMiddleware
             return response()->json(['message' => 'POS Sale status updated successfully', 'data' => $sale]);
         }
 
-        $order = \App\Models\Order::where('user_id', auth()->id())->findOrFail($id);
-        $order->update(['status' => strtolower($request->status)]);
+        $order = \App\Models\Order::with('items.product')->where('user_id', auth()->id())->findOrFail($id);
+        $oldStatus = $order->status;
+        $newStatus = strtolower($request->status);
 
-        return response()->json(['message' => 'Order status updated successfully', 'data' => $order]);
+        DB::beginTransaction();
+        try {
+            $order->update(['status' => $newStatus]);
+
+            // Deduct stock only when moving from pending to processing
+            if ($oldStatus === 'pending' && $newStatus === 'processing') {
+                foreach ($order->items as $item) {
+                    if ($item->product) {
+                        $item->product->decrement('stock_qty', $item->quantity);
+                    }
+                }
+            }
+
+            DB::commit();
+            return response()->json(['message' => 'Order status updated successfully', 'data' => $order]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Failed to update order: ' . $e->getMessage()], 500);
+        }
     }
 
     /**

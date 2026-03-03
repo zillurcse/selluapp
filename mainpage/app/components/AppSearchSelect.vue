@@ -5,7 +5,10 @@
     </label>
     
     <div 
-      class="relative w-full cursor-default overflow-hidden rounded-xl border border-gray-300 bg-white text-left focus-within:ring-2 focus-within:ring-black focus-within:border-transparent transition-all shadow-sm"
+      :class="[
+        'relative w-full cursor-default overflow-hidden rounded-xl border bg-white text-left focus-within:ring-2 focus-within:ring-black focus-within:border-transparent transition-all shadow-sm',
+        error ? 'border-red-500' : 'border-gray-300'
+      ]"
       @click="isOpen = !isOpen"
     >
       <input
@@ -91,7 +94,8 @@ const props = defineProps({
     default: 'Search...'
   },
   required: Boolean,
-  multiple: Boolean
+  multiple: Boolean,
+  error: Boolean
 })
 
 const emit = defineEmits(['update:modelValue', 'onCreate'])

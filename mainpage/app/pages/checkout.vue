@@ -32,10 +32,38 @@
                 <span class="flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-gray-900 text-xs font-bold">1</span>
                 Contact Information
               </h2>
-              <div class="space-y-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1.5">Email Address</label>
-                  <input v-model="form.email" type="email" placeholder="you@example.com" class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black focus:border-transparent text-sm transition-shadow" />
+                  <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                    Email Address <span class="text-red-500">*</span>
+                  </label>
+                  <input v-model="form.email" type="email" placeholder="you@example.com" :class="['w-full px-4 py-2.5 bg-white border rounded-xl outline-none focus:ring-2 focus:ring-black focus:border-transparent text-sm transition-shadow', validationErrors.email ? 'border-red-500' : 'border-gray-300']" />
+                  <p v-if="validationErrors.email" class="mt-1 text-xs text-red-500">{{ validationErrors.email }}</p>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                    Phone Number <span class="text-red-500">*</span>
+                  </label>
+                  <vue-tel-input 
+                    v-model="form.phone" 
+                    mode="auto"
+                    :onlyCountries="['BD']"
+                    :maxLen="13"
+                    :autoFormat="false"
+                    @validate="(validState) => isPhoneValid = validState.valid"
+                    :dropdownOptions="{
+                      showFlags: true,
+                      showDialCodeInList: true,
+                      showDialCodeInSelection: true,
+                      disabled: true
+                    }"
+                    :inputOptions="{
+                      placeholder: '01XXXXXXXXX',
+                      styleClasses: '!w-full !px-4 !py-2.5 !bg-white !border !rounded-xl !outline-none !focus:ring-2 !focus:ring-black !focus:border-transparent !text-sm !transition-shadow ' + (validationErrors.phone ? '!border-red-500' : '!border-gray-300'),
+                    }"
+                    class="tel-input-custom"
+                  />
+                  <p v-if="validationErrors.phone" class="mt-1 text-xs text-red-500">{{ validationErrors.phone }}</p>
                 </div>
               </div>
             </section>
@@ -48,16 +76,18 @@
               </h2>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1.5">First Name</label>
-                  <input v-model="form.first_name" type="text" class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black focus:border-transparent text-sm transition-shadow" />
+                  <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                    First Name <span class="text-red-500">*</span>
+                  </label>
+                  <input v-model="form.first_name" type="text" :class="['w-full px-4 py-2.5 bg-white border rounded-xl outline-none focus:ring-2 focus:ring-black focus:border-transparent text-sm transition-shadow', validationErrors.first_name ? 'border-red-500' : 'border-gray-300']" />
+                  <p v-if="validationErrors.first_name" class="mt-1 text-xs text-red-500">{{ validationErrors.first_name }}</p>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1.5">Last Name</label>
-                  <input v-model="form.last_name" type="text" class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black focus:border-transparent text-sm transition-shadow" />
-                </div>
-                <div class="sm:col-span-2">
-                  <label class="block text-sm font-medium text-gray-700 mb-1.5">Address</label>
-                  <input v-model="form.address" type="text" placeholder="Street address, apartment, suite, etc." class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black focus:border-transparent text-sm transition-shadow" />
+                  <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                    Last Name <span class="text-red-500">*</span>
+                  </label>
+                  <input v-model="form.last_name" type="text" :class="['w-full px-4 py-2.5 bg-white border rounded-xl outline-none focus:ring-2 focus:ring-black focus:border-transparent text-sm transition-shadow', validationErrors.last_name ? 'border-red-500' : 'border-gray-300']" />
+                  <p v-if="validationErrors.last_name" class="mt-1 text-xs text-red-500">{{ validationErrors.last_name }}</p>
                 </div>
                 <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
                   <div class="relative z-[60]">
@@ -66,9 +96,12 @@
                       :items="states"
                       label="State / Division"
                       placeholder="Select State"
+                      required
+                      :error="!!validationErrors.state_id"
                       @update:modelValue="handleStateChange"
                       class="!border-gray-300"
                     />
+                    <p v-if="validationErrors.state_id" class="mt-1 text-xs text-red-500">{{ validationErrors.state_id }}</p>
                   </div>
                   <div class="relative z-[50]">
                     <AppSearchSelect 
@@ -77,9 +110,12 @@
                       label="City / Area"
                       :placeholder="loadingCities ? 'Loading...' : 'Select City'"
                       :disabled="!form.state_id || loadingCities"
+                      required
+                      :error="!!validationErrors.city_id"
                       @update:modelValue="handleCityChange"
                       class="!border-gray-300"
                     />
+                    <p v-if="validationErrors.city_id" class="mt-1 text-xs text-red-500">{{ validationErrors.city_id }}</p>
                   </div>
                 </div>
 
@@ -105,12 +141,15 @@
                 </div>
 
                 <div class="sm:col-span-2">
-                  <label class="block text-sm font-medium text-gray-700 mb-1.5">Full Address</label>
-                  <textarea v-model="form.address" rows="2" placeholder="House #, Road #, Area details..." class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black focus:border-transparent text-sm transition-shadow reseize-none"></textarea>
+                  <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                    Full Address <span class="text-red-500">*</span>
+                  </label>
+                  <textarea v-model="form.full_address" rows="2" placeholder="House #, Road #, Area details..." :class="['w-full px-4 py-2.5 bg-white border rounded-xl outline-none focus:ring-2 focus:ring-black focus:border-transparent text-sm transition-shadow resize-none', validationErrors.full_address ? 'border-red-500' : 'border-gray-300']"></textarea>
+                  <p v-if="validationErrors.full_address" class="mt-1 text-xs text-red-500">{{ validationErrors.full_address }}</p>
                 </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1.5">Postal Code</label>
-                  <input v-model="form.postal_code" type="text" class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black focus:border-transparent text-sm transition-shadow" />
+                <div class="sm:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700 mb-1.5">Order Note (Optional)</label>
+                  <textarea v-model="form.note" rows="3" placeholder="Notes about your order, e.g. special notes for delivery." class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black focus:border-transparent text-sm transition-shadow resize-none"></textarea>
                 </div>
               </div>
             </section>
@@ -263,6 +302,8 @@ const gateways = ref([])
 const loadingGateways = ref(false)
 const paymentMethod = ref('')
 const loading = ref(false)
+const validationErrors = ref({})
+const isPhoneValid = ref(false)
 
 const states = ref([])
 const cities = ref([])
@@ -273,13 +314,14 @@ const availableCarriers = ref([])
 
 const form = ref({
   email: '',
+  phone: '',
   first_name: '',
   last_name: '',
-  address: '',
+  full_address: '',
   state_id: '',
   city_id: '',
   city_name: '',
-  postal_code: '',
+  note: '',
   card_number: '',
   expiry_date: '',
   cvc: '',
@@ -412,8 +454,52 @@ onMounted(() => {
   fetchStates()
 })
 
+const validateForm = () => {
+  validationErrors.value = {}
+  let isValid = true
+
+  if (!form.value.email?.trim()) {
+    validationErrors.value.email = 'Email address is required'
+    isValid = false
+  }
+  if (!form.value.first_name?.trim()) {
+    validationErrors.value.first_name = 'First name is required'
+    isValid = false
+  }
+  if (!form.value.phone?.trim()) {
+    validationErrors.value.phone = 'Phone number is required'
+    isValid = false
+  } else if (!isPhoneValid.value) {
+    validationErrors.value.phone = 'Please enter a valid Bangladesh phone number'
+    isValid = false
+  }
+  if (!form.value.last_name?.trim()) {
+    validationErrors.value.last_name = 'Last name is required'
+    isValid = false
+  }
+  if (!form.value.state_id) {
+    validationErrors.value.state_id = 'State is required'
+    isValid = false
+  }
+  if (!form.value.city_id) {
+    validationErrors.value.city_id = 'City is required'
+    isValid = false
+  }
+  if (!form.value.full_address?.trim()) {
+    validationErrors.value.full_address = 'Full address is required'
+    isValid = false
+  }
+
+  return isValid
+}
+
 const placeOrder = async () => {
   if (cart.value.length === 0) return
+  if (!validateForm()) {
+    const firstError = Object.values(validationErrors.value)[0]
+    alert(firstError || 'Please fill in all required fields')
+    return
+  }
 
   loading.value = true
   try {
@@ -432,11 +518,14 @@ const placeOrder = async () => {
     })
 
     if (response.success) {
-      alert('Order placed successfully! Thank you for your purchase.')
       // Clear cart
+      const invoice_number = response.orders && response.orders.length > 0 ? response.orders[0].invoice_number : ''
       cart.value = []
-      // Redirect to home or a success page
-      router.push('/')
+      // Redirect to a success page
+      router.push({
+        path: '/thank-you',
+        query: { invoice_number: invoice_number }
+      })
     }
   } catch (error) {
     console.error('Checkout error:', error)
@@ -471,5 +560,21 @@ const placeOrder = async () => {
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+
+/* Tel Input Styling */
+:deep(.tel-input-custom) {
+  border: none !important;
+  box-shadow: none !important;
+}
+:deep(.tel-input-custom .vti__dropdown) {
+  border-radius: 0.75rem 0 0 0.75rem !important;
+  padding: 0 0.5rem !important;
+}
+:deep(.tel-input-custom .vti__dropdown:hover) {
+  background-color: #f8fafc !important;
+}
+:deep(.tel-input-custom .vti__input) {
+  border-radius: 0 0.75rem 0.75rem 0 !important;
 }
 </style>
