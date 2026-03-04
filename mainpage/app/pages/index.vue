@@ -20,6 +20,9 @@
     <!-- ===== TOP CATEGORIES ===== -->
     <CategoryGrid :categories="topCategories" />
 
+    <!-- ===== PROMOTIONS SECTION ===== -->
+    <PromotionSection :promotions="promotions" />
+
     <!-- ===== CATEGORY WISE PRODUCTS ===== -->
     <CategoryWiseProducts 
       :categories="categoryWiseProducts" 
@@ -48,7 +51,7 @@ import { storeToRefs } from 'pinia'
 import { defineAsyncComponent, shallowRef, watchEffect } from 'vue'
 
 const storefrontStore = useStorefrontStore()
-const { slides, topCategories, trendingProducts: products, categoryWiseProducts, homeLandingPage } = storeToRefs(storefrontStore)
+const { slides, topCategories, trendingProducts: products, categoryWiseProducts, homeLandingPage, promotions } = storeToRefs(storefrontStore)
 
 // Fetch initial data from store
 await useAsyncData('storefront-init', async () => {

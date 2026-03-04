@@ -240,6 +240,9 @@
                     <span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-md border border-slate-200 dark:border-slate-700">
                       {{ order.amount.method }}
                     </span>
+                    <span v-if="order.amount.discount > 0" class="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 bg-rose-50 dark:bg-rose-950 text-rose-600 dark:text-rose-400 rounded-md border border-rose-100 dark:border-rose-900/30">
+                      Promotion
+                    </span>
                   </div>
                 </div>
               </td>

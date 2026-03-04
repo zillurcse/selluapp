@@ -39,7 +39,10 @@ class PromotionController extends Controller implements HasMiddleware
         $validated['vendor_id'] = auth()->id();
 
         if ($request->hasFile('banner')) {
-            $validated['banner'] = $request->file('banner')->store('vendors/promotions', 'public');
+            $path = $request->file('banner')->store('vendors/promotions', 'public');
+            $validated['banner'] = \Illuminate\Support\Facades\Storage::disk('public')->url($path);
+        } elseif ($request->filled('banner') && is_string($request->banner)) {
+            $validated['banner'] = $request->banner;
         }
 
         $promotion = \App\Models\Promotion::create($validated);
@@ -64,10 +67,13 @@ class PromotionController extends Controller implements HasMiddleware
         $validated = $request->validated();
 
         if ($request->hasFile('banner')) {
-            if ($promotion->banner) {
-                \Illuminate\Support\Facades\Storage::delete('public/' . $promotion->banner);
+            if ($promotion->banner && !\Illuminate\Support\Str::contains($promotion->banner, 'http')) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($promotion->banner);
             }
-            $validated['banner'] = $request->file('banner')->store('vendors/promotions', 'public');
+            $path = $request->file('banner')->store('vendors/promotions', 'public');
+            $validated['banner'] = \Illuminate\Support\Facades\Storage::disk('public')->url($path);
+        } elseif ($request->filled('banner') && is_string($request->banner)) {
+            $validated['banner'] = $request->banner;
         }
 
         $promotion->update($validated);

@@ -164,9 +164,7 @@
         <div class="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-sm p-8 flex flex-col items-center text-center transition-colors duration-300">
           <h2 class="text-lg font-black text-slate-800 dark:text-white mb-6">Website Logo [220H x 90W]</h2>
           
-          <div @click="triggerLogoUpload" class="w-64 aspect-[220/90] bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl flex items-center justify-center p-4 group cursor-pointer hover:border-indigo-300 hover:bg-slate-100/50 dark:hover:bg-slate-700 transition-all relative overflow-hidden">
-            <input type="file" ref="logoInput" class="hidden" accept="image/*" @change="onLogoChange">
-            
+          <div @click="openMediaLibrary" class="w-64 aspect-[220/90] bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl flex items-center justify-center p-4 group cursor-pointer hover:border-indigo-300 hover:bg-slate-100/50 dark:hover:bg-slate-700 transition-all relative overflow-hidden">
             <img v-if="form.logo" :src="form.logo" alt="Logo preview" class="w-full h-full object-contain absolute inset-0 p-2">
             
             <div v-else class="space-y-1 relative z-10">
@@ -180,6 +178,14 @@
             </div>
           </div>
         </div>
+
+        <AppMediaLibrary
+          :show="showMediaModal"
+          :multiple="false"
+          type-label="Logo"
+          @close="showMediaModal = false"
+          @select="handleMediaSelection"
+        />
 
         <!-- Shop Settings Card -->
         <div class="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-sm p-8 space-y-8 transition-colors duration-300">
@@ -292,6 +298,7 @@ import {
   FileText,
   Printer
 } from 'lucide-vue-next'
+import AppMediaLibrary from '~/components/AppMediaLibrary.vue'
 import { reactive, ref, onMounted } from 'vue'
 
 definePageMeta({
@@ -323,25 +330,16 @@ const form = reactive({
 
 const pending = ref(true)
 const saving = ref(false)
-const logoInput = ref(null)
 
-const triggerLogoUpload = () => {
-  logoInput.value?.click()
+// Media Library
+const showMediaModal = ref(false)
+
+const openMediaLibrary = () => {
+  showMediaModal.value = true
 }
 
-const onLogoChange = (event) => {
-  const file = event.target.files[0]
-  if (!file) return
-  
-  if (file.size > 2 * 1024 * 1024) {
-    $toast.error('Logo image must be less than 2MB')
-    return
-  }
-  
-  // Create object URL for immediate preview layout
-  form.logo = URL.createObjectURL(file)
-  // Store the raw file object secretly for the submit handler
-  form._rawLogoFile = file
+const handleMediaSelection = (selected) => {
+  form.logo = selected.file_url
 }
 
 const loadSettings = async () => {
@@ -364,30 +362,10 @@ const saveSettings = async () => {
   try {
     saving.value = true
 
-    // Only send the _rawLogoFile if it exists, otherwise send standard JSON.
-    if (form._rawLogoFile) {
-      const formData = new FormData()
-      formData.append('group', 'shop_settings')
-      
-      // We must stringify the rest of the settings for the 'settings' key
-      const formCopy = { ...form }
-      delete formCopy.logo // we'll use the uploaded URL returned by backend instead
-      delete formCopy._rawLogoFile
-      formData.append('settings', JSON.stringify(formCopy))
-      
-      // Append the file directly
-      formData.append('files[logo]', form._rawLogoFile)
-
-      await createItem('/vendor/settings', formData)
-    } else {
-      await createItem('/vendor/settings', {
-        group: 'shop_settings',
-        settings: form
-      })
-    }
-    
-    // Clear out the temporary raw file pointer so it doesn't try to upload again next time
-    delete form._rawLogoFile
+    await createItem('/vendor/settings', {
+      group: 'shop_settings',
+      settings: form
+    })
 
   } catch (error) {
     console.error(error)

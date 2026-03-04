@@ -208,12 +208,8 @@ export default function useCrud() {
       });
 
       store.isLoading = false;
-      const successMsg = response?.message;
-      if (successMsg) {
-        toast.success(successMsg);
-      } else {
-        toast.success('Item updated successfully');
-      }
+      const successMsg = response?.message || response?.msg || response?.success || 'Item updated successfully';
+      toast.success(successMsg);
 
       // Redirect logic could be here or handled in component
       return response;

@@ -18,6 +18,9 @@
               <span v-if="order" class="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-md border tracking-widest uppercase">
                 {{ orderType.toUpperCase() === 'POS' ? order.reference : order.invoice_number }}
               </span>
+              <span v-if="order && order.discount_amount > 0" class="text-[10px] font-black text-rose-600 bg-rose-50 px-2 py-1 rounded-md border border-rose-100 tracking-widest uppercase">
+                Promotion
+              </span>
             </h2>
             <p v-if="order" class="text-xs text-slate-500 font-semibold mt-1">
               {{ new Date(order.created_at).toLocaleString() }} &bull; {{ orderType }}
@@ -144,11 +147,29 @@
                 <div class="space-y-1">
                    <p class="text-[10px] font-black uppercase text-slate-400 tracking-wider">Payment Details</p>
                    <p class="font-bold text-slate-800 text-sm capitalize">
-                     {{ (order.payment_method || 'Cash').replace('_', ' ') }}
+                     {{ order.payment_method?.toLowerCase().includes('cod') ? 'Cash on deliver(COD)' : (order.payment_method || 'Cash').replace('_', ' ') }}
                    </p>
                    <p class="text-xs font-semibold" :class="order.status === 'paid' || order.payment_status === 'paid' ? 'text-emerald-500' : 'text-amber-500'">
                      {{ order.status === 'paid' || order.payment_status === 'paid' ? 'Fully Paid' : 'Payment Pending' }}
                    </p>
+                </div>
+             </div>
+             
+             <!-- Shipping Details (Standard Orders only) -->
+             <div v-if="orderType.toUpperCase() !== 'POS' && order.shipping_address" class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-2">
+                <div class="flex items-center gap-2 mb-1">
+                  <TruckIcon class="w-4 h-4 text-slate-400" />
+                  <h3 class="text-xs font-black uppercase text-slate-400 tracking-wider">Shipping Details</h3>
+                </div>
+                <div v-if="typeof parsedShippingAddress === 'object'" class="space-y-1">
+                   <p class="font-bold text-slate-800 text-sm">{{ parsedShippingAddress.address }}</p>
+                   <p class="text-xs text-slate-500 font-medium">{{ parsedShippingAddress.city }}</p>
+                   <p v-if="order.delivery_zone" class="text-[10px] font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-md inline-block">
+                     Zone: {{ order.delivery_zone }}
+                   </p>
+                </div>
+                <div v-else class="text-xs font-medium text-slate-600">
+                   {{ order.shipping_address }}
                 </div>
              </div>
 
@@ -193,24 +214,31 @@
                 <div class="space-y-3">
                    <div class="flex justify-between items-center text-xs font-semibold text-slate-500">
                      <span>Subtotal</span>
-                     <span>৳{{ orderType.toUpperCase() === 'POS' ? order.subtotal : calculateOnlineSubtotal(order) }}</span>
+                     <span>৳{{ order.subtotal }}</span>
                    </div>
-                   <div v-if="orderType.toUpperCase() === 'POS'" class="flex justify-between items-center text-xs font-semibold text-rose-500">
-                     <span>Discount</span>
-                     <span>- ৳{{ order.discount_amount }}</span>
-                   </div>
+                    <div v-if="order.discount_amount > 0" class="flex flex-col gap-2 p-3 bg-rose-50/50 dark:bg-rose-950/20 rounded-xl border border-rose-100 dark:border-rose-900/30">
+                      <div class="flex justify-between items-center text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-tighter">
+                        <span>Discount Total</span>
+                        <span>- ৳{{ order.discount_amount }}</span>
+                      </div>
+                      <div v-if="order.applied_promotions && order.applied_promotions.length > 0" class="flex flex-wrap gap-1.5 border-t border-rose-100/50 dark:border-rose-900/40 pt-2">
+                        <span v-for="(p, idx) in order.applied_promotions" :key="idx" class="text-[9px] bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 px-2 py-0.5 rounded-md font-black uppercase tracking-widest border border-rose-200 dark:border-rose-800">
+                          {{ p.offer_title }}
+                        </span>
+                      </div>
+                    </div>
                    <div v-if="orderType.toUpperCase() === 'POS'" class="flex justify-between items-center text-xs font-semibold text-slate-500">
                      <span>Tax ({{ order.tax_percentage }}%)</span>
                      <span>৳{{ order.tax_amount }}</span>
                    </div>
                    <div class="flex justify-between items-center text-xs font-semibold text-slate-500">
                      <span>Shipping / Delivery</span>
-                     <span>+ ৳{{ orderType.toUpperCase() === 'POS' ? order.shipping : order.delivery_charge || '0.00' }}</span>
+                     <span>+ ৳{{ orderType.toUpperCase() === 'POS' ? order.shipping : order.shipping_cost || '0.00' }}</span>
                    </div>
                    <div class="pt-3 border-t border-slate-100 flex justify-between items-center">
                      <span class="text-sm font-black text-slate-800">Total Amount</span>
                      <span class="text-lg font-black text-indigo-600">
-                       ৳{{ orderType.toUpperCase() === 'POS' ? order.total : order.total_amount }}
+                       ৳{{ orderType.toUpperCase() === 'POS' ? order.total : (Number(order.subtotal) + Number(order.shipping_cost || 0) - Number(order.discount_amount || 0)).toFixed(2) }}
                      </span>
                    </div>
                 </div>
@@ -277,7 +305,7 @@ import {
   PrinterIcon,
   TruckIcon
 } from 'lucide-vue-next'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { toast } from 'vue-sonner'
 
 const { getAll, updateItem, createItem } = useCrud()
@@ -291,6 +319,16 @@ const orderStatus = ref('')
 const statusUpdating = ref(false)
 const activeCouriers = ref([])
 const syncingCourier = ref(false)
+
+const parsedShippingAddress = computed(() => {
+    if (!order.value?.shipping_address) return null
+    if (typeof order.value.shipping_address === 'object') return order.value.shipping_address
+    try {
+        return JSON.parse(order.value.shipping_address)
+    } catch (e) {
+        return order.value.shipping_address
+    }
+})
 
 const openDrawer = async (id, type) => {
     isOpen.value = true

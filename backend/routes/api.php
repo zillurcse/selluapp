@@ -26,6 +26,7 @@ Route::get('/storefront/cities', [StorefrontController::class, 'cities']);
 
 Route::post('/checkout/estimate-shipping', [StorefrontController::class, 'estimateShipping']);
 Route::post('/storefront/checkout', [\App\Http\Controllers\API\CheckoutController::class, 'placeOrder']);
+Route::post('/storefront/checkout/calculate-discount', [\App\Http\Controllers\API\CheckoutController::class, 'getDiscount']);
 Route::post('/storefront/checkout/payment-methods', [\App\Http\Controllers\API\CheckoutController::class, 'getPaymentMethods']);
 
 
@@ -49,11 +50,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('profile', [\App\Http\Controllers\API\CustomerPanelController::class, 'updateProfile']);
         Route::put('password', [\App\Http\Controllers\API\CustomerPanelController::class, 'updatePassword']);
         Route::get('orders', [\App\Http\Controllers\API\CustomerPanelController::class, 'orders']);
+        Route::get('orders/{order}', [\App\Http\Controllers\API\CustomerPanelController::class, 'showOrder']);
 
         Route::get('addresses', [\App\Http\Controllers\API\CustomerPanelController::class, 'addresses']);
         Route::post('addresses', [\App\Http\Controllers\API\CustomerPanelController::class, 'storeAddress']);
         Route::put('addresses/{address}', [\App\Http\Controllers\API\CustomerPanelController::class, 'updateAddress']);
         Route::delete('addresses/{address}', [\App\Http\Controllers\API\CustomerPanelController::class, 'destroyAddress']);
+
+        Route::put('settings', [\App\Http\Controllers\API\CustomerPanelController::class, 'updateSettings']);
+        Route::delete('account', [\App\Http\Controllers\API\CustomerPanelController::class, 'deleteAccount']);
     });
 
     // Admin Routes

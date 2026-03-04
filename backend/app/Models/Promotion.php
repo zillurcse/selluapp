@@ -12,6 +12,7 @@ class Promotion extends Model
     protected $fillable = [
         'vendor_id',
         'title',
+        'slug',
         'type',
         'start_date',
         'end_date',
@@ -21,6 +22,9 @@ class Promotion extends Model
         'discount_unit',
         'banner',
         'is_active',
+        'is_stackable',
+        'priority',
+        'rules',
     ];
 
     protected $casts = [
@@ -34,5 +38,33 @@ class Promotion extends Model
     public function vendor()
     {
         return $this->belongsTo(User::class, 'vendor_id');
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saving(function ($promotion) {
+            if (empty($promotion->slug) || $promotion->isDirty('title')) {
+                $promotion->slug = \Illuminate\Support\Str::slug($promotion->title);
+                
+                // Ensure uniqueness
+                $count = static::where('slug', 'like', $promotion->slug . '%')
+                    ->where('id', '!=', $promotion->id)
+                    ->count();
+                
+                if ($count > 0) {
+                    $promotion->slug .= '-' . ($count + 1);
+                }
+            }
+        });
+
+        static::saved(function ($promotion) {
+            \Illuminate\Support\Facades\Cache::forget('storefront_index_' . ($promotion->vendor_id ?? 'global'));
+        });
+
+        static::deleted(function ($promotion) {
+            \Illuminate\Support\Facades\Cache::forget('storefront_index_' . ($promotion->vendor_id ?? 'global'));
+        });
     }
 }

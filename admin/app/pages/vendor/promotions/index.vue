@@ -63,7 +63,7 @@
                     <tr v-for="promotion in items" :key="promotion.id" class="hover:bg-gray-50/50 dark:hover:bg-slate-800/50 transition-colors group">
                         <td class="px-6 py-4 flex items-center gap-4">
                             <div v-if="promotion.banner" class="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden shrink-0">
-                                <img :src="getMediaUrl(promotion.banner)" class="w-full h-full object-cover">
+                                <img :src="promotion.banner" class="w-full h-full object-cover">
                             </div>
                             <div v-else class="w-12 h-12 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-400 shrink-0">
                                 <ImageIcon class="w-5 h-5" />
@@ -145,15 +145,146 @@
             <div class="relative">
               <select 
                 v-model="form.type"
+                @change="handleTypeChange"
                 class="w-full px-4 py-2.5 bg-[#f0f7ff] dark:bg-slate-800 border border-blue-100 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all outline-none appearance-none text-gray-900 dark:text-white"
               >
-                <option value="flash_sale">Flash Sale</option>
-                <option value="flat_discount">Flat Discount</option>
-                <option value="buy_x_get_y">Buy X Get Y</option>
-                <option value="bundle">Bundle Offer</option>
+                <option v-for="ptype in promotionTypes" :key="ptype.value" :value="ptype.value">{{ ptype.label }}</option>
               </select>
               <ChevronDownIcon class="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
+          </div>
+
+          <!-- Dropdown Overlays -->
+          <div v-if="isBuyDropdownOpen || isGetDropdownOpen" @click="closeDropdowns" class="fixed inset-0 z-40 bg-transparent"></div>
+
+          <!-- Dynamic JSON Rules based on Type -->
+          <div v-if="form.type === 'buy_x_get_y'" class="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl space-y-4 border border-indigo-100 dark:border-indigo-800/30">
+             <h3 class="text-sm font-bold text-indigo-900 dark:text-indigo-300 flex items-center gap-2">
+                 <TagIcon class="w-4 h-4" /> Buy X Get Y Configuration
+             </h3>
+             <div class="grid grid-cols-2 gap-4">
+                 <div class="space-y-1.5">
+                     <label class="block text-xs font-semibold text-gray-700 dark:text-slate-300">Buy Quantity <span class="text-red-500">*</span></label>
+                     <input type="number" v-model="form.rules.buy_qty" min="1" class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 outline-none text-sm dark:text-white">
+                 </div>
+                 <div class="space-y-1.5 relative">
+                     <label class="block text-xs font-semibold text-gray-700 dark:text-slate-300">Buy Product <span class="text-red-500">*</span></label>
+                     <div @click="isBuyDropdownOpen = !isBuyDropdownOpen; isGetDropdownOpen = false" class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg cursor-pointer flex justify-between items-center outline-none text-sm dark:text-white">
+                         <span class="truncate block">{{ getProductName(form.rules.buy_product_id) || 'Select Product' }}</span>
+                         <ChevronDownIcon class="w-4 h-4 text-gray-400 shrink-0" />
+                     </div>
+                     <div v-if="isBuyDropdownOpen" class="absolute z-50 w-full mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-xl overflow-hidden top-full left-0">
+                         <div class="p-2 border-b border-gray-100 dark:border-slate-700 relative">
+                             <SearchIcon class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                             <input v-model="buyProductSearch" @click.stop type="text" placeholder="Search product..." class="w-full pl-8 pr-2 py-1.5 text-sm bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 outline-none dark:text-white placeholder:text-gray-400">
+                         </div>
+                         <div class="max-h-40 overflow-y-auto custom-scrollbar p-1">
+                             <div 
+                                 v-for="p in filteredBuyProducts" :key="p.id" 
+                                 @click="selectBuyProduct(p.id)"
+                                 class="px-2 py-1.5 text-sm hover:bg-indigo-50 dark:hover:bg-slate-700 cursor-pointer rounded dark:text-slate-300 truncate transition-colors"
+                                 :title="p.name"
+                             >
+                                 {{ p.name }}
+                             </div>
+                             <div v-if="filteredBuyProducts.length === 0" class="p-2 text-xs text-gray-500 text-center">No products found</div>
+                         </div>
+                     </div>
+                 </div>
+                 <div class="space-y-1.5">
+                     <label class="block text-xs font-semibold text-gray-700 dark:text-slate-300">Get Quantity <span class="text-red-500">*</span></label>
+                     <input type="number" v-model="form.rules.get_qty" min="1" class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 outline-none text-sm dark:text-white">
+                 </div>
+                 <div class="space-y-1.5 relative">
+                     <label class="block text-xs font-semibold text-gray-700 dark:text-slate-300">Get Product <span class="text-red-500">*</span></label>
+                     <div @click="isGetDropdownOpen = !isGetDropdownOpen; isBuyDropdownOpen = false" class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg cursor-pointer flex justify-between items-center outline-none text-sm dark:text-white">
+                         <span class="truncate block">{{ getProductName(form.rules.get_product_id) || 'Select Product' }}</span>
+                         <ChevronDownIcon class="w-4 h-4 text-gray-400 shrink-0" />
+                     </div>
+                     <div v-if="isGetDropdownOpen" class="absolute z-50 w-full mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-xl overflow-hidden top-full left-0">
+                         <div class="p-2 border-b border-gray-100 dark:border-slate-700 relative">
+                             <SearchIcon class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                             <input v-model="getProductSearch" @click.stop type="text" placeholder="Search product..." class="w-full pl-8 pr-2 py-1.5 text-sm bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 outline-none dark:text-white placeholder:text-gray-400">
+                         </div>
+                         <div class="max-h-40 overflow-y-auto custom-scrollbar p-1">
+                             <div 
+                                 v-for="p in filteredGetProducts" :key="p.id" 
+                                 @click="selectGetProduct(p.id)"
+                                 class="px-2 py-1.5 text-sm hover:bg-indigo-50 dark:hover:bg-slate-700 cursor-pointer rounded dark:text-slate-300 truncate transition-colors"
+                                 :title="p.name"
+                             >
+                                 {{ p.name }}
+                             </div>
+                             <div v-if="filteredGetProducts.length === 0" class="p-2 text-xs text-gray-500 text-center">No products found</div>
+                         </div>
+                     </div>
+                 </div>
+             </div>
+             <!-- Buy X Get Y Specific Discount Input -->
+             <div class="border-t border-indigo-100 dark:border-indigo-800/30 pt-4 mt-4">
+                 <h4 class="text-xs font-semibold text-indigo-800 dark:text-indigo-400 mb-3">Discount applied to the 'Get Product'</h4>
+                 <div class="grid grid-cols-2 gap-4">
+                     <div class="space-y-1.5">
+                         <label class="block text-xs font-semibold text-gray-700 dark:text-slate-300">Discount Value <span class="text-red-500">*</span></label>
+                         <input type="number" v-model="form.discount_value" placeholder="0" class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 outline-none text-sm dark:text-white">
+                     </div>
+                     <div class="space-y-1.5">
+                         <label class="block text-xs font-semibold text-gray-700 dark:text-slate-300">Discount Unit <span class="text-red-500">*</span></label>
+                         <select v-model="form.discount_unit" class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg outline-none text-sm dark:text-white">
+                             <option value="percentage">Percentage (%)</option>
+                             <option value="fixed">Fixed Amount</option>
+                         </select>
+                     </div>
+                 </div>
+             </div>
+          </div>
+
+          <div v-if="form.type === 'bundle'" class="p-4 bg-fuchsia-50 dark:bg-fuchsia-900/20 rounded-xl space-y-4 border border-fuchsia-100 dark:border-fuchsia-800/30">
+             <h3 class="text-sm font-bold text-fuchsia-900 dark:text-fuchsia-300 flex items-center gap-2">
+                 <PackageIcon class="w-4 h-4" /> Bundle Configuration
+             </h3>
+             <div class="space-y-1.5">
+                 <label class="block text-xs font-semibold text-gray-700 dark:text-slate-300">Required Items in Cart <span class="text-red-500">*</span></label>
+                 <div class="w-full border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden bg-white dark:bg-slate-800">
+                     <div class="p-2 border-b border-gray-100 dark:border-slate-700">
+                         <div class="relative">
+                             <SearchIcon class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                             <input 
+                                 v-model="bundleProductSearch"
+                                 type="text" 
+                                 placeholder="Search products..." 
+                                 class="w-full pl-9 pr-4 py-1.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-md focus:ring-2 focus:ring-fuchsia-100 focus:border-fuchsia-400 transition-all outline-none text-xs text-gray-900 dark:text-white placeholder:text-gray-400"
+                             >
+                         </div>
+                     </div>
+                     <div class="max-h-40 overflow-y-auto p-2 custom-scrollbar">
+                         <label v-for="p in filteredBundleProducts" :key="p.id" class="flex items-center p-1.5 hover:bg-gray-50 dark:hover:bg-slate-700/50 rounded cursor-pointer">
+                             <input type="checkbox" :value="p.id" v-model="form.rules.required_items" class="w-3.5 h-3.5 text-fuchsia-600 rounded">
+                             <span class="ml-2 text-xs text-gray-700 dark:text-slate-300">{{ p.name }}</span>
+                         </label>
+                         <div v-if="filteredBundleProducts.length === 0" class="p-3 text-sm text-center text-gray-500 dark:text-gray-400">
+                             No products found
+                         </div>
+                     </div>
+                 </div>
+             </div>
+             <!-- Bundle Specific Discount Input -->
+             <div class="border-t border-fuchsia-100 dark:border-fuchsia-800/30 pt-4 mt-4">
+                 <h4 class="text-xs font-semibold text-fuchsia-800 dark:text-fuchsia-400 mb-3">Discount applied to the Bundle Total <span class="text-red-500">*</span></h4>
+                 <div class="grid grid-cols-2 gap-4">
+                     <div class="space-y-1.5">
+                         <label class="block text-xs font-semibold text-gray-700 dark:text-slate-300">Discount Value</label>
+                         <input type="number" v-model="form.discount_value" placeholder="0" class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-fuchsia-100 focus:border-fuchsia-400 outline-none text-sm dark:text-white">
+                     </div>
+                     <div class="space-y-1.5">
+                         <label class="block text-xs font-semibold text-gray-700 dark:text-slate-300">Discount Unit</label>
+                         <select v-model="form.discount_unit" class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg outline-none text-sm dark:text-white">
+                             <option value="percentage">Percentage (%)</option>
+                             <option value="fixed">Fixed Amount</option>
+                         </select>
+                     </div>
+                 </div>
+             </div>
           </div>
 
           <!-- Date Range -->
@@ -176,13 +307,13 @@
             </div>
           </div>
 
-          <!-- Target -->
-          <div class="space-y-1.5">
-            <label class="block text-sm font-semibold text-gray-700">Apply To <span class="text-red-500">*</span></label>
+          <!-- Target (Hidden for specific strategy types) -->
+          <div v-show="!['buy_x_get_y', 'bundle'].includes(form.type)" class="space-y-1.5">
+            <label class="block text-sm font-semibold text-gray-700 dark:text-slate-300">Apply To <span class="text-red-500">*</span></label>
             <div class="relative">
               <select 
                 v-model="form.target"
-                class="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all outline-none appearance-none text-gray-900"
+                class="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all outline-none appearance-none text-gray-900 dark:text-white"
               >
                 <option value="all">All Products</option>
                 <option value="selected">Selected Products</option>
@@ -192,48 +323,82 @@
             </div>
           </div>
 
-          <!-- Dynamic Lookups based on target -->
-          <div v-if="form.target === 'selected'" class="space-y-1.5">
-              <label class="block text-sm font-semibold text-gray-700">Select Products <span class="text-red-500">*</span></label>
-              <select 
-                  v-model="form.target_ids" 
-                  multiple 
-                  class="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all outline-none text-gray-900 min-h-[120px]"
-              >
-                  <option v-for="p in allProducts" :key="p.id" :value="p.id">{{ p.name }}</option>
-              </select>
-              <p class="text-xs text-gray-500 mt-1">Hold Ctrl (Windows) or Cmd (Mac) to select multiple items.</p>
+          <div v-show="!['buy_x_get_y', 'bundle'].includes(form.type)">
+             <!-- Dynamic Lookups based on target -->
+             <div v-if="form.target === 'selected'" class="space-y-1.5">
+                 <label class="block text-sm font-semibold text-gray-700 dark:text-slate-300">Select Products <span class="text-red-500">*</span></label>
+                 <div class="w-full border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden bg-white dark:bg-slate-800">
+                     <div class="p-2 border-b border-gray-100 dark:border-slate-700">
+                         <div class="relative">
+                             <SearchIcon class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                             <input 
+                                 v-model="productSearch"
+                                 type="text" 
+                                 placeholder="Search products..." 
+                                 class="w-full pl-9 pr-4 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-md focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all outline-none text-sm text-gray-900 dark:text-white placeholder:text-gray-400"
+                             >
+                         </div>
+                     </div>
+                     <div class="max-h-52 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+                         <label v-for="p in filteredProducts" :key="p.id" class="flex items-center p-2 hover:bg-gray-50 dark:hover:bg-slate-700/50 rounded-md cursor-pointer transition-colors">
+                             <input 
+                                 type="checkbox" 
+                                 :value="p.id" 
+                                 v-model="form.target_ids"
+                                 class="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 cursor-pointer"
+                             >
+                             <span class="ml-3 text-sm text-gray-700 dark:text-slate-300">{{ p.name }}</span>
+                         </label>
+                     </div>
+                 </div>
+             </div>
+
+             <div v-if="form.target === 'categories'" class="space-y-1.5 mt-4">
+                 <label class="block text-sm font-semibold text-gray-700 dark:text-slate-300">Select Categories <span class="text-red-500">*</span></label>
+                 <div class="w-full border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden bg-white dark:bg-slate-800">
+                     <div class="p-2 border-b border-gray-100 dark:border-slate-700">
+                         <div class="relative">
+                             <SearchIcon class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                             <input 
+                                 v-model="categorySearch"
+                                 type="text" 
+                                 placeholder="Search categories..." 
+                                 class="w-full pl-9 pr-4 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-md focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all outline-none text-sm text-gray-900 dark:text-white placeholder:text-gray-400"
+                             >
+                         </div>
+                     </div>
+                     <div class="max-h-52 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+                         <label v-for="c in filteredCategories" :key="c.id" class="flex items-center p-2 hover:bg-gray-50 dark:hover:bg-slate-700/50 rounded-md cursor-pointer transition-colors">
+                             <input 
+                                 type="checkbox" 
+                                 :value="c.id" 
+                                 v-model="form.target_ids"
+                                 class="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 cursor-pointer"
+                             >
+                             <span class="ml-3 text-sm text-gray-700 dark:text-slate-300">{{ c.name }}</span>
+                         </label>
+                     </div>
+                 </div>
+             </div>
           </div>
 
-          <div v-if="form.target === 'categories'" class="space-y-1.5">
-              <label class="block text-sm font-semibold text-gray-700">Select Categories <span class="text-red-500">*</span></label>
-              <select 
-                  v-model="form.target_ids" 
-                  multiple 
-                  class="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all outline-none text-gray-900 min-h-[120px]"
-              >
-                  <option v-for="c in allCategories" :key="c.id" :value="c.id">{{ c.name }}</option>
-              </select>
-              <p class="text-xs text-gray-500 mt-1">Hold Ctrl (Windows) or Cmd (Mac) to select multiple items.</p>
-          </div>
-
-          <!-- Discount Details -->
-          <div class="grid grid-cols-2 gap-4">
+          <!-- Discount Details (Global) -->
+          <div v-if="!['buy_x_get_y', 'bundle'].includes(form.type)" class="grid grid-cols-2 gap-4">
             <div class="space-y-1.5">
-                <label class="block text-sm font-semibold text-gray-700">Discount Value <span class="text-red-500">*</span></label>
+                <label class="block text-sm font-semibold text-gray-700 dark:text-slate-300">Discount Value <span class="text-red-500">*</span></label>
                 <input 
                   v-model="form.discount_value"
                   type="number" 
                   placeholder="0.00" 
-                  class="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all outline-none text-gray-900 placeholder:text-gray-400"
+                  class="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all outline-none text-gray-900 dark:text-white placeholder:text-gray-400"
                 >
             </div>
             <div class="space-y-1.5">
-                <label class="block text-sm font-semibold text-gray-700">Unit <span class="text-red-500">*</span></label>
+                <label class="block text-sm font-semibold text-gray-700 dark:text-slate-300">Unit <span class="text-red-500">*</span></label>
                 <div class="relative">
                   <select 
                     v-model="form.discount_unit"
-                    class="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all outline-none appearance-none text-gray-900"
+                    class="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all outline-none appearance-none text-gray-900 dark:text-white"
                   >
                     <option value="percentage">Percentage (%)</option>
                     <option value="fixed">Fixed Amount</option>
@@ -243,28 +408,48 @@
             </div>
           </div>
 
-          <!-- Banner Placeholder -->
+          <!-- Execution Settings -->
+          <div class="p-4 bg-gray-50 dark:bg-slate-800/50 rounded-xl space-y-4 border border-gray-100 dark:border-slate-700/50">
+             <h3 class="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                 <SettingsIcon class="w-4 h-4" /> Execution Rules
+             </h3>
+             <div class="grid grid-cols-2 gap-4">
+                 <div class="space-y-1.5">
+                     <label class="block text-xs font-semibold text-gray-700 dark:text-slate-300" title="Higher priority executes first">Priority</label>
+                     <input type="number" v-model="form.priority" class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg outline-none text-sm dark:text-white" placeholder="0">
+                 </div>
+                 <div class="flex items-center h-full pt-6">
+                     <label class="flex items-center gap-2 cursor-pointer">
+                         <input type="checkbox" v-model="form.is_stackable" class="w-4 h-4 text-blue-600 rounded bg-white border-gray-300 focus:ring-blue-500">
+                         <span class="text-xs font-semibold text-gray-700 dark:text-slate-300">Stackable Offer</span>
+                     </label>
+                 </div>
+             </div>
+          </div>
+
+          <!-- Banner Selector -->
           <div class="space-y-1.5">
-            <label class="block text-sm font-semibold text-gray-700">Promotion Banner</label>
-            <div class="w-full h-32 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer relative overflow-hidden group">
-              <template v-if="form.bannerPreview">
-                <img :src="form.bannerPreview" class="w-full h-full object-cover" />
-                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <span class="text-white font-bold text-xs bg-black/50 px-3 py-1.5 rounded-lg backdrop-blur-sm">Change Image</span>
-                </div>
-              </template>
-              <template v-else-if="form.bannerUrl">
-                <img :src="form.bannerUrl" class="w-full h-full object-cover" />
-                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <span class="text-white font-bold text-xs bg-black/50 px-3 py-1.5 rounded-lg backdrop-blur-sm">Change Image</span>
+            <label class="block text-sm font-semibold text-gray-700 dark:text-slate-300">Promotion Banner</label>
+            <div 
+              @click="isMediaLibraryOpen = true"
+              class="w-full h-40 border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-2xl flex flex-col items-center justify-center bg-gray-50/50 dark:bg-slate-800/50 hover:bg-white dark:hover:bg-slate-800 hover:border-blue-300 dark:hover:border-blue-500/50 transition-all cursor-pointer relative overflow-hidden group shadow-sm"
+            >
+              <template v-if="form.bannerPreview || form.bannerUrl">
+                <img :src="form.bannerPreview || form.bannerUrl" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center backdrop-blur-[2px]">
+                    <div class="bg-white/90 dark:bg-slate-900/90 text-gray-900 dark:text-white font-black text-[10px] uppercase tracking-widest px-4 py-2 rounded-xl shadow-2xl flex items-center gap-2 transform translate-y-4 group-hover:translate-y-0 transition-transform">
+                        <ImageIcon class="w-3.5 h-3.5" />
+                        Change Image
+                    </div>
                 </div>
               </template>
               <template v-else>
-                <UploadCloudIcon class="w-8 h-8 text-gray-400 mb-2" />
-                <p class="text-xs text-gray-500 font-medium">Click to upload or drag and drop</p>
-                <p class="text-[10px] text-gray-400 mt-1">PNG, JPG or WEBP (Max. 2MB)</p>
+                <div class="w-16 h-16 bg-white dark:bg-slate-900 rounded-2xl flex items-center justify-center mb-3 shadow-xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
+                    <UploadCloudIcon class="w-8 h-8 text-blue-500" />
+                </div>
+                <p class="text-[10px] text-gray-400 dark:text-slate-500 font-black uppercase tracking-widest">Click to select banner from gallery</p>
+                <p class="text-[8px] text-gray-400 mt-2 font-bold uppercase tracking-tighter italic">High quality images recommended</p>
               </template>
-              <input type="file" @change="handleBannerUpload" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
             </div>
           </div>
 
@@ -328,11 +513,21 @@
         @confirm="handleConfirmDelete"
         @cancel="isDeleteModalOpen = false"
     />
+
+    <!-- Media Library Component -->
+    <AppMediaLibrary 
+        :show="isMediaLibraryOpen"
+        @close="isMediaLibraryOpen = false"
+        @select="handleMediaSelect"
+        type-label="Promotion Banner"
+    />
   </div>
 </template>
 
 <script setup>
+import AppMediaLibrary from '~/components/AppMediaLibrary.vue'
 import { 
+  SearchIcon,
   HomeIcon, 
   ChevronRightIcon, 
   MegaphoneIcon, 
@@ -342,13 +537,14 @@ import {
   UploadCloudIcon,
   TrashIcon,
   EditIcon,
-  Image as ImageIcon
+  Image as ImageIcon,
+  TagIcon,
+  PackageIcon,
+  SettingsIcon,
+  ArrowRightIcon
 } from 'lucide-vue-next'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { toast } from 'vue-sonner'
-
-const config = useRuntimeConfig()
-const getMediaUrl = (path) => path ? `${config.public.apiBase.replace('/api', '')}/storage/${path}` : ''
 
 const { getAll, createItem, deleteItem } = useCrud()
 const router = useRouter()
@@ -356,7 +552,80 @@ const router = useRouter()
 const items = ref([])
 const allProducts = ref([])
 const allCategories = ref([])
+const productSearch = ref('')
+const categorySearch = ref('')
 const loading = ref(false)
+const isBuyDropdownOpen = ref(false)
+const isGetDropdownOpen = ref(false)
+const buyProductSearch = ref('')
+const getProductSearch = ref('')
+const bundleProductSearch = ref('')
+
+const promotionTypes = [
+  { label: 'Flash Sale', value: 'flash_sale' },
+  { label: 'Flat Discount', value: 'flat_discount' },
+  { label: 'Buy X Get Y', value: 'buy_x_get_y' },
+  { label: 'Bundle Offer', value: 'bundle' }
+]
+
+const filteredProducts = computed(() => {
+    if (!productSearch.value) return allProducts.value
+    const lower = productSearch.value.toLowerCase()
+    return allProducts.value.filter(p => p.name.toLowerCase().includes(lower))
+})
+
+const filteredCategories = computed(() => {
+    if (!categorySearch.value) return allCategories.value
+    const lower = categorySearch.value.toLowerCase()
+    return allCategories.value.filter(c => c.name.toLowerCase().includes(lower))
+})
+
+const filteredBuyProducts = computed(() => {
+    if (!buyProductSearch.value) return allProducts.value
+    const lower = buyProductSearch.value.toLowerCase()
+    return allProducts.value.filter(p => p.name.toLowerCase().includes(lower))
+})
+
+const filteredGetProducts = computed(() => {
+    if (!getProductSearch.value) return allProducts.value
+    const lower = getProductSearch.value.toLowerCase()
+    return allProducts.value.filter(p => p.name.toLowerCase().includes(lower))
+})
+
+const filteredBundleProducts = computed(() => {
+    if (!bundleProductSearch.value) return allProducts.value
+    const lower = bundleProductSearch.value.toLowerCase()
+    return allProducts.value.filter(p => p.name.toLowerCase().includes(lower))
+})
+
+const getProductName = (id) => {
+    if (!id || !allProducts.value) return ''
+    const p = allProducts.value.find(p => p.id === id)
+    return p ? p.name : ''
+}
+
+const handleMediaSelect = (file) => {
+    form.value.banner = file.file_url // Store the full URL
+    form.value.bannerUrl = file.file_url
+    form.value.bannerPreview = null
+}
+
+const selectBuyProduct = (id) => {
+    form.value.rules.buy_product_id = id
+    isBuyDropdownOpen.value = false
+    buyProductSearch.value = ''
+}
+
+const selectGetProduct = (id) => {
+    form.value.rules.get_product_id = id
+    isGetDropdownOpen.value = false
+    getProductSearch.value = ''
+}
+
+const closeDropdowns = () => {
+    isBuyDropdownOpen.value = false
+    isGetDropdownOpen.value = false
+}
 const isOpen = ref(false)
 const isEditing = ref(false)
 const isSaving = ref(false)
@@ -364,6 +633,7 @@ const isSaving = ref(false)
 const isDeleteModalOpen = ref(false)
 const promotionToDelete = ref(null)
 const isDeleting = ref(false)
+const isMediaLibraryOpen = ref(false)
 
 const form = ref({
   id: null,
@@ -376,6 +646,15 @@ const form = ref({
   discount_value: '',
   discount_unit: 'percentage',
   is_active: true,
+  is_stackable: false,
+  priority: 0,
+  rules: {
+      buy_qty: 2,
+      buy_product_id: '',
+      get_qty: 1,
+      get_product_id: '',
+      required_items: []
+  },
   banner: null,
   bannerPreview: null,
   bannerUrl: null
@@ -425,19 +704,46 @@ const openAddDrawer = () => {
     isOpen.value = true
 }
 
+const handleTypeChange = () => {
+    if (form.value.type === 'buy_x_get_y' || form.value.type === 'bundle') {
+        form.value.target = 'selected'
+    } else if (form.value.type === 'category') {
+        form.value.target = 'categories'
+    } else {
+        form.value.target = 'all'
+    }
+}
+
 const openEditDrawer = (promotion) => {
     isEditing.value = true
+    productSearch.value = ''
+    categorySearch.value = ''
+    buyProductSearch.value = ''
+    getProductSearch.value = ''
+    bundleProductSearch.value = ''
+    closeDropdowns()
+    
+    let parsedRules = { buy_qty: 2, buy_product_id: '', get_qty: 1, get_product_id: '', required_items: [] }
+    if (promotion.rules) {
+        try {
+            parsedRules = { ...parsedRules, ...JSON.parse(promotion.rules) }
+        } catch (e) { console.error(e) }
+    }
+
     form.value = {
         id: promotion.id,
         title: promotion.title,
         type: promotion.type,
-        start_date: promotion.start_date,
-        end_date: promotion.end_date,
+        start_date: promotion.start_date ? promotion.start_date.split('T')[0] : '',
+        end_date: promotion.end_date ? promotion.end_date.split('T')[0] : '',
         target: promotion.target,
         target_ids: promotion.target_ids || [],
         discount_value: promotion.discount_value,
         discount_unit: promotion.discount_unit,
         is_active: promotion.is_active,
+        is_stackable: promotion.is_stackable || false,
+        priority: promotion.priority || 0,
+        rules: parsedRules,
         banner: null,
         bannerPreview: null,
         bannerUrl: promotion.banner ? getMediaUrl(promotion.banner) : null
@@ -451,6 +757,12 @@ const closeDrawer = () => {
 }
 
 const resetForm = () => {
+    productSearch.value = ''
+    categorySearch.value = ''
+    buyProductSearch.value = ''
+    getProductSearch.value = ''
+    bundleProductSearch.value = ''
+    closeDropdowns()
     if (form.value.bannerPreview) {
         URL.revokeObjectURL(form.value.bannerPreview)
     }
@@ -465,6 +777,9 @@ const resetForm = () => {
         discount_value: '',
         discount_unit: 'percentage',
         is_active: true,
+        is_stackable: false,
+        priority: 0,
+        rules: { buy_qty: 2, buy_product_id: '', get_qty: 1, get_product_id: '', required_items: [] },
         banner: null,
         bannerPreview: null,
         bannerUrl: null
@@ -501,9 +816,24 @@ const handleSubmit = async () => {
         return
     }
 
-    if (form.value.target !== 'all' && (!form.value.target_ids || form.value.target_ids.length === 0)) {
-        toast.error(`Please select at least one ${form.value.target === 'selected' ? 'product' : 'category'}`)
-        return
+    if (!['buy_x_get_y', 'bundle'].includes(form.value.type)) {
+        if (form.value.target !== 'all' && (!form.value.target_ids || form.value.target_ids.length === 0)) {
+            toast.error(`Please select at least one ${form.value.target === 'selected' ? 'product' : 'category'}`)
+            return
+        }
+    } else {
+        if (form.value.type === 'buy_x_get_y') {
+            if (!form.value.rules.buy_qty || !form.value.rules.buy_product_id || !form.value.rules.get_qty || !form.value.rules.get_product_id) {
+                toast.error('Please fill in all Buy X Get Y details')
+                return
+            }
+        }
+        if (form.value.type === 'bundle') {
+            if (!form.value.rules.required_items || form.value.rules.required_items.length === 0) {
+                toast.error('Please select at least one required item for the bundle')
+                return
+            }
+        }
     }
 
     isSaving.value = true
@@ -523,6 +853,25 @@ const handleSubmit = async () => {
                 formData.append('target_ids[]', id)
             })
         }
+
+        // Clean rules based on type and stringify
+        let finalRules = {}
+        if (form.value.type === 'buy_x_get_y') {
+            finalRules = {
+                buy_qty: form.value.rules.buy_qty,
+                buy_product_id: form.value.rules.buy_product_id,
+                get_qty: form.value.rules.get_qty,
+                get_product_id: form.value.rules.get_product_id
+            }
+        } else if (form.value.type === 'bundle') {
+            finalRules = {
+                required_items: form.value.rules.required_items
+            }
+        }
+        
+        formData.append('rules', JSON.stringify(finalRules))
+        formData.append('is_stackable', form.value.is_stackable ? 1 : 0)
+        formData.append('priority', form.value.priority)
 
         if (form.value.banner) {
             formData.append('banner', form.value.banner)

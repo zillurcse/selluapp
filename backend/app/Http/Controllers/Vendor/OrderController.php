@@ -24,23 +24,31 @@ class OrderController extends Controller implements HasMiddleware
      */
     public function index(Request $request)
     {
-        // ---------------------------------------------------------
-        // Handle POS Sales Request
-        // ---------------------------------------------------------
-        if ($request->filled('type') && strtolower($request->type) === 'pos') {
-            $query = \App\Models\PosSale::with(['customer', 'items'])->where('vendor_id', auth()->id());
+        $vendorId = auth()->id();
+        $status = $request->status ?? 'All';
+        $type = $request->type ?? 'All';
+        $search = $request->search;
+        $date = $request->date;
 
-            if ($request->filled('status') && $request->status !== 'All' && $request->status !== 'latest') {
-                $statusFilter = strtolower($request->status);
-                if ($statusFilter === 'delivered') {
-                    $statusFilter = 'paid';
+        // 1. Fetch POS Sales
+        $posSales = collect();
+        if ($type === 'All' || strtolower($type) === 'pos') {
+            $posQuery = \App\Models\PosSale::with(['customer', 'items'])->where('vendor_id', $vendorId);
+            
+            if ($status !== 'All' && $status !== 'latest') {
+                $posStatus = strtolower($status);
+                if ($posStatus === 'delivered') $posStatus = 'paid';
+                elseif ($posStatus === 'process') $posStatus = 'pending';
+                
+                if (in_array($posStatus, ['pending', 'paid', 'cancelled'])) {
+                    $posQuery->where('status', $posStatus);
+                } else {
+                    $posQuery->whereRaw('1=0'); 
                 }
-                $query->where('status', $statusFilter);
             }
 
-            if ($request->filled('search')) {
-                $search = $request->search;
-                $query->where(function($q) use ($search) {
+            if ($search) {
+                $posQuery->where(function($q) use ($search) {
                     $q->where('reference', 'like', "%{$search}%")
                       ->orWhereHas('customer', function($cq) use ($search) {
                           $cq->where('phone', 'like', "%{$search}%")
@@ -50,181 +58,149 @@ class OrderController extends Controller implements HasMiddleware
                 });
             }
 
-            if ($request->filled('date')) {
-                $query->whereDate('created_at', $request->date);
+            if ($date) {
+                $posQuery->whereDate('created_at', $date);
             }
 
-            $sales = $query->latest()->paginate(15);
-
-            $mappedSales = $sales->through(function ($sale) {
-                // Customer initials
-                $customerName = optional($sale->customer)->first_name  
-                    ? trim($sale->customer->first_name . ' ' . $sale->customer->last_name) 
-                    : 'Walk-in Customer';
-                
-                $words = explode(' ', $customerName);
-                $initials = (count($words) > 1) 
-                    ? strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1)) 
-                    : strtoupper(substr($customerName, 0, 2));
-
-                $itemCount = $sale->items->sum('qty');
-                $skus = $sale->items->count();
-
-                return [
-                    'id' => $sale->id,
-                    'customer' => [
-                        'name' => $customerName,
-                        'initials' => $initials,
-                        'phone' => optional($sale->customer)->phone ?? 'N/A',
-                        'vip' => false,
-                    ],
-                    'invoice' => $sale->reference,
-                    // Map POS status terminology to fit Order tab visually
-                    'status' => $sale->status === 'paid' ? 'Delivered' : ucfirst($sale->status), 
-                    'date' => $sale->created_at->format('d M, Y'),
-                    'time' => $sale->created_at->format('H:i'),
-                    'risk' => [
-                        'score' => 0,
-                        'flags' => ['In-Store'],
-                    ],
-                    'products' => [
-                        'count' => $itemCount,
-                        'skus' => $skus,
-                        'images' => ['https://placehold.co/100x100?text=POS'], // Fallback for POS 
-                    ],
-                    'amount' => [
-                        'total' => '৳' . number_format($sale->total, 2),
-                        'method' => ucfirst(str_replace('_', ' ', $sale->payment_method)),
-                        'paid' => $sale->status === 'paid',
-                    ],
-                    'type' => 'POS',
-                    'zone' => 'In-Store',
-                    'courier' => [
-                        'name' => '', 
-                        'tracking' => '',
-                    ]
-                ];
-            });
-
-            return response()->json([
-                'data' => $mappedSales->items(),
-                'meta' => [
-                    'current_page' => $sales->currentPage(),
-                    'last_page' => $sales->lastPage(),
-                    'total' => $sales->total(),
-                ]
-            ]);
+            $posSales = $posQuery->latest()->get();
         }
 
-        // ---------------------------------------------------------
-        // Handle Standard Online Orders
-        // ---------------------------------------------------------
-        $query = \App\Models\Order::with(['customer', 'items.product', 'fraudCheck'])->where('user_id', auth()->id());
-
-        // Simple filtering
-        if ($request->filled('status') && $request->status !== 'All' && $request->status !== 'latest') {
-            $query->where('status', strtolower($request->status));
-        }
-        
-        if ($request->filled('type') && $request->type !== 'All') {
-            $query->where('type', strtolower($request->type));
-        }
-
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('invoice_number', 'like', "%{$search}%")
-                  ->orWhereHas('customer', function($cq) use ($search) {
-                      $cq->where('phone', 'like', "%{$search}%")
-                         ->orWhere('name', 'like', "%{$search}%");
-                  });
-            });
-        }
-
-        if ($request->filled('date')) {
-            $query->whereDate('created_at', $request->date);
-        }
-
-        $orders = $query->latest()->paginate(15);
-
-        // Map data specifically for the frontend table structure
-        $mappedOrders = $orders->through(function ($order) {
+        // 2. Fetch Standard Orders
+        $standardOrders = collect();
+        if ($type === 'All' || strtolower($type) === 'normal' || strtolower($type) === 'pre-order') {
+            $orderQuery = \App\Models\Order::with(['customer', 'items.product', 'fraudCheck'])->where('user_id', $vendorId);
             
-            // Extract item images
-            $images = [];
-            $skus = 0;
-            $itemCount = 0;
-            
-            foreach($order->items as $item) {
-                $itemCount += $item->quantity;
-                $skus++;
-                if($item->product && $item->product->thumbnail) {
-                    $images[] = asset('storage/' . $item->product->thumbnail);
-                }
-            }
-            if(empty($images)) {
-                $images[] = 'https://placehold.co/100x100?text=No+Image';
+            if ($status !== 'All' && $status !== 'latest') {
+                $orderQuery->where('status', strtolower($status));
             }
 
-            // Customer initials
-            $customerName = optional($order->customer)->name ?? 'Guest User';
+            if (strtolower($type) !== 'all') {
+                $orderQuery->where('type', strtolower($type));
+            }
+
+            if ($search) {
+                $orderQuery->where(function($q) use ($search) {
+                    $q->where('invoice_number', 'like', "%{$search}%")
+                      ->orWhereHas('customer', function($cq) use ($search) {
+                          $cq->where('phone', 'like', "%{$search}%")
+                             ->orWhere('first_name', 'like', "%{$search}%")
+                             ->orWhere('last_name', 'like', "%{$search}%");
+                      });
+                });
+            }
+
+            if ($date) {
+                $orderQuery->whereDate('created_at', $date);
+            }
+
+            $standardOrders = $orderQuery->latest()->get();
+        }
+
+        // 3. Map Data
+        $mappedPos = $posSales->map(function ($sale) {
+            $customerName = optional($sale->customer)->first_name ? trim($sale->customer->first_name . ' ' . $sale->customer->last_name) : 'Walk-in Customer';
             $words = explode(' ', $customerName);
             $initials = (count($words) > 1) ? strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1)) : strtoupper(substr($customerName, 0, 2));
 
-            // Risk Flags mapping
-            $flags = is_array($order->risk_flags) ? $order->risk_flags : [];
-
-                // Parse tracking number
-                $trackingParts = explode(':', $order->tracking_number ?? '', 2);
-                if (count($trackingParts) == 2) {
-                    $courierName = $trackingParts[0];
-                    $trackingCode = $trackingParts[1];
-                } else {
-                    $courierName = null;
-                    $trackingCode = $order->tracking_number ?? '';
-                }
-
-                return [
-                    'id' => $order->id,
-                    'customer' => [
-                        'name' => $customerName,
-                        'initials' => $initials,
-                        'phone' => optional($order->customer)->phone ?? 'N/A',
-                        'vip' => false, // Can be based on customer purchase history later
-                    ],
-                    'invoice' => $order->invoice_number,
-                    'status' => ucfirst($order->status),
-                    'date' => $order->created_at->format('d M, Y'),
-                    'time' => $order->created_at->format('H:i'),
-                    'risk' => [
-                        'score' => $order->risk_score ?? 0,
-                        'flags' => $flags,
-                    ],
-                    'products' => [
-                        'count' => $itemCount,
-                        'skus' => $skus,
-                        'images' => $images,
-                    ],
-                    'amount' => [
-                        'total' => '৳' . number_format($order->total_amount, 2),
-                        'method' => ucfirst(str_replace('_', ' ', $order->payment_method ?? 'N/A')),
-                        'paid' => $order->payment_status === 'paid',
-                    ],
-                    'type' => ucfirst(str_replace('_', ' ', $order->type)),
-                    'zone' => $order->delivery_zone ?? 'N/A',
-                    'courier' => [
-                        'name' => $courierName, 
-                        'tracking' => $trackingCode,
-                    ]
-                ];
+            return [
+                'id' => $sale->id,
+                'customer' => [
+                    'name' => $customerName,
+                    'initials' => $initials,
+                    'phone' => optional($sale->customer)->phone ?? 'N/A',
+                    'vip' => false,
+                ],
+                'invoice' => $sale->reference,
+                'status' => $sale->status === 'paid' ? 'Delivered' : ucfirst($sale->status),
+                'date' => $sale->created_at->format('d M, Y'),
+                'created_at' => $sale->created_at,
+                'time' => $sale->created_at->format('H:i'),
+                'risk' => ['score' => 0, 'flags' => ['In-Store']],
+                'products' => [
+                    'count' => $sale->items->sum('qty'),
+                    'skus' => $sale->items->count(),
+                    'images' => ['https://placehold.co/100x100?text=POS'],
+                ],
+                'amount' => [
+                    'total' => '৳' . number_format($sale->total, 2),
+                    'discount' => $sale->discount_amount,
+                    'method' => ucfirst(str_replace('_', ' ', $sale->payment_method)),
+                    'paid' => $sale->status === 'paid',
+                ],
+                'type' => 'POS',
+                'zone' => 'In-Store',
+                'courier' => ['name' => '', 'tracking' => '']
+            ];
         });
 
+        $mappedOrders = $standardOrders->map(function ($order) {
+            $images = []; $skus = 0; $itemCount = 0;
+            foreach($order->items as $item) {
+                $itemCount += $item->quantity; $skus++;
+                if($item->product && $item->product->thumbnail) $images[] = asset('storage/' . $item->product->thumbnail);
+            }
+            if(empty($images)) $images[] = 'https://placehold.co/100x100?text=No+Image';
+
+            $customerName = optional($order->customer)->first_name ? trim($order->customer->first_name . ' ' . $order->customer->last_name) : 'Guest User';
+            $words = explode(' ', $customerName);
+            $initials = (count($words) > 1) ? strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1)) : strtoupper(substr($customerName, 0, 2));
+
+            $trackingParts = explode(':', $order->tracking_number ?? '', 2);
+            $courierName = count($trackingParts) == 2 ? $trackingParts[0] : null;
+            $trackingCode = count($trackingParts) == 2 ? $trackingParts[1] : ($order->tracking_number ?? '');
+
+            return [
+                'id' => $order->id,
+                'customer' => [
+                    'name' => $customerName,
+                    'initials' => $initials,
+                    'phone' => optional($order->customer)->phone ?? 'N/A',
+                    'vip' => false,
+                ],
+                'invoice' => $order->invoice_number,
+                'status' => ucfirst($order->status),
+                'date' => $order->created_at->format('d M, Y'),
+                'created_at' => $order->created_at,
+                'time' => $order->created_at->format('H:i'),
+                'risk' => ['score' => $order->risk_score ?? 0, 'flags' => is_array($order->risk_flags) ? $order->risk_flags : []],
+                'products' => ['count' => $itemCount, 'skus' => $skus, 'images' => $images],
+                'amount' => [
+                    'total' => '৳' . number_format(($order->subtotal + $order->shipping_cost) - $order->discount_amount, 2),
+                    'discount' => $order->discount_amount,
+                    'method' => ucfirst(str_replace('_', ' ', $order->payment_method ?? 'N/A')),
+                    'paid' => $order->payment_status === 'paid',
+                ],
+                'type' => ucfirst(str_replace('_', ' ', $order->type)),
+                'zone' => $order->delivery_zone ?? 'N/A',
+                'courier' => ['name' => $courierName, 'tracking' => $trackingCode]
+            ];
+        });
+
+        // 4. Merge and Paginate
+        $all = $mappedPos->concat($mappedOrders)->sortByDesc('created_at');
+        $perPage = 15;
+        $page = $request->input('page', 1);
+        $total = $all->count();
+        $items = $all->forPage($page, $perPage)->values();
+
+        // 5. Calculate Global Counts for Tabs
+        $counts = [
+            'latest' => \App\Models\Order::where('user_id', $vendorId)->count() + \App\Models\PosSale::where('vendor_id', $vendorId)->count(),
+            'pending' => \App\Models\Order::where('user_id', $vendorId)->where('status', 'pending')->count() + \App\Models\PosSale::where('vendor_id', $vendorId)->where('status', 'pending')->count(),
+            'approved' => \App\Models\Order::where('user_id', $vendorId)->where('status', 'approved')->count(),
+            'process' => \App\Models\Order::where('user_id', $vendorId)->where('status', 'processing')->count() + \App\Models\PosSale::where('vendor_id', $vendorId)->where('status', 'pending')->count(),
+            'courier' => \App\Models\Order::where('user_id', $vendorId)->where('status', 'courier')->count(),
+            'delivered' => \App\Models\Order::where('user_id', $vendorId)->where('status', 'delivered')->count() + \App\Models\PosSale::where('vendor_id', $vendorId)->where('status', 'paid')->count(),
+            'cancelled' => \App\Models\Order::where('user_id', $vendorId)->where('status', 'cancelled')->count() + \App\Models\PosSale::where('vendor_id', $vendorId)->where('status', 'cancelled')->count(),
+        ];
+
         return response()->json([
-            'data' => $mappedOrders->items(),
+            'data' => $items,
+            'counts' => $counts,
             'meta' => [
-                'current_page' => $orders->currentPage(),
-                'last_page' => $orders->lastPage(),
-                'total' => $orders->total(),
+                'current_page' => (int)$page,
+                'last_page' => (int)ceil($total / $perPage),
+                'total' => $total,
             ]
         ]);
     }

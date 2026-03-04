@@ -22,6 +22,7 @@ class Order extends Model
         'shipping_cost',
         'discount_amount',
         'total_amount',
+        'applied_promotions',
         'payment_method',
         'payment_status',
         'shipping_address',
@@ -44,6 +45,7 @@ class Order extends Model
         'shipping_cost' => 'decimal:2',
         'discount_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
+        'applied_promotions' => 'array',
     ];
 
     public function vendor()

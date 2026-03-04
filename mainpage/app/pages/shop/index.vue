@@ -174,8 +174,14 @@
         <!-- Product Grid -->
         <main class="lg:col-span-9 animate-fade-in" style="animation-delay: 0.2s">
           <div class="flex flex-col sm:flex-row justify-between items-center mb-10 gap-6 border-b border-gray-50 pb-8">
-            <div class="text-sm font-bold text-gray-400 uppercase tracking-widest">
-              Showing <span class="text-gray-900">{{ totalFound }}</span> items found
+            <div class="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-3">
+              <span>Showing <span class="text-gray-900">{{ totalFound }}</span> items found</span>
+              <span v-if="filters.promotion" class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-[10px] font-bold flex items-center gap-2">
+                Active Offer Filter
+                <button @click="filters.promotion = null" class="hover:text-indigo-900">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+              </span>
             </div>
             <div class="flex items-center gap-4">
               <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">Sort By:</span>
@@ -281,6 +287,7 @@ const filters = reactive({
   max_price: null,
   sort: 'newest',
   search: '',
+  promotion: null,
   offset: 0,
   limit: 10
 })
@@ -306,6 +313,7 @@ const initFiltersFromQuery = () => {
   if (route.query.sort) filters.sort = route.query.sort
   if (route.query.min_price) filters.min_price = Number(route.query.min_price)
   if (route.query.max_price) filters.max_price = Number(route.query.max_price)
+  if (route.query.promotion) filters.promotion = route.query.promotion
 }
 
 initFiltersFromQuery()
@@ -346,7 +354,8 @@ const { data: productsData, pending } = await useAsyncData('products', () =>
       () => filters.search,
       () => JSON.stringify(filters.specs),
       () => filters.min_price,
-      () => filters.max_price
+      () => filters.max_price,
+      () => filters.promotion
     ]
   }
 )
@@ -485,6 +494,7 @@ const clearFilters = () => {
   filters.offset = 0
   filters.limit = 10
   filters.search = ''
+  filters.promotion = null
 }
 
 const toggleFilter = (type, slug) => {
@@ -540,6 +550,7 @@ watch(filters, (newFilters) => {
   if (newFilters.sort && newFilters.sort !== 'newest') query.sort = newFilters.sort
   if (newFilters.min_price) query.min_price = newFilters.min_price
   if (newFilters.max_price) query.max_price = newFilters.max_price
+  if (newFilters.promotion) query.promotion = newFilters.promotion
   
   router.push({ query, replace: true })
 }, { deep: true })

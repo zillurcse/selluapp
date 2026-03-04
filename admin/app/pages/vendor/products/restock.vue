@@ -1,233 +1,252 @@
 <template>
-  <div class="p-10 bg-[#f8fafc] dark:bg-slate-950 min-h-screen transition-colors duration-300">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-      <div class="flex items-center gap-4">
-        <button @click="$router.back()" class="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm active:scale-95 group">
-          <ChevronLeft class="w-5 h-5 text-slate-600 dark:text-slate-300 group-hover:-translate-x-0.5 transition-transform" />
-        </button>
+  <div class="p-6 md:p-8 min-h-screen">
+    <div class="max-w-7xl mx-auto">
+      <!-- Header -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 class="text-2xl font-black text-slate-900 dark:text-white leading-tight tracking-tight">Restock Inventory</h1>
-          <p class="text-sm text-slate-500 dark:text-slate-400 font-semibold opacity-80">Add stock and track purchase history professionally.</p>
-        </div>
-      </div>
-      
-      <div class="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl">
-        <button v-for="tab in ['restock', 'history']" :key="tab" @click="activeTab = tab" :class="[
-          'px-6 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl transition-all',
-          activeTab === tab ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
-        ]">
-          {{ tab }}
-        </button>
-      </div>
-    </div>
-
-    <!-- Restock Tab -->
-    <div v-if="activeTab === 'restock'" class="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <!-- Form Column -->
-      <div class="lg:col-span-2 space-y-6">
-        <div class="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-200/60 dark:border-slate-800 p-8 shadow-sm">
-          <h2 class="text-lg font-black text-slate-800 dark:text-white mb-6 flex items-center gap-2">
-            <Package class="w-5 h-5 text-indigo-500" />
-            Stock Entry
-          </h2>
-          
-          <div class="space-y-6">
-            <!-- Product Search -->
-            <div class="relative">
-              <label class="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 block">Search Product or Scan Barcode</label>
-              <div class="relative group">
-                <input 
-                  type="text" 
-                  v-model="productSearch" 
-                  @input="searchProducts"
-                  placeholder="Type product name or scan..." 
-                  class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl pl-12 pr-5 py-4 text-sm font-bold focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-slate-400" 
-                />
-                <Search class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
-                
-                <!-- Results Dropdown -->
-                <div v-if="searchResults.length > 0" class="absolute left-0 right-0 top-full mt-2 z-50 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[24px] shadow-2xl p-2 max-h-[300px] overflow-y-auto">
-                  <button v-for="res in searchResults" :key="res.id" @click="selectProduct(res)" class="w-full flex items-center gap-4 p-3 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-all text-left group">
-                    <img :src="res.thumbnail_url || '/placeholder.png'" class="w-12 h-12 rounded-lg object-cover shadow-sm" />
-                    <div class="flex-1">
-                      <div class="font-bold text-slate-900 dark:text-white text-sm group-hover:text-indigo-600 transition-colors">{{ res.name }}</div>
-                      <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Stock: {{ res.stock_qty }} {{ res.unit?.name }}</div>
-                    </div>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Selected Product Preview -->
-            <div v-if="selectedProduct" class="bg-indigo-50/50 dark:bg-indigo-500/5 rounded-2xl p-6 border border-indigo-100/50 dark:border-indigo-500/10 flex items-center gap-6 animate-in zoom-in-95 duration-300">
-               <img :src="selectedProduct.thumbnail_url" class="w-20 h-20 rounded-2xl object-cover shadow-md border-4 border-white dark:border-slate-800" />
-               <div class="flex-1">
-                 <h3 class="font-black text-slate-900 dark:text-white">{{ selectedProduct.name }}</h3>
-                 <p class="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest mt-1">Current Stock: {{ selectedProduct.stock_qty }}</p>
-               </div>
-               <button @click="selectedProduct = null" class="p-2 text-slate-400 hover:text-rose-500 transition-colors">
-                 <X class="w-5 h-5" />
-               </button>
-            </div>
-
-            <!-- Variant Selection if exists -->
-            <div v-if="selectedProduct?.variants?.length > 0">
-               <label class="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 block">Choose Variant</label>
-               <div class="grid grid-cols-2 gap-3">
-                 <button v-for="v in selectedProduct.variants" :key="v.id" @click="selectedVariant = v" :class="[
-                   'flex items-center gap-3 p-4 rounded-2xl border transition-all text-left group',
-                   selectedVariant?.id === v.id ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg' : 'bg-slate-50 dark:bg-slate-800 border-transparent hover:border-slate-200 dark:hover:border-slate-700'
-                 ]">
-                    <div class="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center font-black">V</div>
-                    <div>
-                      <div class="text-xs font-black uppercase tracking-widest">{{ v.sku }}</div>
-                      <div class="text-[10px] opacity-70">Stock: {{ v.stock_qty }}</div>
-                    </div>
-                 </button>
-               </div>
-            </div>
-
-            <!-- Restock Details -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label class="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 block">Quantity to Add</label>
-                <input v-model="form.quantity" type="number" step="0.01" class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl px-5 py-4 text-sm font-black focus:ring-2 focus:ring-indigo-500/20 transition-all" />
-              </div>
-              <div>
-                <label class="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 block">Unit Cost (Optional)</label>
-                <div class="relative">
-                  <input v-model="form.purchase_price" type="number" step="0.01" class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl pl-10 pr-5 py-4 text-sm font-black focus:ring-2 focus:ring-indigo-500/20 transition-all" />
-                  <span class="absolute left-4 top-1/2 -translate-y-1/2 font-black text-slate-400">$</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Supplier -->
-            <div>
-              <label class="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 block">Supplier</label>
-              <select v-model="form.supplier_id" class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl px-5 py-4 text-sm font-bold focus:ring-2 focus:ring-indigo-500/20 transition-all appearance-none">
-                <option value="">Select a supplier</option>
-                <option v-for="s in suppliers" :key="s.id" :value="s.id">{{ s.name }}</option>
-              </select>
-            </div>
-
-            <!-- Notes -->
-            <div>
-                <label class="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 block">Notes</label>
-                <textarea v-model="form.note" rows="3" class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl px-5 py-4 text-sm font-bold focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:font-medium" placeholder="E.g. Monthly restock, Damage correction..."></textarea>
-            </div>
+          <div class="flex items-center gap-2">
+            <button @click="$router.back()" class="p-2 -ml-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 dark:hover:text-gray-300 rounded-lg transition-colors">
+              <ChevronLeft class="w-5 h-5" />
+            </button>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Restock Inventory</h1>
           </div>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 ml-9">Add stock to your products and track historical inventory changes.</p>
         </div>
-      </div>
-
-      <!-- Action Column -->
-      <div class="space-y-6">
-        <div class="bg-slate-900 rounded-[32px] p-8 text-white shadow-2xl">
-          <h2 class="text-xl font-black mb-6">Summary</h2>
-          <div class="space-y-4 mb-8">
-            <div class="flex justify-between items-center text-sm">
-              <span class="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Product</span>
-              <span class="font-black text-right">{{ selectedProduct?.name || '-' }}</span>
-            </div>
-            <div v-if="selectedVariant" class="flex justify-between items-center text-sm border-t border-white/5 pt-4">
-              <span class="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Variant</span>
-              <span class="font-black">{{ selectedVariant.sku }}</span>
-            </div>
-            <div class="flex justify-between items-center text-sm border-t border-white/5 pt-4">
-              <span class="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Add Qty</span>
-              <span class="font-black text-emerald-400">+ {{ form.quantity || 0 }}</span>
-            </div>
-            <div class="flex justify-between items-center text-sm border-t border-white/5 pt-4">
-              <span class="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Projected Stock</span>
-              <span class="font-black">{{ projectedStock }}</span>
-            </div>
-          </div>
-          
-          <button @click="processRestock" :disabled="!isReady || loading" class="w-full py-4.5 bg-indigo-500 hover:bg-indigo-400 text-white font-black rounded-2xl transition-all shadow-lg active:scale-95 disabled:opacity-30 disabled:grayscale">
-            {{ loading ? 'Processing...' : 'Complete Restock' }}
+        
+        <div class="flex p-1 bg-gray-100/80 dark:bg-gray-800/80 rounded-lg shadow-inner">
+          <button v-for="tab in ['restock', 'history']" :key="tab" @click="activeTab = tab" :class="[
+            'px-5 py-2 text-sm font-medium capitalize rounded-md transition-all duration-200',
+            activeTab === tab ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm ring-1 ring-gray-900/5' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+          ]">
+            {{ tab }}
           </button>
         </div>
+      </div>
 
-        <div class="bg-indigo-600 rounded-[32px] p-8 text-white">
-            <div class="flex items-center gap-4 mb-4">
-                <div class="p-3 bg-white/10 rounded-2xl">
-                    <Truck class="w-6 h-6" />
+      <!-- Restock Tab -->
+      <div v-if="activeTab === 'restock'" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Form Column -->
+        <div class="lg:col-span-2">
+          <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
+            <div class="p-6 sm:p-8">
+              <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Stock Entry Details</h2>
+              
+              <div class="space-y-6">
+                <!-- Search -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Search Product or Scan Barcode</label>
+                  <div class="relative">
+                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                      <Search class="h-5 w-5 text-gray-400" aria-hidden="true" />
+                    </div>
+                    <input 
+                      type="text" 
+                      v-model="productSearch" 
+                      @input="searchProducts"
+                      placeholder="Search by product name, SKU, or barcode..." 
+                      class="block w-full rounded-xl border-0 py-3.5 pl-11 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-base dark:bg-gray-800 dark:text-white dark:ring-gray-700 transition-shadow" 
+                    />
+                    <!-- Dropdown -->
+                    <ul v-if="searchResults.length > 0" class="absolute z-10 mt-1.5 max-h-60 w-full overflow-auto rounded-xl bg-white dark:bg-gray-800 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm border border-gray-100 dark:border-gray-700">
+                      <li v-for="res in searchResults" :key="res.id" @click="selectProduct(res)" class="relative cursor-pointer select-none py-2.5 pl-3 pr-9 hover:bg-gray-50 dark:hover:bg-gray-700/50 text-gray-900 dark:text-white flex items-center gap-3 transition-colors">
+                        <img :src="res.thumbnail_url || '/placeholder.png'" class="h-10 w-10 flex-shrink-0 rounded-md object-cover border border-gray-200 dark:border-gray-700" />
+                        <div class="flex flex-col">
+                          <span class="block truncate font-medium">{{ res.name }}</span>
+                          <span class="block truncate text-xs text-gray-500 dark:text-gray-400 mt-0.5">Stock: {{ res.stock_qty }} {{ res.unit?.name }} &bull; SKU: {{ res.sku || 'N/A' }}</span>
+                        </div>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- Selected Product Preview -->
+                <div v-if="selectedProduct" class="rounded-xl border border-indigo-100 dark:border-indigo-900/50 bg-indigo-50/50 dark:bg-indigo-900/10 p-4 transition-all">
+                   <div class="flex items-start justify-between">
+                     <div class="flex items-center gap-4">
+                       <img :src="selectedProduct.thumbnail_url" class="h-16 w-16 rounded-lg object-cover border border-white dark:border-gray-800 shadow-sm bg-white" />
+                       <div>
+                         <h3 class="font-semibold text-gray-900 dark:text-white text-base">{{ selectedProduct.name }}</h3>
+                         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Current Stock: <span class="font-medium text-gray-900 dark:text-gray-300">{{ selectedProduct.stock_qty }}</span></p>
+                       </div>
+                     </div>
+                     <button @click="selectedProduct = null" class="text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-1.5 rounded-lg transition-colors">
+                       <X class="h-5 w-5" />
+                     </button>
+                   </div>
+                </div>
+
+                <!-- Variant Selection -->
+                <div v-if="selectedProduct?.variants?.length > 0">
+                   <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select Variant</label>
+                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                     <div v-for="v in selectedProduct.variants" :key="v.id" @click="selectedVariant = v" :class="[
+                       'cursor-pointer rounded-xl border p-4 transition-all duration-200',
+                       selectedVariant?.id === v.id ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-900/20 ring-1 ring-indigo-600 shadow-sm' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 hover:border-gray-300 dark:hover:border-gray-600'
+                     ]">
+                        <div class="flex items-start justify-between">
+                          <div class="flex flex-col">
+                              <span class="text-sm font-medium text-gray-900 dark:text-white" v-if="v.attributes && v.attributes.length > 0">
+                                  {{ v.attributes.map(a => a.attribute?.name + ': ' + a.value).join(', ') }}
+                              </span>
+                              <span class="text-sm font-medium text-gray-900 dark:text-white" v-else>Variant {{ v.sku }}</span>
+                              <span class="text-xs text-gray-500 dark:text-gray-400 mt-1">SKU: {{ v.sku || 'N/A' }}</span>
+                          </div>
+                          <span class="inline-flex items-center rounded-md bg-gray-50 dark:bg-gray-800 px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 ring-1 ring-inset ring-gray-500/10">Stock: {{ v.stock_qty }}</span>
+                        </div>
+                     </div>
+                   </div>
+                </div>
+
+                <!-- Restock Details (Qty, Cost, Supplier) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Quantity to Add <span class="text-red-500">*</span></label>
+                    <input v-model="form.quantity" type="number" step="0.01" min="0.01" class="block w-full rounded-xl border-0 py-3 px-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-base dark:bg-gray-800 dark:text-white dark:ring-gray-700" />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Unit Purchase Cost <span class="text-gray-400 font-normal">(Optional)</span></label>
+                    <div class="relative">
+                      <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                        <span class="text-gray-500 text-base">$</span>
+                      </div>
+                      <input v-model="form.purchase_price" type="number" step="0.01" class="block w-full rounded-xl border-0 py-3 pl-9 pr-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-base dark:bg-gray-800 dark:text-white dark:ring-gray-700" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Supplier -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Supplier <span class="text-gray-400 font-normal">(Optional)</span></label>
+                  <select v-model="form.supplier_id" class="block w-full rounded-xl border-0 py-3 px-4 pr-10 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 text-base dark:bg-gray-800 dark:text-white dark:ring-gray-700">
+                    <option value="">Select a supplier...</option>
+                    <option v-for="s in suppliers" :key="s.id" :value="s.id">{{ s.name }}</option>
+                  </select>
+                </div>
+
+                <!-- Notes -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Note <span class="text-gray-400 font-normal">(Optional)</span></label>
+                    <textarea v-model="form.note" rows="3" class="block w-full rounded-xl border-0 py-3 px-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-base dark:bg-gray-800 dark:text-white dark:ring-gray-700" placeholder="E.g. Restock from new batch, damaged stock replacement..."></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar / Action Column -->
+        <div class="space-y-6">
+          <div class="bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 sm:p-8">
+            <h2 class="text-base font-semibold text-gray-900 dark:text-white mb-6">Stock Summary</h2>
+            <dl class="space-y-4 text-sm text-gray-600 dark:text-gray-400">
+              <div class="flex justify-between items-center pb-4 border-b border-gray-200 dark:border-gray-700/50">
+                <dt>Selected Product</dt>
+                <dd class="font-medium text-gray-900 dark:text-white text-right max-w-[150px] truncate" :title="selectedProduct?.name">{{ selectedProduct?.name || '-' }}</dd>
+              </div>
+              <div v-if="selectedVariant" class="flex justify-between items-center pb-4 border-b border-gray-200 dark:border-gray-700/50">
+                <dt>Variant SKU</dt>
+                <dd class="font-medium text-gray-900 dark:text-white">{{ selectedVariant.sku || 'Yes' }}</dd>
+              </div>
+              <div class="flex justify-between items-center pb-4 border-b border-gray-200 dark:border-gray-700/50">
+                <dt>Quantity to Add</dt>
+                <dd class="font-medium text-green-600 dark:text-green-500">+ {{ form.quantity || 0 }}</dd>
+              </div>
+              <div class="flex justify-between items-center pt-2">
+                <dt class="font-medium text-gray-900 dark:text-white text-base">Projected Stock</dt>
+                <dd class="font-bold text-gray-900 dark:text-white text-lg">{{ projectedStock }}</dd>
+              </div>
+            </dl>
+            
+            <button @click="processRestock" :disabled="!isReady || loading" class="mt-8 w-full flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+              <svg v-if="loading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              {{ loading ? 'Processing...' : 'Confirm Restock' }}
+            </button>
+          </div>
+
+          <div class="rounded-2xl border border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/50 dark:bg-indigo-900/10 p-6 flex flex-col gap-4">
+              <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-lg">
+                    <Truck class="w-5 h-5" />
                 </div>
                 <div>
-                    <div class="text-[10px] font-black uppercase tracking-wider opacity-60">Manage</div>
-                    <div class="text-lg font-black">Suppliers</div>
+                    <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Supplier Directory</h3>
                 </div>
-            </div>
-            <p class="text-sm opacity-70 font-medium mb-6">Manage your product source directories to maintain a professional inventory ledger.</p>
-            <NuxtLink to="/vendor/products/suppliers" class="block w-full text-center py-3 bg-white text-indigo-600 font-black rounded-xl hover:bg-indigo-50 transition-colors">
-                Go to Suppliers
-            </NuxtLink>
+              </div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Manage your product source directories to maintain a professional inventory ledger.</p>
+              <NuxtLink to="/vendor/products/suppliers" class="mt-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:hover:text-indigo-400 inline-flex items-center gap-1 group">
+                  Go to Suppliers <ChevronRight class="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+              </NuxtLink>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- History Tab -->
-    <div v-else class="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-200/60 dark:border-slate-800 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 shadow-sm">
-        <div class="flex justify-between items-center p-8 border-b border-slate-100 dark:border-slate-800">
-            <h2 class="text-lg font-black text-slate-800 dark:text-white">Stock Movement History</h2>
-            <button @click="fetchLogs" class="p-2 text-slate-400 hover:text-indigo-600 transition-colors">
-                <RefreshCw class="w-5 h-5" :class="{ 'animate-spin': loadingLogs }" />
-            </button>
+      <!-- History Tab -->
+      <div v-else class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden animate-in fade-in duration-300">
+        <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/20">
+          <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-white">Stock Movement History</h3>
+          <button @click="fetchLogs" class="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': loadingLogs }" />
+          </button>
+        </div>
+        
+        <div v-if="loadingLogs" class="py-16 flex justify-center">
+          <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
         </div>
 
-        <div v-if="loadingLogs" class="flex justify-center py-20">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-        </div>
-
-        <div v-else-if="logs.length === 0" class="text-center py-20">
-            <p class="text-slate-400 font-bold uppercase tracking-widest text-xs">No movements recorded yet.</p>
+        <div v-else-if="logs.length === 0" class="py-16 text-center px-6">
+          <div class="mx-auto w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-3">
+              <Package class="h-6 w-6 text-gray-400" />
+          </div>
+          <h3 class="text-sm font-semibold text-gray-900 dark:text-white">No stock movements found</h3>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Inventory adjustments and restock logs will appear here.</p>
         </div>
 
         <div v-else class="overflow-x-auto">
-            <table class="w-full text-left">
-                <thead class="bg-slate-50/50 dark:bg-slate-800/50">
-                    <tr>
-                        <th class="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date & Item</th>
-                        <th class="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Type</th>
-                        <th class="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Qty</th>
-                        <th class="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Before/After</th>
-                        <th class="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Supplier/Note</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-50 dark:divide-slate-800/40">
-                    <tr v-for="log in logs" :key="log.id" class="hover:bg-slate-50/30 dark:hover:bg-slate-800/20 transition-colors">
-                        <td class="px-8 py-4">
-                            <div class="text-[10px] text-slate-400 font-bold mb-1">{{ formatDate(log.created_at) }}</div>
-                            <div class="font-bold text-slate-900 dark:text-white text-sm">{{ log.product?.name }}</div>
-                            <div v-if="log.variant" class="text-[9px] text-indigo-500 font-black uppercase tracking-tighter">SKU: {{ log.variant.sku }}</div>
-                        </td>
-                        <td class="px-8 py-4">
-                            <span :class="[
-                                'px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter',
-                                log.type === 'restock' ? 'bg-emerald-50 text-emerald-600' : 
-                                log.type === 'sale' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50 text-slate-600'
-                            ]">
-                                {{ log.type }}
-                            </span>
-                        </td>
-                        <td class="px-8 py-4 text-center">
-                            <span class="font-black" :class="log.quantity > 0 ? 'text-emerald-500' : 'text-rose-500'">
-                                {{ log.quantity > 0 ? '+' : '' }}{{ log.quantity }}
-                            </span>
-                        </td>
-                        <td class="px-8 py-4 text-center">
-                            <div class="text-xs font-bold text-slate-400 line-through">{{ log.old_stock }}</div>
-                            <div class="text-sm font-black text-slate-900 dark:text-white">{{ log.new_stock }}</div>
-                        </td>
-                        <td class="px-8 py-4 max-w-[200px]">
-                            <div class="text-[10px] font-black text-slate-500 truncate" v-if="log.supplier">{{ log.supplier.name }}</div>
-                            <div class="text-[10px] text-slate-400 italic font-medium line-clamp-2">{{ log.note || '-' }}</div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+          <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+            <thead class="bg-gray-50 dark:bg-gray-800/50">
+              <tr>
+                <th scope="col" class="py-3.5 pl-6 pr-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Product Info</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Action Type</th>
+                <th scope="col" class="px-3 py-3.5 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Qty change</th>
+                <th scope="col" class="px-3 py-3.5 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Balance</th>
+                <th scope="col" class="py-3.5 pl-3 pr-6 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Remarks</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
+              <tr v-for="log in logs" :key="log.id" class="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
+                <td class="whitespace-nowrap py-4 pl-6 pr-3 text-sm text-gray-500 dark:text-gray-400">
+                  {{ formatDate(log.created_at) }}
+                </td>
+                <td class="px-3 py-4 text-sm max-w-[240px]">
+                  <div class="font-medium text-gray-900 dark:text-white truncate" :title="log.product?.name">{{ log.product?.name }}</div>
+                  <div v-if="log.variant" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">SKU: {{ log.variant.sku }}</div>
+                </td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm">
+                  <span :class="[
+                      'inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset',
+                      log.type === 'restock' ? 'bg-green-50 text-green-700 ring-green-600/20 dark:bg-green-500/10 dark:text-green-400 dark:ring-green-500/20' : 
+                      log.type === 'sale' ? 'bg-blue-50 text-blue-700 ring-blue-700/10 dark:bg-blue-900/20 dark:text-blue-400 dark:ring-blue-900/30' : 
+                      'bg-gray-50 text-gray-600 ring-gray-500/20 dark:bg-gray-400/10 dark:text-gray-400 dark:ring-gray-400/20'
+                  ]">
+                      <span class="capitalize">{{ log.type }}</span>
+                  </span>
+                </td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-medium" :class="log.quantity > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
+                  {{ log.quantity > 0 ? '+' : '' }}{{ log.quantity }}
+                </td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-right text-gray-500 dark:text-gray-400">
+                  <span class="line-through text-gray-400 dark:text-gray-500 text-xs mr-2">{{ log.old_stock }}</span>
+                  <span class="font-medium text-gray-900 dark:text-white">{{ log.new_stock }}</span>
+                </td>
+                <td class="py-4 pl-3 pr-6 text-sm text-gray-500 dark:text-gray-400 max-w-[200px]">
+                   <div v-if="log.supplier" class="font-medium text-gray-900 dark:text-white truncate" :title="log.supplier.name">{{ log.supplier.name }}</div>
+                   <div class="truncate text-xs mt-0.5" :title="log.note">{{ log.note || '-' }}</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
+      </div>
     </div>
   </div>
 </template>
@@ -236,7 +255,7 @@
 definePageMeta({ layout: 'vendor', middleware: 'auth' })
 import { ref, onMounted, computed, watch } from 'vue'
 import { toast } from 'vue-sonner'
-import { ChevronLeft, Package, Search, X, Truck, RefreshCw } from 'lucide-vue-next'
+import { ChevronLeft, ChevronRight, Package, Search, X, Truck, RefreshCw } from 'lucide-vue-next'
 
 const { getAll, createItem } = useCrud()
 
@@ -360,7 +379,3 @@ watch(activeTab, (newTab) => {
     if (newTab === 'history') fetchLogs()
 })
 </script>
-
-<style scoped>
-.flex-2 { flex: 2; }
-</style>

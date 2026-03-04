@@ -178,6 +178,44 @@ class StorefrontController extends Controller
                 $this->formatProducts($category->products);
             }
 
+            // Fetch active promotions
+            $promotionsQuery = \App\Models\Promotion::where('is_active', true)
+                ->where('start_date', '<=', now())
+                ->where('end_date', '>=', now())
+                ->orderBy('priority', 'desc');
+
+            if ($tenantId) {
+                $promotionsQuery->where('vendor_id', $tenantId);
+            }
+
+            $promotions = $promotionsQuery->get()->map(function($promo) {
+                if ($promo->banner) {
+                    $promo->banner_url = \Illuminate\Support\Str::contains($promo->banner, ['http://', 'https://']) 
+                        ? $promo->banner 
+                        : Storage::disk('public')->url($promo->banner);
+                } else {
+                    $promo->banner_url = null;
+                }
+                $promo->slug = $promo->slug ?: \Illuminate\Support\Str::slug($promo->title); // Fallback if not yet migrated
+                
+                // Hydrate rules/targets with slugs for easier frontend linking
+                $rules = is_string($promo->rules) ? json_decode($promo->rules, true) : $promo->rules;
+                
+                if ($promo->type === 'buy_x_get_y' && isset($rules['buy_product_id'])) {
+                    $p = \App\Models\Product::find($rules['buy_product_id']);
+                    if ($p) $rules['buy_product_slug'] = $p->slug;
+                } elseif ($promo->type === 'bundle' && isset($rules['required_items'])) {
+                    $slugs = \App\Models\Product::whereIn('id', $rules['required_items'])->pluck('slug')->toArray();
+                    $rules['product_slugs'] = $slugs;
+                } elseif ($promo->type === 'category' && !empty($promo->target_ids)) {
+                    $slugs = \App\Models\Category::whereIn('id', $promo->target_ids)->pluck('slug')->toArray();
+                    $promo->category_slugs = $slugs;
+                }
+
+                $promo->rules = $rules;
+                return $promo;
+            });
+
             return response()->json([
                 'sliders' => $sliders,
                 'featured_products' => $featuredProducts,
@@ -186,7 +224,8 @@ class StorefrontController extends Controller
                 'categories' => $categories,
                 'brands' => $brands,
                 'units' => $units,
-                'vendor' => $vendorProfile
+                'vendor' => $vendorProfile,
+                'promotions' => $promotions
             ]);
         });
     }
@@ -279,6 +318,44 @@ class StorefrontController extends Controller
 
         if ($request->filled('search')) {
             $query->where('name', 'like', '%' . $request->search . '%');
+        }
+
+        // Filter by Promotion
+        if ($request->filled('promotion_id') || $request->filled('promotion')) {
+            $promotion = null;
+            if ($request->filled('promotion_id')) {
+                $promotion = \App\Models\Promotion::find($request->promotion_id);
+            } elseif ($request->filled('promotion')) {
+                $promotion = \App\Models\Promotion::where('slug', $request->promotion)->first() 
+                            ?? \App\Models\Promotion::where('title', $request->promotion)->first();
+            }
+
+            if ($promotion) {
+                if ($promotion->type === 'buy_x_get_y') {
+                    $rules = is_string($promotion->rules) ? json_decode($promotion->rules, true) : $promotion->rules;
+                    $ids = array_filter([$rules['buy_product_id'] ?? null, $rules['get_product_id'] ?? null]);
+                    if (!empty($ids)) $query->whereIn('id', $ids);
+                } elseif ($promotion->type === 'bundle') {
+                    $rules = is_string($promotion->rules) ? json_decode($promotion->rules, true) : $promotion->rules;
+                    if (!empty($rules['required_items'])) {
+                        $query->whereIn('id', $rules['required_items']);
+                    }
+                } elseif ($promotion->type === 'category') {
+                    if (!empty($promotion->target_ids)) {
+                        $query->whereHas('categories', function($q) use ($promotion) {
+                            $q->whereIn('id', $promotion->target_ids);
+                        });
+                    }
+                } else {
+                    if ($promotion->target === 'selected' && !empty($promotion->target_ids)) {
+                        $query->whereIn('id', $promotion->target_ids);
+                    } elseif ($promotion->target === 'categories' && !empty($promotion->target_ids)) {
+                        $query->whereHas('categories', function($q) use ($promotion) {
+                            $q->whereIn('id', $promotion->target_ids);
+                        });
+                    }
+                }
+            }
         }
 
         if ($request->filled('sort')) {

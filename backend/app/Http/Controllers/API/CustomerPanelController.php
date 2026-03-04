@@ -86,8 +86,45 @@ class CustomerPanelController extends Controller
                 'lastName' => $customer ? $customer->last_name : (isset($nameParts[1]) ? $nameParts[1] : ''),
                 'email' => $user->email,
                 'phone' => $customer ? $customer->phone : '',
+            ],
+            'settings' => $customer && $customer->settings ? $customer->settings : [
+                ['id' => 1, 'label' => 'Order Updates', 'desc' => 'Get notified about your order status changes', 'enabled' => true],
+                ['id' => 2, 'label' => 'New Arrivals', 'desc' => 'Be the first to know about new products', 'enabled' => false],
+                ['id' => 3, 'label' => 'Newsletter', 'desc' => 'Weekly digest of best deals and stories', 'enabled' => true]
             ]
         ]);
+    }
+
+    public function updateSettings(Request $request)
+    {
+        $customer = $this->getCustomer($request);
+        if (!$customer) {
+            return response()->json(['message' => 'Customer not found'], 404);
+        }
+
+        $validated = $request->validate([
+            'settings' => 'required|array',
+        ]);
+
+        $customer->update([
+            'settings' => $validated['settings']
+        ]);
+
+        return response()->json(['message' => 'Settings updated successfully']);
+    }
+
+    public function deleteAccount(Request $request)
+    {
+        $user = $request->user();
+        $customer = $this->getCustomer($request);
+
+        if ($customer) {
+            $customer->delete(); // Soft delete if implemented
+        }
+
+        $user->delete();
+
+        return response()->json(['message' => 'Account deleted successfully']);
     }
 
     public function updateProfile(Request $request)
@@ -157,13 +194,28 @@ class CustomerPanelController extends Controller
                     'icon' => '📦',
                     'name' => 'Order #' . $order->invoice_number,
                     'date' => $order->created_at->format('M d, Y'),
-                    'items' => $order->items->count(),
+                    'items_count' => $order->items->count(),
                     'total' => $order->total_amount,
                     'status' => ucfirst($order->status),
+                    'order' => $order // Return full order for easier detail viewing
                 ];
             });
 
         return response()->json(['orders' => $orders]);
+    }
+
+    public function showOrder(Request $request, $id)
+    {
+        $customer = $this->getCustomer($request);
+        if (!$customer) {
+            return response()->json(['message' => 'Customer not found'], 404);
+        }
+
+        $order = Order::where('customer_id', $customer->id)
+            ->with(['items.product'])
+            ->findOrFail($id);
+
+        return response()->json(['order' => $order]);
     }
 
     public function addresses(Request $request)
@@ -199,5 +251,44 @@ class CustomerPanelController extends Controller
             'message' => 'Address saved successfully',
             'address' => $address
         ]);
+    }
+
+    public function updateAddress(Request $request, $id)
+    {
+        $address = \App\Models\CustomerAddress::where('user_id', $request->user()->id)->findOrFail($id);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'line1' => 'required|string|max:255',
+            'city' => 'required|string|max:255',
+            'state' => 'required|string|max:255',
+            'zip' => 'required|string|max:50',
+            'country' => 'required|string|max:255',
+            'is_default' => 'boolean',
+        ]);
+
+        if ($validated['is_default'] ?? false) {
+            \App\Models\CustomerAddress::where('user_id', $request->user()->id)->update(['is_default' => false]);
+        }
+
+        $address->update($validated);
+
+        return response()->json([
+            'message' => 'Address updated successfully',
+            'address' => $address
+        ]);
+    }
+
+    public function destroyAddress(Request $request, $id)
+    {
+        $address = \App\Models\CustomerAddress::where('user_id', $request->user()->id)->findOrFail($id);
+
+        if ($address->is_default) {
+            return response()->json(['message' => 'Cannot delete default address'], 422);
+        }
+
+        $address->delete();
+
+        return response()->json(['message' => 'Address deleted successfully']);
     }
 }

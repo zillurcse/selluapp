@@ -94,6 +94,7 @@ class CustomerController extends Controller implements HasMiddleware
         }
 
         $validatedData = $request->validated();
+        $oldEmail = $customer->email;
 
         // Hash password if provided, else remove it from update array
         if (!empty($validatedData['password'])) {
@@ -103,6 +104,18 @@ class CustomerController extends Controller implements HasMiddleware
         }
 
         $customer->update($validatedData);
+
+        // Sync with User record
+        $user = \App\Models\User::where('email', $oldEmail)->first();
+        if ($user) {
+            $userData = [
+                'name' => $customer->first_name . ' ' . $customer->last_name
+            ];
+            if ($customer->password) {
+                $userData['password'] = $customer->password;
+            }
+            $user->update($userData);
+        }
 
         return response()->json([
             'message' => 'Customer updated successfully',
@@ -120,7 +133,11 @@ class CustomerController extends Controller implements HasMiddleware
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
+        $email = $customer->email;
         $customer->delete();
+
+        // Delete associated user
+        \App\Models\User::where('email', $email)->delete();
 
         return response()->json([
             'message' => 'Customer deleted successfully'

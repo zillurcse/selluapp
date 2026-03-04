@@ -271,9 +271,12 @@
         <div class="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-100 dark:border-slate-800 p-8 shadow-sm transition-colors duration-300">
           <h2 class="text-lg font-black text-slate-800 dark:text-white mb-6">How to Setup</h2>
           <div class="space-y-4">
-            <div v-for="guide in setupGuides" :key="guide" class="flex items-center justify-between py-1">
-              <span class="text-sm font-bold text-slate-600 dark:text-slate-400">{{ guide }}</span>
-              <button class="bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all active:scale-95 group">
+            <div v-for="guide in setupGuides" :key="guide.title" class="flex items-center justify-between py-1">
+              <span class="text-sm font-bold text-slate-600 dark:text-slate-400">{{ guide.title }}</span>
+              <button 
+                @click="handleOpenVideo(guide)"
+                class="bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all active:scale-95 group"
+              >
                 <div class="w-6 h-4 bg-red-600 rounded flex items-center justify-center text-white text-[8px]">
                   <Play class="w-2.5 h-2.5 fill-current" />
                 </div>
@@ -284,6 +287,14 @@
         </div>
       </div>
     </div>
+    
+    <!-- Video Modal -->
+    <AppVideoModal 
+      :is-open="isModalOpen"
+      :video-id="activeVideo?.videoId"
+      :title="activeVideo?.title"
+      @close="isModalOpen = false"
+    />
     
     <!-- Floating Save Button -->
     <div class="fixed bottom-8 right-8 z-40">
@@ -310,6 +321,7 @@ import {
   Play
 } from 'lucide-vue-next'
 import { reactive, ref, onMounted } from 'vue'
+import AppVideoModal from '~/components/AppVideoModal.vue'
 
 definePageMeta({
   middleware: 'auth',
@@ -325,14 +337,23 @@ const showFBPixelToken = ref(false)
 const showTikTokToken = ref(false)
 const showGoogleSecret = ref(false)
 
+const isModalOpen = ref(false)
+const activeVideo = ref(null)
+
+const handleOpenVideo = (guide) => {
+  console.log('Opening video:', guide)
+  activeVideo.value = guide
+  isModalOpen.value = true
+}
+
 const setupGuides = [
-  'Google Tag Manager ID',
-  'Tiktok Pixel',
-  'Google Analytics Credentials',
-  'Facebook Pixel & API',
-  'Google Social Login',
-  'Sitemaps Guide',
-  'Facebook Data Feed'
+  { title: 'Google Tag Manager ID', videoId: 'H9pU9rVEnB8' },
+  { title: 'Tiktok Pixel', videoId: 'H9pU9rVEnB8' },
+  { title: 'Google Analytics Credentials', videoId: 'H9pU9rVEnB8' },
+  { title: 'Facebook Pixel & API', videoId: 'H9pU9rVEnB8' },
+  { title: 'Google Social Login', videoId: 'H9pU9rVEnB8' },
+  { title: 'Sitemaps Guide', videoId: 'H9pU9rVEnB8' },
+  { title: 'Facebook Data Feed', videoId: 'H9pU9rVEnB8' }
 ]
 
 const form = reactive({

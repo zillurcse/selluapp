@@ -247,7 +247,18 @@
             <div class="space-y-3 pt-6 border-t border-gray-100">
               <div class="flex justify-between text-sm text-gray-600">
                 <span>Subtotal</span>
-                <span class="font-medium text-gray-900">${{ cartTotal.toFixed(2) }}</span>
+                <span class="font-medium text-gray-900">৳{{ cartTotal.toFixed(2) }}</span>
+              </div>
+              <div v-if="discountTotal > 0" class="flex justify-between text-sm text-rose-600 bg-rose-50 px-3 py-2 rounded-lg border border-rose-100 animate-pulse">
+                <div class="flex flex-col gap-1">
+                    <span class="font-bold">Discount</span>
+                    <div class="flex flex-wrap gap-1">
+                        <span v-for="offer in appliedOffers" :key="offer.offer_id" class="text-[10px] bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded-md font-black uppercase tracking-tighter">
+                            {{ offer.offer_title }}
+                        </span>
+                    </div>
+                </div>
+                <span class="font-black">-৳{{ discountTotal.toFixed(2) }}</span>
               </div>
               <div class="flex justify-between text-sm text-gray-600">
                 <span>Estimated Shipping</span>
@@ -263,7 +274,7 @@
               <span class="text-base font-semibold text-gray-900">Total</span>
               <div class="text-right">
                 <span class="text-xs text-gray-500 font-medium mr-2">BDT</span>
-                <span class="text-2xl font-bold text-gray-900">৳{{ (cartTotal + shippingCost).toFixed(2) }}</span>
+                <span class="text-2xl font-bold text-gray-900">৳{{ (cartTotal + shippingCost - discountTotal).toFixed(2) }}</span>
               </div>
             </div>
 
@@ -276,7 +287,7 @@
                 <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                 Processing...
               </span>
-              <span v-else>Place Order - ৳{{ (cartTotal + shippingCost).toFixed(2) }}</span>
+              <span v-else>Place Order - ৳{{ (cartTotal + shippingCost - discountTotal).toFixed(2) }}</span>
             </button>
             
             <div class="mt-6 flex items-center justify-center gap-2 text-xs text-gray-500">
@@ -311,6 +322,10 @@ const loadingCities = ref(false)
 const shippingCost = ref(0)
 const selectedCity = ref(null)
 const availableCarriers = ref([])
+
+const discountTotal = ref(0)
+const appliedOffers = ref([])
+const calculatingDiscount = ref(false)
 
 const form = ref({
   email: '',
@@ -401,9 +416,39 @@ const handleCityChange = async () => {
       shippingCost.value = parseFloat(city.cost || 0)
       availableCarriers.value = []
     }
-  } else {
+    } else {
     selectedCity.value = null
     shippingCost.value = 0
+  }
+}
+
+const calculateDiscounts = async () => {
+  if (cart.value.length === 0) {
+    discountTotal.value = 0
+    appliedOffers.value = []
+    return
+  }
+
+  calculatingDiscount.value = true
+  try {
+    const response = await $fetch(`${config.public.apiBase}/storefront/checkout/calculate-discount`, {
+      method: 'POST',
+      body: {
+        items: cart.value.map(item => ({
+          id: item.id,
+          quantity: item.quantity
+        }))
+      }
+    })
+
+    if (response.success) {
+      discountTotal.value = response.data.discount_total || 0
+      appliedOffers.value = response.data.applied_offers || []
+    }
+  } catch (error) {
+    console.error('Failed to calculate discounts:', error)
+  } finally {
+    calculatingDiscount.value = false
   }
 }
 
@@ -440,6 +485,7 @@ watch(() => cart.value, () => {
   if(gateways.value.length === 0 && cart.value.length > 0) {
      fetchGateways()
   }
+  calculateDiscounts()
 }, { deep: true, immediate: true })
 
 onMounted(() => {

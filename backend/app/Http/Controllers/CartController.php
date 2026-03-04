@@ -6,9 +6,17 @@ use Illuminate\Http\Request;
 use App\Models\Cart;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use App\Services\Offers\OfferCalculationService;
 
 class CartController extends Controller
 {
+    protected OfferCalculationService $offerService;
+
+    public function __construct(OfferCalculationService $offerService)
+    {
+        $this->offerService = $offerService;
+    }
+
     public function index()
     {
         $carts = Cart::with('product')->where('user_id', Auth::id())->get();
@@ -21,13 +29,30 @@ class CartController extends Controller
                 'id' => $cart->product_id, // frontend uses product id as item id
                 'cart_id' => $cart->id,
                 'name' => $product->name,
-                'price' => $product->sale_price ?? $product->price,
+                'price' => $product->sale_price ?? $product->price, // The base price
                 'image' => $product->image ? Storage::disk('public')->url($product->image) : null,
-                'quantity' => $cart->quantity
+                'quantity' => $cart->quantity,
+                'product_id' => $product->id,
+                'vendor_id' => $product->vendor_id,
             ];
-        })->filter()->values();
+        })->filter()->values()->toArray();
 
-        return response()->json(['data' => $formatted]);
+        // Currently, we run this per vendor or overall. Assuming typical ecommerce, 
+        // offers might be specific to the vendor or admin. The Cart items might belong to MULTIPLE vendors.
+        // For standard marketplace, we should probably group by vendor. For now, running globally:
+        
+        // Ensure format is an array of raw item arrays suitable for calculation
+        $calculationResult = $this->offerService->calculateDiscounts($formatted);
+
+        return response()->json([
+            'data' => $calculationResult['items'], 
+            'summary' => [
+                'original_total' => $calculationResult['original_total'],
+                'discount_total' => $calculationResult['discount_total'],
+                'final_total' => $calculationResult['final_total'],
+                'applied_offers' => $calculationResult['applied_offers']
+            ]
+        ]);
     }
 
     public function store(Request $request)

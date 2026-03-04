@@ -37,7 +37,14 @@
         <p class="font-bold text-slate-800 text-lg">{{ getCustomerName() }}</p>
         <p class="text-slate-600 mt-1">{{ order.customer?.phone || 'N/A' }}</p>
         <p class="text-slate-600">{{ order.customer?.email || 'N/A' }}</p>
-        <p v-if="orderType !== 'POS'" class="text-slate-600 mt-2 max-w-xs">{{ order.shipping_address || 'In-Store / Digital' }}</p>
+        <div v-if="orderType !== 'POS' && order.shipping_address" class="text-slate-600 mt-2 max-w-xs">
+          <p v-if="typeof parsedShippingAddress === 'object'">
+            {{ parsedShippingAddress.address }}<br>
+            {{ parsedShippingAddress.city }}
+          </p>
+          <p v-else>{{ order.shipping_address }}</p>
+        </div>
+        <p v-else-if="orderType !== 'POS'" class="text-slate-600 mt-2">In-Store / Digital</p>
       </div>
 
       <!-- Invoice Details -->
@@ -110,12 +117,12 @@
 
         <div class="flex justify-between items-center text-sm border-t border-slate-100 pt-2">
            <span class="font-bold text-slate-500">Shipping</span>
-           <span class="font-bold text-slate-800">৳{{ Number(orderType === 'POS' ? order.shipping : order.delivery_charge || 0).toFixed(2) }}</span>
+           <span class="font-bold text-slate-800">৳{{ Number(orderType === 'POS' ? order.shipping : order.shipping_cost || 0).toFixed(2) }}</span>
         </div>
 
         <div class="flex justify-between items-center border-t-2 border-slate-800 pt-4 mt-4">
            <span class="text-lg font-black text-slate-800 uppercase tracking-widest">Total</span>
-           <span class="text-2xl font-black text-indigo-600">৳{{ Number(orderType === 'POS' ? order.total : order.total_amount).toFixed(2) }}</span>
+           <span class="text-2xl font-black text-indigo-600">৳{{ Number(orderType === 'POS' ? order.total : (Number(calculateOnlineSubtotal(order)) + Number(order.shipping_cost || 0) - Number(order.discount_amount || 0))).toFixed(2) }}</span>
         </div>
       </div>
     </div>
@@ -134,7 +141,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 
 const route = useRoute()
 const { getAll } = useCrud()
@@ -146,6 +153,16 @@ definePageMeta({
   layout: 'empty', // use empty layout for printable pages ideally
   middleware: 'auth',
   permissions: 'orders.view'
+})
+
+const parsedShippingAddress = computed(() => {
+    if (!order.value?.shipping_address) return null
+    if (typeof order.value.shipping_address === 'object') return order.value.shipping_address
+    try {
+        return JSON.parse(order.value.shipping_address)
+    } catch (e) {
+        return order.value.shipping_address
+    }
 })
 
 onMounted(async () => {

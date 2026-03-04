@@ -28,6 +28,7 @@ class Customer extends Model
         'loyalty_points',
         'date_of_birth',
         'gender',
+        'settings',
     ];
 
     protected $hidden = [
@@ -37,6 +38,7 @@ class Customer extends Model
     protected $casts = [
         'is_active' => 'boolean',
         'password' => 'hashed',
+        'settings' => 'array',
     ];
 
     public function vendor(): BelongsTo

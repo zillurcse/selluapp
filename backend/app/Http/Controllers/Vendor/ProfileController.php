@@ -99,12 +99,12 @@ class ProfileController extends Controller implements HasMiddleware
 
         // Handle File Uploads
         if ($request->hasFile('logo')) {
-            if ($profile->logo) Storage::delete('public/' . $profile->logo);
+            if ($profile->logo) Storage::disk('public')->delete($profile->logo);
             $profile->logo = $request->file('logo')->store('vendors/logos', 'public');
         }
 
         if ($request->hasFile('banner')) {
-            if ($profile->banner) Storage::delete('public/' . $profile->banner);
+            if ($profile->banner) Storage::disk('public')->delete($profile->banner);
             $profile->banner = $request->file('banner')->store('vendors/banners', 'public');
         }
 

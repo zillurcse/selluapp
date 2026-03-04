@@ -239,7 +239,7 @@ import { toast } from 'vue-sonner'
 
 const emit = defineEmits(['saved'])
 
-const { createItem } = useCrud()
+const { createItem, updateItem } = useCrud()
 
 const isOpen = ref(false)
 const showPassword = ref(false)
@@ -321,6 +321,7 @@ const handleSubmit = async () => {
         saving.value = true
 
         const payload = { ...form.value }
+        console.log('edit id', editId.value);
         
         if (editId.value) {
            try {
@@ -328,7 +329,7 @@ const handleSubmit = async () => {
                  useUtilityStore.isEditing = true
              }
            } catch (e) {}
-           await createItem(`/vendor/customers`, payload, editId.value)
+           await updateItem(`/vendor/customers/${editId.value}`, payload)
            try {
                if (typeof useUtilityStore !== 'undefined') {
                    useUtilityStore.isEditing = false

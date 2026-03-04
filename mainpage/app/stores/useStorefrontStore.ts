@@ -12,7 +12,8 @@ export const useStorefrontStore = defineStore('storefront', {
         categoryWiseProducts: [] as any[],
         slides: [] as any[],
         vendorProfile: null as any,
-        homeLandingPage: null as any
+        homeLandingPage: null as any,
+        promotions: [] as any[]
     }),
 
     actions: {
@@ -102,6 +103,22 @@ export const useStorefrontStore = defineStore('storefront', {
                 slug: p.slug,
                 image: p.image_url || lampImg,
                 category: p.categories?.[0]?.name || 'Uncategorized'
+            })) || []
+
+            // 2.3 Map Promotions
+            this.promotions = data.promotions?.map((promo: any) => ({
+                id: promo.id,
+                title: promo.title,
+                slug: promo.slug,
+                type: promo.type,
+                discount_value: promo.discount_value,
+                discount_unit: promo.discount_unit,
+                banner: promo.banner_url || null,
+                rules: typeof promo.rules === 'string' ? JSON.parse(promo.rules) : promo.rules,
+                priority: promo.priority,
+                is_stackable: promo.is_stackable,
+                category_slugs: promo.category_slugs || [],
+                end_date: promo.end_date
             })) || []
 
             // 2.5 Map Category Wise Products

@@ -10,10 +10,12 @@ use App\Models\Customer;
 use App\Models\ShopSetting;
 use App\Models\FraudCheck;
 use App\Models\User;
+use App\Services\Offers\OfferCalculationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 class CheckoutController extends Controller
 {
@@ -75,6 +77,38 @@ class CheckoutController extends Controller
         return response()->json([
             'success' => true,
             'gateways' => $gateways
+        ]);
+    }
+
+    public function getDiscount(Request $request)
+    {
+        $validated = $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*.id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|integer|min:1',
+        ]);
+
+        $cartItems = [];
+        $vendorId = null;
+
+        foreach ($validated['items'] as $item) {
+            $product = Product::find($item['id']);
+            if (!$vendorId) $vendorId = $product->vendor_id;
+            
+            $cartItems[] = [
+                'product_id' => $product->id,
+                'price' => (float)($product->discount_price ?: $product->sale_price),
+                'quantity' => $item['quantity'],
+                'category_id' => $product->category_id
+            ];
+        }
+
+        $service = new OfferCalculationService();
+        $result = $service->calculateDiscounts($cartItems, $vendorId);
+
+        return response()->json([
+            'success' => true,
+            'data' => $result
         ]);
     }
 
@@ -158,6 +192,23 @@ class CheckoutController extends Controller
                 }
 
                 $subtotal = 0;
+                $offerCartItems = [];
+                foreach ($vendorItems as $vi) {
+                    $price = (float)($vi['product']->discount_price ?: $vi['product']->sale_price);
+                    $subtotal += ($price * $vi['quantity']);
+                    $offerCartItems[] = [
+                        'product_id' => $vi['product']->id,
+                        'price' => $price,
+                        'quantity' => $vi['quantity'],
+                        'category_id' => $vi['product']->category_id
+                    ];
+                }
+
+                // Apply Promotions
+                $calculationService = new OfferCalculationService();
+                $discountResult = $calculationService->calculateDiscounts($offerCartItems, $vendorId);
+                $discountAmount = $discountResult['discount_total'];
+                
                 // Prepare carts collection for getShippingCost helper
                 $carts = collect();
                 foreach ($validated['items'] as $item) {
@@ -186,7 +237,7 @@ class CheckoutController extends Controller
                 $shippingCost = !$shippingApplied ? (float)$total_shipping : 0.00; // Charge shipping only once per order group if needed, but here it's per vendor order. Actually, usually it's per vendor.
                 $shippingApplied = true;
                 
-                $totalAmount = $subtotal + (float)$shippingCost;
+                $totalAmount = ($subtotal - $discountAmount) + (float)$shippingCost;
 
                 // Check Spider Intelligence Settings
                 $spiderIntelligenceSettings = ShopSetting::where('user_id', $vendorId)
@@ -223,8 +274,10 @@ class CheckoutController extends Controller
                     'status' => 'pending',
                     'type' => 'normal',
                     'subtotal' => $subtotal,
+                    'discount_amount' => $discountAmount,
+                    'applied_promotions' => $discountResult['applied_offers'] ?? [],
                     'shipping_cost' => $shippingCost,
-                    'total_amount' => $totalAmount,
+                    'total_amount' => max(0, $totalAmount),
                     'payment_method' => $validated['payment_method'],
                     'payment_status' => 'unpaid',
                     'requires_manual_review' => $requiresManualReview,

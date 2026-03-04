@@ -103,7 +103,7 @@ class BrandController extends Controller implements HasMiddleware
         // image: accept file upload OR path string from media library
         if ($request->hasFile('image')) {
             if ($brand->image && !str_starts_with($brand->image, 'uploads/')) {
-                Storage::delete('public/' . $brand->image);
+                Storage::disk('public')->delete($brand->image);
             }
             $validated['image'] = $request->file('image')->store('brands', 'public');
         } elseif ($request->filled('image')) {
@@ -121,7 +121,7 @@ class BrandController extends Controller implements HasMiddleware
     public function destroy(Brand $brand)
     {
         if ($brand->image) {
-            Storage::delete('public/' . $brand->image);
+            Storage::disk('public')->delete($brand->image);
         }
         $brand->delete();
         return response()->json(['message' => 'Brand deleted successfully']);
