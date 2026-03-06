@@ -149,7 +149,7 @@ const loadSettings = async () => {
        // if group has settings
        if (Object.keys(response.data).length > 0) {
           const loaded = response.data
-          form.showAnnouncement = loaded.showAnnouncement === 'true' || loaded.showAnnouncement === true
+          form.showAnnouncement = loaded.showAnnouncement === 'true' || loaded.showAnnouncement === true || loaded.showAnnouncement === '1' || loaded.showAnnouncement === 1
           form.announcementText = loaded.announcementText || ''
           form.announcementBgColor = loaded.announcementBgColor || '#000000'
           form.announcementTextColor = loaded.announcementTextColor || '#ffffff'

@@ -1,5 +1,5 @@
 <template>
-  <section class="py-16 bg-white relative overflow-hidden">
+  <section class="pt-16  bg-white relative overflow-hidden">
     <!-- Decorative subtle background -->
     <div class="absolute top-0 right-0 w-64 h-64 bg-cyan-50/30 rounded-full blur-3xl -z-10"></div>
     

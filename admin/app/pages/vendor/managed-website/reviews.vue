@@ -184,10 +184,10 @@ const loadSettings = async () => {
     if (response?.data) {
        if (Object.keys(response.data).length > 0) {
           const loaded = response.data
-          form.enableReviews = loaded.enableReviews === 'true' || loaded.enableReviews === true || loaded.enableReviews === '1'
-          form.autoApprove = loaded.autoApprove === 'true' || loaded.autoApprove === true || loaded.autoApprove === '1'
-          form.verifiedOnly = loaded.verifiedOnly === 'true' || loaded.verifiedOnly === true || loaded.verifiedOnly === '1'
-          form.minAutoApproveRating = loaded.minAutoApproveRating || '4'
+          form.enableReviews = loaded.enableReviews === 'true' || loaded.enableReviews === true || loaded.enableReviews === '1' || loaded.enableReviews === 1
+          form.autoApprove = loaded.autoApprove === 'true' || loaded.autoApprove === true || loaded.autoApprove === '1' || loaded.autoApprove === 1
+          form.verifiedOnly = loaded.verifiedOnly === 'true' || loaded.verifiedOnly === true || loaded.verifiedOnly === '1' || loaded.verifiedOnly === 1
+          form.minAutoApproveRating = String(loaded.minAutoApproveRating || '4')
        }
     }
   } catch (error) {

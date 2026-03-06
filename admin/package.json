@@ -26,11 +26,11 @@
     "vue-sonner": "^2.0.9"
   },
   "devDependencies": {
+    "@headlessui/vue": "^1.7.23",
     "@nuxtjs/color-mode": "^4.0.0",
     "autoprefixer": "^10.4.17",
+    "lodash-es": "^4.17.23",
     "postcss": "^8.4.35",
-    "tailwindcss": "^3.4.1",
-    "@headlessui/vue": "^1.7.23",
-    "lodash-es": "^4.17.23"
+    "tailwindcss": "^3.4.1"
   }
 }

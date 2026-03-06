@@ -1,6 +1,6 @@
 <template>
   <div v-if="categories && categories.length > 0">
-    <section v-for="(category, index) in categories" :key="category.id" class="py-12 md:py-20" :class="index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'">
+    <section v-for="(category, index) in categories" :key="category.id" class="pt-12 md:pt-20" :class="index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'">
       <div class="container mx-auto px-4 sm:px-6">
         <div class="flex items-center justify-between mb-10">
           <div>

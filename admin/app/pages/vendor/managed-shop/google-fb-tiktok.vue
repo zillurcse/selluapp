@@ -347,13 +347,13 @@ const handleOpenVideo = (guide) => {
 }
 
 const setupGuides = [
-  { title: 'Google Tag Manager ID', videoId: 'H9pU9rVEnB8' },
-  { title: 'Tiktok Pixel', videoId: 'H9pU9rVEnB8' },
-  { title: 'Google Analytics Credentials', videoId: 'H9pU9rVEnB8' },
-  { title: 'Facebook Pixel & API', videoId: 'H9pU9rVEnB8' },
-  { title: 'Google Social Login', videoId: 'H9pU9rVEnB8' },
-  { title: 'Sitemaps Guide', videoId: 'H9pU9rVEnB8' },
-  { title: 'Facebook Data Feed', videoId: 'H9pU9rVEnB8' }
+  { title: 'Google Tag Manager ID', videoId: 'F8_sbW63sH0' },
+  { title: 'Tiktok Pixel', videoId: 'YN5BjimwRKM' },
+  { title: 'Google Analytics Credentials', videoId: 'FjoqCYew37A' },
+  { title: 'Facebook Pixel & API', videoId: 'o4wl8iAs744' },
+  { title: 'Google Social Login', videoId: 'oa6c1tbbskU' },
+  { title: 'Sitemaps Guide', videoId: 'RqZoihCoIaY' },
+  { title: 'Facebook Data Feed', videoId: 'sZDBR5Y9KyU' }
 ]
 
 const form = reactive({

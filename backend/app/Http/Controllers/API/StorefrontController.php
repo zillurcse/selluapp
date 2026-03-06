@@ -136,8 +136,8 @@ class StorefrontController extends Controller
             if ($tenantId) {
                 $profile = \App\Models\VendorProfile::where('user_id', $tenantId)->first();
                 if ($profile) {
-                    $profile->logo_url = $profile->logo ? Storage::disk('public')->url($profile->logo) : null;
-                    $profile->banner_url = $profile->banner ? Storage::disk('public')->url($profile->banner) : null;
+                    $profile->logo_url = $profile->logo ?? $profile->logo;
+                    $profile->banner_url = $profile->banner ?? $profile->banner;
                     $vendorProfile = $profile;
                 }
             }
@@ -216,8 +216,31 @@ class StorefrontController extends Controller
                 return $promo;
             });
 
+            // Fetch website banners
+            $websiteBanners = ShopSetting::where('user_id', $userId)
+                ->where('group', 'website_banners')
+                ->get()
+                ->pluck('value', 'key')
+                ->map(function ($val, $key) {
+                    $decoded = json_decode($val, true);
+                    $parsedVal = (json_last_error() === JSON_ERROR_NONE) ? $decoded : $val;
+
+                    if (is_string($parsedVal) && str_starts_with($parsedVal, 'shop/')) {
+                        return Storage::disk('public')->url($parsedVal);
+                    }
+
+                    return $parsedVal;
+                });
+
+            // Fetch marketing/social settings
+            $marketingSettings = ShopSetting::where('user_id', $userId)
+                ->where('group', 'marketing_social')
+                ->get()
+                ->pluck('value', 'key');
+
             return response()->json([
                 'sliders' => $sliders,
+                'website_banners' => $websiteBanners,
                 'featured_products' => $featuredProducts,
                 'trending_products' => $trendingProducts,
                 'category_wise_products' => $categoryWiseProducts,
@@ -225,7 +248,8 @@ class StorefrontController extends Controller
                 'brands' => $brands,
                 'units' => $units,
                 'vendor' => $vendorProfile,
-                'promotions' => $promotions
+                'promotions' => $promotions,
+                'marketing' => $marketingSettings
             ]);
         });
     }
@@ -318,6 +342,10 @@ class StorefrontController extends Controller
 
         if ($request->filled('search')) {
             $query->where('name', 'like', '%' . $request->search . '%');
+        }
+
+        if ($request->filled('is_trending') && filter_var($request->is_trending, FILTER_VALIDATE_BOOLEAN)) {
+            $query->where('is_trending', true);
         }
 
         // Filter by Promotion
@@ -554,23 +582,23 @@ class StorefrontController extends Controller
 
     private function formatSingleProduct($product)
     {
-        $product->image_url = $product->image ? Storage::disk('public')->url($product->image) : null;
-        $product->thumbnail_url = $product->thumbnail ? Storage::disk('public')->url($product->thumbnail) : null;
+        $product->image_url = $product->image ?? $product->image;
+        $product->thumbnail_url = $product->thumbnail ?? $product->thumbnail;
         if ($product->gallery) {
             $product->gallery_urls = array_map(function ($path) {
-                return Storage::disk('public')->url($path);
+                return $path;
             }, $product->gallery);
         }
 
         if ($product->vendor && $product->vendor->vendorProfile) {
             $profile = $product->vendor->vendorProfile;
-            $profile->logo_url = $profile->logo ? Storage::disk('public')->url($profile->logo) : null;
-            $profile->banner_url = $profile->banner ? Storage::disk('public')->url($profile->banner) : null;
+            $profile->logo_url = $profile->logo ?? $profile->logo;
+            $profile->banner_url = $profile->banner ?? $profile->banner;
         }
 
         if ($product->variants) {
             foreach ($product->variants as $variant) {
-                $variant->image_url = $variant->image ? Storage::disk('public')->url($variant->image) : null;
+                $variant->image_url = $variant->image ?? $variant->image;
             }
         }
     }
@@ -662,6 +690,58 @@ class StorefrontController extends Controller
             'formatted' => format_price(convert_price($total_shipping)),
             'method'    => $shipping_method,
             'available_carriers' => $available_carriers
+        ]);
+    }
+
+    public function reviews(Request $request, \App\Models\Product $product)
+    {
+        $tenantId = $this->resolveTenantId($request);
+        
+        // Ensure product belongs to tenant if applicable
+        if ($tenantId && $product->vendor_id != $tenantId) {
+            return response()->json(['message' => 'Product not found.'], 404);
+        }
+
+        $reviews = $product->reviews()
+                           ->with('customer:id,first_name,last_name')
+                           ->where('status', 'approved')
+                           ->latest()
+                           ->paginate($request->get('per_page', 10));
+
+        // Format customer names to just first name + initial
+        $reviews->getCollection()->transform(function($review) {
+            $customerName = 'Anonymous Customer';
+            if ($review->customer) {
+                $firstName = $review->customer->first_name;
+                $lastNameInitial = $review->customer->last_name ? substr($review->customer->last_name, 0, 1) . '.' : '';
+                $customerName = trim($firstName . ' ' . $lastNameInitial);
+            }
+            return [
+                'id' => $review->id,
+                'rating' => $review->rating,
+                'comment' => $review->comment,
+                'is_verified' => $review->is_verified,
+                'customer_name' => $customerName,
+                'created_at' => $review->created_at->diffForHumans(),
+                'date' => $review->created_at->format('M d, Y')
+            ];
+        });
+
+        $stats = [
+            'total_reviews' => $product->reviews()->where('status', 'approved')->count(),
+            'average_rating' => (float) $product->reviews()->where('status', 'approved')->avg('rating'),
+            'rating_counts' => [
+                5 => $product->reviews()->where('status', 'approved')->where('rating', 5)->count(),
+                4 => $product->reviews()->where('status', 'approved')->where('rating', 4)->count(),
+                3 => $product->reviews()->where('status', 'approved')->where('rating', 3)->count(),
+                2 => $product->reviews()->where('status', 'approved')->where('rating', 2)->count(),
+                1 => $product->reviews()->where('status', 'approved')->where('rating', 1)->count(),
+            ]
+        ];
+
+        return response()->json([
+            'reviews' => $reviews,
+            'stats' => $stats
         ]);
     }
 }

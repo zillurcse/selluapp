@@ -54,7 +54,9 @@
         <div class="space-y-12 animate-fade-in" style="animation-delay: 0.3s">
           <div class="space-y-6">
             <div class="flex flex-wrap items-center gap-4">
-              <span class="px-5 py-2 rounded-full bg-black text-white text-[9px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-black/10">Limited Release</span>
+              <span v-if="product.is_special || product.is_featured || product.is_trending" class="px-5 py-2 rounded-full bg-black text-white text-[9px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-black/10">
+                 {{ product.is_special ? 'Special' : (product.is_featured ? 'Featured' : 'Trending') }}
+              </span>
               <div v-if="currentStock > 0" class="flex items-center gap-2 px-4 py-2 rounded-full glass-panel border border-emerald-100/50">
                 <span class="relative flex h-2 w-2">
                   <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -72,18 +74,21 @@
             <div class="pt-4 flex flex-col gap-8 md:gap-10">
               <div class="relative">
                 <div class="text-5xl md:text-6xl lg:text-7xl font-black text-gray-900 tracking-tighter transition-all duration-700 group hover:tracking-normal cursor-default">
-                    ${{ currentPrice }}
+                  {{ currentPrice }} ৳
                 </div>
-                <div class="flex items-center gap-3 mt-4">
+                <!-- Dynamic Review Stats (Only shows if reviews exist) -->
+                <div v-if="reviewStats && reviewStats.total_reviews > 0" class="flex items-center gap-3 mt-4">
                      <div class="flex text-amber-400">
-                      <svg v-for="i in 5" :key="i" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                      <svg v-for="i in 5" :key="i" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" :class="i <= Math.round(reviewStats.average_rating) ? 'text-amber-400' : 'text-gray-200'"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
                     </div>
-                    <span class="text-[11px] font-black text-gray-400 uppercase tracking-widest leading-none">Verified 1.2k Purchases</span>
+                    <span class="text-[11px] font-black text-gray-400 uppercase tracking-widest leading-none">
+                      {{ reviewStats.average_rating.toFixed(1) }} ({{ reviewStats.total_reviews }} Reviews)
+                    </span>
                 </div>
               </div>
 
-              <p class="text-gray-400 text-base md:text-lg leading-relaxed max-w-xl font-medium border-l-2 border-gray-100 pl-6">
-                {{ product.short_description || 'A masterpiece of contemporary craftsmanship, blending structural integrity with fluid aesthetics for the discerning collector.' }}
+              <p v-if="product.short_description" class="text-gray-400 text-base md:text-lg leading-relaxed max-w-xl font-medium border-l-2 border-gray-100 pl-6">
+                {{ product.short_description }}
               </p>
             </div>
           </div>
@@ -186,6 +191,16 @@
                         <span>Order Now</span>
                     </span>
                   </button>
+
+                  <!-- Watch Video -->
+                  <a v-if="product.video_url" :href="product.video_url" target="_blank"
+                    class="group relative flex items-center justify-center w-[72px] h-[72px] sm:w-[72px] bg-rose-50 text-rose-600 rounded-2xl overflow-hidden transition-all duration-700 shadow-sm hover:shadow-md hover:-translate-y-1 active:scale-95 active:translate-y-0"
+                  >
+                     <div class="absolute inset-0 bg-rose-600 translate-y-full group-hover:translate-y-0 transition-transform duration-700 cubic-bezier(0.19, 1, 0.22, 1)"></div>
+                     <span class="relative z-10 group-hover:text-white transition-colors duration-500">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+                     </span>
+                  </a>
                </div>
 
                <!-- Subtle Trust Bar -->
@@ -228,7 +243,7 @@
         <div class="max-w-4xl mx-auto">
           <div class="flex items-center justify-center gap-4 md:gap-16 mb-12 border-b border-gray-50 pb-px overflow-x-auto hide-scrollbar whitespace-nowrap">
             <button 
-              v-for="tab in ['Description', 'Specifications', 'Reviews']" 
+              v-for="tab in availableTabs" 
               :key="tab"
               @click="activeTab = tab"
               class="relative py-4 text-[10px] md:text-sm font-black uppercase tracking-[0.2em] transition-all duration-300"
@@ -246,25 +261,139 @@
             <transition name="tab-fade" mode="out-in">
               <div :key="activeTab">
                 <div v-if="activeTab === 'Description'" class="space-y-6">
-                  <p>This product is a testament to minimalist design. Every curve and line has been thoughtfully considered to create a piece that is both beautiful and functional. Made from sustainable materials, it's a guilt-free addition to your home.</p>
-                  <p>Our artisans spend over 20 hours hand-crafting each individual unit, ensuring that no two pieces are exactly alike. This uniqueness is what makes our collection truly special.</p>
-                </div>
-                
-                <div v-if="activeTab === 'Specifications'" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div v-for="(val, label) in specifications" :key="label" class="flex justify-between py-3 border-b border-gray-50">
-                    <span class="font-bold text-gray-900">{{ label }}</span>
-                    <span>{{ val }}</span>
+                  <div v-if="product.description" v-html="product.description"></div>
+                  <div v-else>
+                     <p>This product is a testament to minimalist design. Every curve and line has been thoughtfully considered to create a piece that is both beautiful and functional. Made from sustainable materials, it's a guilt-free addition to your home.</p>
+                     <p>Our artisans spend over 20 hours hand-crafting each individual unit, ensuring that no two pieces are exactly alike. This uniqueness is what makes our collection truly special.</p>
                   </div>
                 </div>
+                
+                <div v-if="activeTab === 'Specifications'" class="space-y-12">
+                   <div v-for="(section, idx) in product.specifications" :key="idx" class="space-y-6">
+                      <h3 v-if="section.title" class="text-xs font-black uppercase tracking-widest text-gray-900">{{ section.title }}</h3>
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div v-for="(item, iIdx) in section.items" :key="iIdx" class="flex justify-between py-3 border-b border-gray-50">
+                            <span class="font-bold text-gray-900">{{ item.label }}</span>
+                            <span>{{ item.value }}</span>
+                          </div>
+                      </div>
+                   </div>
+                </div>
 
-                <div v-if="activeTab === 'Reviews'" class="text-center py-10">
-                  <div class="text-5xl mb-4">⭐</div>
-                  <h3 class="text-2xl font-black text-gray-900 mb-2">98% Satisfied Customers</h3>
-                  <p class="text-sm font-medium tracking-wide">Join the thousands of happy customers who have transformed their space.</p>
-                  <button class="mt-10 group px-12 py-4 rounded-full border-2 border-black text-black font-black text-[11px] uppercase tracking-[0.3em] hover:bg-black hover:text-white transition-all duration-700 flex items-center gap-4 mx-auto">
-                    Write a Review
-                    <span class="w-1 h-1 rounded-full bg-black group-hover:bg-white transition-colors"></span>
-                  </button>
+                <div v-if="activeTab === 'FAQ'" class="space-y-6">
+                   <div v-for="(faq, idx) in product.faqs" :key="idx" class="p-6 bg-gray-50 rounded-2xl border border-gray-100">
+                       <h4 class="text-sm font-bold text-gray-900 mb-2">{{ faq.question }}</h4>
+                       <p class="text-sm text-gray-500">{{ faq.answer }}</p>
+                   </div>
+                </div>
+
+                <div v-if="activeTab === 'Reviews'" class="py-10">
+                  <div class="grid grid-cols-1 md:grid-cols-12 gap-12">
+                     <!-- Reviews Stats Content -->
+                     <div class="md:col-span-4 space-y-8">
+                        <div class="text-center md:text-left">
+                           <div class="text-5xl md:text-7xl font-black text-gray-900 tracking-tighter">{{ reviewStats.average_rating.toFixed(1) }}</div>
+                           <div class="flex items-center justify-center md:justify-start gap-1 text-amber-400 mt-2">
+                             <svg v-for="i in 5" :key="i" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" :class="i <= Math.round(reviewStats.average_rating) ? 'text-amber-400' : 'text-gray-200'"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                           </div>
+                           <p class="text-xs font-bold uppercase tracking-widest text-gray-400 mt-4">Based on {{ reviewStats.total_reviews }} reviews</p>
+                        </div>
+                        
+                        <div class="space-y-3">
+                           <div v-for="i in 5" :key="i" class="flex items-center gap-4 text-xs font-bold text-gray-400">
+                              <span class="w-8">{{ 6 - i }} Stars</span>
+                              <div class="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                 <div class="h-full bg-amber-400 rounded-full" :style="{ width: `${reviewStats.total_reviews > 0 ? (reviewStats.rating_counts[6-i] / reviewStats.total_reviews) * 100 : 0}%` }"></div>
+                              </div>
+                              <span class="w-8 text-right">{{ reviewStats.rating_counts[6-i] || 0 }}</span>
+                           </div>
+                        </div>
+
+                        <button v-if="auth.isAuthenticated && canReviewProduct" @click="showReviewForm = true" class="w-full group px-8 py-4 rounded-2xl bg-black text-white font-black text-[11px] uppercase tracking-[0.2em] shadow-xl hover:shadow-2xl hover:-translate-y-1 active:scale-95 transition-all duration-300">
+                           Write a Review
+                        </button>
+                        <div v-else-if="auth.isAuthenticated && !canReviewProduct" class="text-center p-6 bg-gray-50 rounded-3xl border border-gray-100">
+                           <p class="text-xs font-bold text-gray-500">{{ reviewErrorMessage || 'Checking eligibility...' }}</p>
+                        </div>
+                        <div v-else-if="!auth.isAuthenticated" class="text-center p-6 bg-gray-50 rounded-3xl border border-gray-100">
+                           <p class="text-xs font-bold text-gray-500 mb-4">Please log in to write a review</p>
+                           <NuxtLink to="/login" class="inline-block px-6 py-3 bg-white text-black text-[10px] font-black uppercase tracking-[0.2em] rounded-full shadow-sm hover:shadow-md transition-all">Sign In</NuxtLink>
+                        </div>
+                     </div>
+
+                     <!-- Reviews List -->
+                     <div class="md:col-span-8">
+                        <!-- Review Form -->
+                        <div v-if="showReviewForm" class="mb-10 p-8 pt-10 rounded-[2.5rem] bg-white border border-gray-100 shadow-xl animate-fade-in relative overflow-hidden">
+                           <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
+                           <button @click="showReviewForm = false" class="absolute top-6 right-6 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-900">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                           </button>
+                           
+                           <h4 class="text-2xl font-black text-gray-900 mb-2">Share your thoughts</h4>
+                           <p class="text-sm font-medium text-gray-500 mb-8">Your review helps other customers make better choices.</p>
+                           
+                           <form @submit.prevent="submitReview" class="space-y-6 relative z-10">
+                             <div>
+                                <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">Your Rating</label>
+                                <div class="flex items-center gap-2">
+                                   <button type="button" v-for="i in 5" :key="i" @click="reviewForm.rating = i" class="text-3xl transition-transform hover:scale-110 active:scale-90" :class="i <= reviewForm.rating ? 'text-amber-400' : 'text-gray-200'">
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                                   </button>
+                                </div>
+                             </div>
+                             
+                             <div>
+                                <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">Your Review</label>
+                                <textarea v-model="reviewForm.comment" rows="4" class="w-full px-6 py-5 rounded-2xl bg-white border border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all resize-none text-sm font-medium" placeholder="What did you love about this product?"></textarea>
+                             </div>
+                             
+                             <button type="submit" :disabled="submittingReview || !reviewForm.rating" class="w-full px-8 py-4 rounded-2xl bg-black text-white font-black text-[11px] uppercase tracking-[0.2em] shadow-xl hover:-translate-y-1 active:scale-95 transition-all disabled:opacity-50 disabled:hover:translate-y-0 disabled:cursor-not-allowed">
+                                {{ submittingReview ? 'Submitting...' : 'Submit Review' }}
+                             </button>
+                           </form>
+                        </div>
+
+                        <div v-if="reviewsPending" class="flex justify-center py-12">
+                           <div class="w-8 h-8 border-4 border-gray-200 border-t-black rounded-full animate-spin"></div>
+                        </div>
+                        <div v-else-if="reviews.length === 0" class="text-center py-12 px-6 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
+                           <div class="text-4xl mb-4 opacity-50">✨</div>
+                           <h4 class="text-lg font-black text-gray-900">No reviews yet</h4>
+                           <p class="text-sm font-medium text-gray-500 mt-2">Be the first to share your experience with this product.</p>
+                        </div>
+                        <div v-else class="space-y-8">
+                           <div v-for="review in reviews" :key="review.id" class="border-b border-gray-50 pb-8 last:border-0">
+                              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                                 <div>
+                                    <div class="flex items-center gap-2 mb-1 text-sm font-black text-gray-900">
+                                       {{ review.customer_name }}
+                                       <span v-if="review.is_verified" class="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                                          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                                          Verified Buyer
+                                       </span>
+                                    </div>
+                                    <div class="text-[10px] font-bold uppercase tracking-widest text-gray-400">{{ review.date }}</div>
+                                 </div>
+                                 <div class="flex text-amber-400">
+                                   <svg v-for="i in 5" :key="i" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" :class="i <= review.rating ? 'text-amber-400' : 'text-gray-200'"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                                 </div>
+                              </div>
+                              <p class="text-sm md:text-base font-medium text-gray-600 leading-relaxed">{{ review.comment }}</p>
+                           </div>
+
+                           <div v-if="reviewsMeta.last_page > 1" class="flex justify-center mt-10">
+                              <button 
+                                 @click="loadReviews(reviewsMeta.current_page + 1)" 
+                                 :disabled="reviewsMeta.current_page >= reviewsMeta.last_page || pendingReviews"
+                                 class="px-8 py-3 rounded-full border border-gray-200 text-xs font-black uppercase tracking-widest hover:border-black hover:bg-black hover:text-white transition-all disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-black disabled:hover:border-gray-200"
+                              >
+                                 {{ pendingReviews ? 'Loading...' : 'Load More Reviews' }}
+                              </button>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
                 </div>
               </div>
             </transition>
@@ -276,13 +405,18 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import lampImg from '~/assets/img/lamp.png'
 import vaseImg from '~/assets/img/vase.png'
 
 const route = useRoute()
 const { addToCart } = useCart()
+const auth = useAuthStore()
+const tokenStore = useTokenStore()
+const { $toast } = useNuxtApp()
+const { trackViewContent, trackAddToCart } = useTracking()
+const { setProductSeo } = useSeo()
 
 const config = useRuntimeConfig()
 const apiBase = config.public.apiBase
@@ -295,7 +429,7 @@ const isManualImageSelection = ref(false)
 
 const domain = useRequestURL().hostname;
 
-const { data: rawProduct } = await useFetch(`${apiBase}/storefront/products/${route.params.id}`, {
+const { data: rawProduct } = await useFetch(`${apiBase}/storefront/products/${route.params.slug}`, {
   headers: { 'X-Tenant-Domain': domain }
 })
 
@@ -310,6 +444,12 @@ const product = computed(() => {
     category: p.categories?.[0]?.name || 'Uncategorized',
     description: p.description,
     short_description: p.short_description,
+    is_featured: p.is_featured,
+    is_special: p.is_special,
+    is_trending: p.is_trending,
+    video_url: p.video_url,
+    specifications: p.specifications && p.specifications.length > 0 ? p.specifications : null,
+    faqs: p.faqs && p.faqs.length > 0 ? p.faqs : null,
     vendor_profile: p.vendor?.vendor_profile ? {
       store_name: p.vendor.vendor_profile.store_name,
       store_slug: p.vendor.vendor_profile.store_slug,
@@ -319,34 +459,14 @@ const product = computed(() => {
   }
 })
 
-const specifications = computed(() => {
-  if (!rawProduct.value || !rawProduct.value.specifications) return defaultSpecs
-  const specs = {}
-  try {
-    const rawSpecs = rawProduct.value.specifications
-    if (Array.isArray(rawSpecs)) {
-      rawSpecs.forEach(section => {
-        if (section.items) {
-          section.items.forEach(item => {
-            specs[item.label] = item.value
-          })
-        }
-      })
-    }
-  } catch (e) {
-    return defaultSpecs
-  }
-  return Object.keys(specs).length > 0 ? specs : defaultSpecs
+const availableTabs = computed(() => {
+    if (!product.value) return []
+    const tabs = ['Description']
+    if (product.value.specifications) tabs.push('Specifications')
+    if (product.value.faqs) tabs.push('FAQ')
+    tabs.push('Reviews')
+    return tabs
 })
-
-const defaultSpecs = {
-  'Material': 'Premium Concrete & Brushed Steel',
-  'Dimensions': '30cm x 15cm x 15cm',
-  'Weight': '1.2kg',
-  'Power': '12W LED (Built-in)',
-  'Guarantee': '2 Year Limited Warranty',
-  'Origin': 'Ethically Sourced'
-}
 
 const availableAttributes = computed(() => {
   if (!rawProduct.value || !rawProduct.value.variants) return []
@@ -451,6 +571,16 @@ const handleAddToCart = (openCart = true) => {
   }
   
   addToCart(itemToAdd, quantity.value, openCart)
+
+  // Fire AddToCart tracking event
+  if (product.value) {
+    trackAddToCart({
+      id: product.value.id,
+      name: product.value.name,
+      price: currentPrice.value,
+      quantity: quantity.value
+    })
+  }
 }
 
 const handleOrderNow = async () => {
@@ -462,6 +592,145 @@ const handleOrderNow = async () => {
     // Then navigate to checkout
     await navigateTo('/checkout')
 }
+
+// Reviews Logic
+const reviews = ref([])
+const reviewsPending = ref(true)
+const pendingReviews = ref(false)
+const reviewStats = ref({
+   total_reviews: 0,
+   average_rating: 0,
+   rating_counts: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+})
+const reviewsMeta = ref({ current_page: 1, last_page: 1 })
+const vendorReviewSettings = ref({})
+
+const loadReviews = async (page = 1) => {
+   if (!rawProduct.value) return;
+   
+   try {
+      if (page === 1) reviewsPending.value = true;
+      else pendingReviews.value = true;
+
+      const { data } = await useFetch(`${apiBase}/storefront/products/${rawProduct.value.id}/reviews`, {
+         headers: { 'X-Tenant-Domain': domain },
+         query: { page }
+      })
+      
+      if (data.value) {
+         if (page === 1) {
+            reviews.value = data.value.reviews.data
+            reviewStats.value = data.value.stats
+         } else {
+            reviews.value = [...reviews.value, ...data.value.reviews.data]
+         }
+         
+         reviewsMeta.value = {
+            current_page: data.value.reviews.current_page,
+            last_page: data.value.reviews.last_page
+         }
+
+         // Infer basic vendor settings since public API doesn't expose them directly right now
+         // We assume it's true until blocked by API if we get 403 on submit
+         vendorReviewSettings.value = { enableReviews: true }
+      }
+   } catch (error) {
+      console.error('Error loading reviews:', error)
+   } finally {
+      reviewsPending.value = false
+      pendingReviews.value = false
+   }
+}
+
+const canReviewProduct = ref(false)
+const reviewErrorMessage = ref('')
+
+const checkReviewEligibility = async () => {
+   if (!auth.isAuthenticated || !rawProduct.value) return;
+   try {
+      const { data } = await useFetch(`${apiBase}/customer/products/${rawProduct.value.id}/can-review`, {
+         headers: {
+            'Authorization': `Bearer ${tokenStore.getToken}`,
+            'X-Tenant-Domain': domain
+         }
+      })
+      if (data.value) {
+         canReviewProduct.value = data.value.can_review
+         reviewErrorMessage.value = data.value.message || ''
+      }
+   } catch (error) {
+      canReviewProduct.value = false
+   }
+}
+
+watch(() => activeTab.value, (newTab) => {
+   if (newTab === 'Reviews' && reviews.value.length === 0 && rawProduct.value) {
+      if (auth.isAuthenticated) {
+         checkReviewEligibility()
+      }
+   }
+})
+
+const showReviewForm = ref(false)
+const submittingReview = ref(false)
+const reviewForm = ref({ rating: 0, comment: '' })
+
+const submitReview = async () => {
+   if (!reviewForm.value.rating) return;
+   
+   try {
+      submittingReview.value = true
+      const { data, error } = await useFetch(`${apiBase}/customer/reviews/${rawProduct.value.id}`, {
+         method: 'POST',
+         headers: {
+            'Authorization': `Bearer ${tokenStore.getToken}`,
+            'X-Tenant-Domain': domain 
+         },
+         body: reviewForm.value
+      })
+      
+      if (error.value) {
+         if (error.value.statusCode === 403) {
+            $toast.error(error.value.data?.message || 'You cannot review this product.')
+         } else if (error.value.statusCode === 422) {
+            $toast.error('Please check your review details.')
+         } else {
+            $toast.error('Failed to submit review.')
+         }
+      } else {
+         $toast.success(data.value?.message || 'Review submitted successfully!')
+         showReviewForm.value = false
+         reviewForm.value = { rating: 0, comment: '' }
+         loadReviews(1) // Reload fresh
+      }
+   } catch (e) {
+      console.error(e)
+   } finally {
+      submittingReview.value = false
+   }
+}
+
+// Fire ViewContent + SEO when product loads
+onMounted(() => {
+  if (product.value) {
+    trackViewContent({
+      id: product.value.id,
+      name: product.value.name,
+      price: product.value.price
+    })
+    setProductSeo({
+      name: product.value.name,
+      short_description: product.value.short_description,
+      description: product.value.description,
+      image_url: product.value.image_url,
+      slug: product.value.slug || String(product.value.id),
+    })
+
+    // Load reviews on mount to get stats for the top section unconditionally
+    loadReviews()
+  }
+})
+
 </script>
 
 <style scoped>

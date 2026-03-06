@@ -24,6 +24,34 @@ class UserResource extends JsonResource
                 'name' => $role->name,
             ]),
             'permissions' => $this->getAllPermissions()->pluck('name'),
+            'customer' => $this->when($this->whenLoaded('roles') && $this->hasRole('customer'), function () {
+                $customer = \App\Models\Customer::where('email', $this->email)
+                    ->where('vendor_id', $this->vendor_id)
+                    ->first();
+                
+                $lastOrder = null;
+                $address = null;
+                if ($customer) {
+                    $lastOrder = \App\Models\Order::where('customer_id', $customer->id)
+                        ->orderBy('created_at', 'desc')
+                        ->first();
+                    
+                    if ($lastOrder && $lastOrder->shipping_address) {
+                        $address = json_decode($lastOrder->shipping_address, true);
+                        if ($address && isset($address['city_id']) && !isset($address['state_id'])) {
+                            $city = \App\Models\City::find($address['city_id']);
+                            if ($city) {
+                                $address['state_id'] = $city->state_id;
+                            }
+                        }
+                    }
+                }
+                
+                return [
+                    'phone' => $customer ? $customer->phone : null,
+                    'last_shipping_address' => $address,
+                ];
+            }),
             'vendor_profile' => $this->when($this->shop_profile, function () {
                 $profile = $this->shop_profile;
                 return [

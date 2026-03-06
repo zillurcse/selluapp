@@ -19,6 +19,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        \Illuminate\Support\Facades\Event::listen(
+            \App\Events\Automation\OrderPlaced::class,
+            [\App\Listeners\Automation\SendToN8n::class, 'handle']
+        );
+        \Illuminate\Support\Facades\Event::listen(
+            \App\Events\Automation\ReviewSubmitted::class,
+            [\App\Listeners\Automation\SendToN8n::class, 'handle']
+        );
+        \Illuminate\Support\Facades\Event::listen(
+            \App\Events\Automation\MessageReceived::class,
+            [\App\Listeners\Automation\SendToN8n::class, 'handle']
+        );
     }
 }

@@ -291,4 +291,113 @@ class CustomerPanelController extends Controller
 
         return response()->json(['message' => 'Address deleted successfully']);
     }
+
+    public function submitReview(Request $request, \App\Models\Product $product)
+    {
+        $customer = $this->getCustomer($request);
+        if (!$customer) {
+            return response()->json(['message' => 'Customer not found'], 404);
+        }
+
+        $validated = $request->validate([
+            'rating' => 'required|integer|min:1|max:5',
+            'comment' => 'nullable|string|max:1000',
+        ]);
+
+        // Check if reviews are enabled for this vendor
+        $vendorId = $product->vendor_id;
+        $reviewSettings = \App\Models\ShopSetting::where('user_id', $vendorId)
+            ->where('group', 'customer_reviews')
+            ->first();
+
+        $settings = $reviewSettings ? json_decode($reviewSettings->value, true) : [
+            'enableReviews' => true,
+            'autoApprove' => false,
+            'verifiedOnly' => true,
+            'minAutoApproveRating' => '4'
+        ];
+
+        if (isset($settings['enableReviews']) && !$settings['enableReviews']) {
+            return response()->json(['message' => 'Reviews are disabled for this product.'], 403);
+        }
+
+        // Check if customer purchased the product and it was delivered
+        $hasPurchased = \App\Models\Order::where('customer_id', $customer->id)
+            ->where('status', 'delivered')
+            ->whereHas('items', function ($q) use ($product) {
+                $q->where('product_id', $product->id);
+            })->exists();
+
+        if (!$hasPurchased) {
+             return response()->json(['message' => 'You can only review products after purchasing and receiving them.'], 403);
+        }
+
+        $isVerified = true;
+
+        // Determine initial status based on auto-approve settings
+        $status = 'pending';
+        if (isset($settings['autoApprove']) && $settings['autoApprove']) {
+             $minRating = isset($settings['minAutoApproveRating']) ? (int)$settings['minAutoApproveRating'] : 4;
+             if ($validated['rating'] >= $minRating) {
+                 $status = 'approved';
+             }
+        }
+
+        $review = \App\Models\ProductReview::create([
+            'user_id' => $vendorId,
+            'customer_id' => $customer->id,
+            'product_id' => $product->id,
+            'rating' => $validated['rating'],
+            'comment' => $validated['comment'] ?? '',
+            'status' => $status,
+            'is_verified' => $isVerified,
+        ]);
+
+        return response()->json([
+            'message' => 'Review submitted successfully.' . ($status === 'pending' ? ' It is pending approval.' : ''),
+            'review' => $review
+        ]);
+    }
+
+    public function canReview(Request $request, \App\Models\Product $product)
+    {
+        $customer = $this->getCustomer($request);
+        if (!$customer) {
+            return response()->json(['can_review' => false, 'message' => 'Please login to review.'], 403);
+        }
+
+        $vendorId = $product->vendor_id;
+        $reviewSettings = \App\Models\ShopSetting::where('user_id', $vendorId)
+            ->where('group', 'customer_reviews')
+            ->first();
+
+        $settings = $reviewSettings ? json_decode($reviewSettings->value, true) : [
+            'enableReviews' => true,
+        ];
+
+        if (isset($settings['enableReviews']) && !$settings['enableReviews']) {
+             return response()->json(['can_review' => false, 'message' => 'Reviews are disabled for this product.']);
+        }
+
+        $hasPurchased = \App\Models\Order::where('customer_id', $customer->id)
+            ->where('status', 'delivered')
+            ->whereHas('items', function ($q) use ($product) {
+                $q->where('product_id', $product->id);
+            })->exists();
+
+        if (!$hasPurchased) {
+             return response()->json(['can_review' => false, 'message' => 'You can only review products after purchasing and receiving them.']);
+        }
+
+        // Optional: Check if the user already reviewed the product
+        $alreadyReviewed = \App\Models\ProductReview::where('customer_id', $customer->id)
+            ->where('product_id', $product->id)
+            ->exists();
+
+        if ($alreadyReviewed) {
+             return response()->json(['can_review' => false, 'message' => 'You have already reviewed this product.']);
+        }
+
+        return response()->json(['can_review' => true]);
+    }
 }

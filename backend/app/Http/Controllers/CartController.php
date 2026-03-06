@@ -30,7 +30,7 @@ class CartController extends Controller
                 'cart_id' => $cart->id,
                 'name' => $product->name,
                 'price' => $product->sale_price ?? $product->price, // The base price
-                'image' => $product->image ? Storage::disk('public')->url($product->image) : null,
+                'image' => $product->image ?? $product->image,
                 'quantity' => $cart->quantity,
                 'product_id' => $product->id,
                 'vendor_id' => $product->vendor_id,

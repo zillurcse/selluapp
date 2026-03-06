@@ -45,12 +45,11 @@
                 <ImageIcon class="h-12 w-12 opacity-20" />
              </div>
              
-             <label class="absolute inset-0 flex items-center justify-center cursor-pointer bg-black/0 hover:bg-black/10 transition-colors">
+             <button type="button" @click="openBannerMediaLibrary" class="absolute inset-0 flex items-center justify-center cursor-pointer bg-black/0 hover:bg-black/10 transition-colors">
                 <div class="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg text-sm font-medium text-gray-700 flex items-center gap-2 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
                    <Camera class="w-4 h-4" /> Change Banner
                 </div>
-                <input type="file" @change="handleBannerUpload" accept="image/*" class="hidden" />
-             </label>
+             </button>
           </div>
 
           <!-- Profile Information Tab -->
@@ -99,26 +98,18 @@
                             <img v-if="logoPreview" :src="logoPreview" class="w-full h-full object-cover" />
                             <Store v-else class="h-8 w-8 text-gray-300" />
                          </div>
-                         <label class="absolute inset-0 flex items-center justify-center cursor-pointer bg-black/0 hover:bg-black/5 rounded-xl transition-all">
+                         <button type="button" @click="openLogoMediaLibrary" class="absolute inset-0 flex items-center justify-center cursor-pointer bg-black/0 hover:bg-black/5 rounded-xl transition-all">
                             <div class="bg-white shadow-sm border border-gray-200 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transform scale-90 group-hover:scale-100 transition-all">
                                <Camera class="w-4 h-4 text-gray-600" />
                             </div>
-                            <input type="file" @change="handleLogoUpload" accept="image/*" class="hidden" />
-                         </label>
+                         </button>
                       </div>
                       
                       <div class="flex-1 space-y-4">
-                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         <div class="grid grid-cols-1 gap-4">
                             <div class="space-y-1">
                                <label class="block text-sm font-medium text-gray-700">Store Name</label>
                                <input v-model="form.store_name" type="text" class="block w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all outline-none">
-                            </div>
-                            <div class="space-y-1">
-                               <label class="block text-sm font-medium text-gray-700">Store Slug (URL)</label>
-                               <div class="flex rounded-lg shadow-sm">
-                                  <span class="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-gray-200 bg-gray-50 text-gray-500 text-sm">/shop/</span>
-                                  <input v-model="form.store_slug" type="text" class="flex-1 min-w-0 block w-full px-4 py-2.5 bg-white border border-gray-200 rounded-r-lg text-gray-900 focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all outline-none">
-                               </div>
                             </div>
                          </div>
                       </div>
@@ -202,11 +193,29 @@
           </div>
         </form>
       </main>
+      
+      <!-- Media Libraries -->
+      <AppMediaLibrary
+        :show="showLogoMediaModal"
+        :multiple="false"
+        type-label="Logo"
+        @close="showLogoMediaModal = false"
+        @select="handleLogoSelection"
+      />
+
+      <AppMediaLibrary
+        :show="showBannerMediaModal"
+        :multiple="false"
+        type-label="Banner"
+        @close="showBannerMediaModal = false"
+        @select="handleBannerSelection"
+      />
     </div>
   </div>
 </template>
 
 <script setup>
+import AppMediaLibrary from '~/components/AppMediaLibrary.vue'
 import { 
   User, 
   Store, 
@@ -239,6 +248,9 @@ const tabs = [
 const activeTab = ref('profile')
 const logoPreview = ref(null)
 const bannerPreview = ref(null)
+
+const showLogoMediaModal = ref(false)
+const showBannerMediaModal = ref(false)
 
 const isFetching = ref(false)
 const isSaving = ref(false)
@@ -295,8 +307,8 @@ const fetchProfile = async () => {
             form.logo = null
             form.banner = null
             
-            logoPreview.value = profile.logo ? `${config.public.apiBase}/storage/${profile.logo}` : null
-            bannerPreview.value = profile.banner ? `${config.public.apiBase}/storage/${profile.banner}` : null
+            logoPreview.value = profile.logo ?? profile.logo
+            bannerPreview.value = profile.banner ?? profile.banner
             
             // Reset the slug manual flag so that it gets auto-generated again if name changes
             isSlugManuallyEdited.value = false
@@ -326,6 +338,24 @@ const handleBannerUpload = (e) => {
     }
 }
 
+const openLogoMediaLibrary = () => {
+    showLogoMediaModal.value = true
+}
+
+const openBannerMediaLibrary = () => {
+    showBannerMediaModal.value = true
+}
+
+const handleLogoSelection = (selected) => {
+    form.logo = selected.file_url
+    logoPreview.value = selected.file_url
+}
+
+const handleBannerSelection = (selected) => {
+    form.banner = selected.file_url
+    bannerPreview.value = selected.file_url
+}
+
 const updateProfile = async () => {
     isSaving.value = true
     try {
@@ -352,7 +382,10 @@ const updateProfile = async () => {
 
         // Files
         if(form.logo instanceof File) formData.append('logo', form.logo)
+        else if (form.logo && typeof form.logo === 'string') formData.append('logo', form.logo)
+
         if(form.banner instanceof File) formData.append('banner', form.banner)
+        else if (form.banner && typeof form.banner === 'string') formData.append('banner', form.banner)
 
         await createItem('/vendor/profile', formData)
         

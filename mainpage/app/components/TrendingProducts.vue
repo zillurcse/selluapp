@@ -27,7 +27,7 @@
 
       <div class="mt-20">
         <NuxtLink
-          to="/shop"
+          :to="selectedCategory === 'All Items' ? '/shop?is_trending=true' : `/shop?category=${selectedCategory}&is_trending=true`"
           class="inline-flex items-center px-12 py-5 bg-gray-900 text-white font-bold text-sm uppercase tracking-[0.2em] rounded-full transition-all hover:-translate-y-1 hover:shadow-2xl active:translate-y-0"
         >Browse Full Catalog</NuxtLink>
       </div>

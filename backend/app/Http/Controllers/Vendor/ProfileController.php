@@ -53,8 +53,8 @@ class ProfileController extends Controller implements HasMiddleware
             'description' => 'nullable|string',
             'email' => 'nullable|email|max:255', // Store email
             'address' => 'nullable|string',
-            'logo' => 'nullable|image|max:2048',
-            'banner' => 'nullable|image|max:2048',
+            'logo' => 'nullable',
+            'banner' => 'nullable',
 
             // Socials
             'facebook' => 'nullable|string|max:255',
@@ -101,11 +101,15 @@ class ProfileController extends Controller implements HasMiddleware
         if ($request->hasFile('logo')) {
             if ($profile->logo) Storage::disk('public')->delete($profile->logo);
             $profile->logo = $request->file('logo')->store('vendors/logos', 'public');
+        } elseif ($request->filled('logo') && is_string($request->logo)) {
+            $profile->logo = $request->logo;
         }
 
         if ($request->hasFile('banner')) {
             if ($profile->banner) Storage::disk('public')->delete($profile->banner);
             $profile->banner = $request->file('banner')->store('vendors/banners', 'public');
+        } elseif ($request->filled('banner') && is_string($request->banner)) {
+            $profile->banner = $request->banner;
         }
 
         $profile->save();

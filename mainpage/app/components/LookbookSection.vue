@@ -1,5 +1,5 @@
 <template>
-  <section class="py-2 md:py-4 bg-white">
+  <section class="pt-0 md:pt-0 bg-white">
     <div class="container mx-auto px-4 sm:px-6">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 md:gap-24 items-center bg-gray-50/30 rounded-[4rem] p-10 md:p-24 border border-gray-100 overflow-hidden relative group">
         <div class="absolute top-0 right-0 w-96 h-96 bg-indigo-50 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 -z-10"></div>

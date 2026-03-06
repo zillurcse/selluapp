@@ -118,6 +118,11 @@ class Product extends Model
         return $this->belongsTo(Unit::class);
     }
 
+    public function reviews()
+    {
+        return $this->hasMany(ProductReview::class);
+    }
+
     public function variants()
     {
         return $this->hasMany(ProductVariant::class);

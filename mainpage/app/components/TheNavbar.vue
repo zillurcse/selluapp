@@ -31,7 +31,7 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-300 group-hover/nav:rotate-180"><path d="m6 9 6 6 6-6"/></svg>
           </button>
           
-          <div class="absolute top-full left-1/2 -translate-x-1/2 translate-y-4 opacity-0 invisible group-hover/nav:opacity-100 group-hover/nav:visible group-hover/nav:translate-y-0 transition-all duration-500 bg-white/95 backdrop-blur-xl border border-gray-100 rounded-[2rem] p-8 flex gap-12 shadow-2xl z-[100] min-w-max max-w-[90vw]">
+          <div class="absolute -left-[175px] top-full translate-y-4 opacity-0 invisible group-hover/nav:opacity-100 group-hover/nav:visible group-hover/nav:translate-y-0 transition-all duration-500 bg-white/95 backdrop-blur-xl border border-gray-100 rounded-[2rem] p-8 flex gap-12 shadow-2xl z-[100] min-w-max max-w-[90vw]">
             <!-- Categories Grid -->
             <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-12 gap-y-10">
               <div v-for="cat in storefrontStore.topCategories.slice(0, 8)" :key="cat.slug" class="flex flex-col gap-4 min-w-[160px]">

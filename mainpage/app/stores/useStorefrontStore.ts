@@ -13,7 +13,9 @@ export const useStorefrontStore = defineStore('storefront', {
         slides: [] as any[],
         vendorProfile: null as any,
         homeLandingPage: null as any,
-        promotions: [] as any[]
+        promotions: [] as any[],
+        websiteBanners: [] as any[],
+        marketing: null as any
     }),
 
     actions: {
@@ -68,6 +70,9 @@ export const useStorefrontStore = defineStore('storefront', {
 
         processStorefrontData(data: any) {
             if (!data) return
+
+            // 0. Marketing Settings
+            this.marketing = data.marketing || null
 
             // 0. Vendor Profile
             this.vendorProfile = data.vendor || null
@@ -136,6 +141,22 @@ export const useStorefrontStore = defineStore('storefront', {
                 })) || []
             })) || []
 
+            // 2.6 Map Website Banners (3 promotional banners)
+            let mappedBanners: any[] = []
+            if (data.website_banners && typeof data.website_banners === 'object') {
+                const bannersObj = data.website_banners
+                const meta = Array.isArray(bannersObj.banners_meta) ? bannersObj.banners_meta : []
+                if (meta.length > 0) {
+                    mappedBanners = meta.map((item: any) => ({
+                        id: item.id,
+                        link: item.link || '/shop',
+                        active: item.active !== false,
+                        image: bannersObj[item.id] || null
+                    }))
+                }
+            }
+            this.websiteBanners = mappedBanners
+
             // 3. Map Slides (Prioritize ShopSetting sliders with sliders_meta)
             let mappedSlides: any[] = []
             if (data.sliders && typeof data.sliders === 'object') {
@@ -188,7 +209,7 @@ export const useStorefrontStore = defineStore('storefront', {
                     title: p.name,
                     description: p.short_description || `Experience the perfect balance of form and function with our ${p.name}.`,
                     buttonText: 'Shop Now',
-                    link: `/shop/product/${p.slug}`,
+                    link: `/product/${p.slug}`,
                     image: p.image_url || headphonesImg,
                     glowColor: idx % 3 === 0 ? 'radial-gradient(circle, rgba(99,102,241,0.6) 0%, transparent 70%)' :
                         idx % 3 === 1 ? 'radial-gradient(circle, rgba(251,191,36,0.5) 0%, transparent 70%)' :

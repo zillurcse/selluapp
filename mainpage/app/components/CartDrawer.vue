@@ -27,7 +27,7 @@
             <div class="item-details">
               <div class="item-info">
                 <h3 class="item-name">{{ item.name }}</h3>
-                <p class="item-price">${{ item.price }}</p>
+                <p class="item-price">৳{{ item.price }}</p>
               </div>
               <div class="item-actions">
                 <div class="quantity-control">
@@ -44,7 +44,7 @@
         <div v-if="cart.length > 0" class="cart-footer">
           <div class="total-row">
             <span>Subtotal</span>
-            <span class="total-amount">${{ cartTotal.toFixed(2) }}</span>
+            <span class="total-amount">৳{{ cartTotal.toFixed(2) }}</span>
           </div>
           <p class="shipping-note">Shipping and taxes calculated at checkout.</p>
           <NuxtLink to="/checkout" class="btn btn-primary checkout-btn" @click="closeCart">

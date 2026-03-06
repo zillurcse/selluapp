@@ -1,6 +1,10 @@
 <?php
 
 use App\Http\Controllers\API\StorefrontController;
+use App\Http\Controllers\API\SitemapController;
+use App\Http\Controllers\API\FeedController;
+use App\Http\Controllers\API\FacebookCapiController;
+use App\Http\Controllers\API\SocialAuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
@@ -23,6 +27,21 @@ Route::get('/storefront/categories', function () {
 });
 Route::get('/storefront/states', [StorefrontController::class, 'states']);
 Route::get('/storefront/cities', [StorefrontController::class, 'cities']);
+Route::get('/storefront/products/{product}/reviews', [StorefrontController::class, 'reviews']);
+
+// Sitemap & Robots
+Route::get('/sitemap.xml', [SitemapController::class, 'index']);
+Route::get('/robots.txt', [SitemapController::class, 'robots']);
+
+// Product Feeds
+Route::get('/storefront/google-feed.xml', [FeedController::class, 'googleShopping']);
+Route::get('/storefront/facebook-feed.xml', [FeedController::class, 'facebookFeed']);
+
+// Facebook Conversion API Server-Side Relay
+Route::post('/storefront/checkout/facebook-capi', [FacebookCapiController::class, 'event']);
+
+// Google Social Login
+Route::post('/auth/google', [SocialAuthController::class, 'googleLogin']);
 
 Route::post('/checkout/estimate-shipping', [StorefrontController::class, 'estimateShipping']);
 Route::post('/storefront/checkout', [\App\Http\Controllers\API\CheckoutController::class, 'placeOrder']);
@@ -59,6 +78,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::put('settings', [\App\Http\Controllers\API\CustomerPanelController::class, 'updateSettings']);
         Route::delete('account', [\App\Http\Controllers\API\CustomerPanelController::class, 'deleteAccount']);
+        Route::get('products/{product}/can-review', [\App\Http\Controllers\API\CustomerPanelController::class, 'canReview']);
+        Route::post('reviews/{product}', [\App\Http\Controllers\API\CustomerPanelController::class, 'submitReview']);
     });
 
     // Admin Routes

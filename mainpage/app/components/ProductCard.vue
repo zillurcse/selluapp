@@ -66,7 +66,7 @@ const props = defineProps({
 const emit = defineEmits(['add-to-cart'])
 
 const navigateToProduct = () => {
-  navigateTo(`/shop/${props.product.slug}`)
+  navigateTo(`/product/${props.product.slug}`)
 }
 </script>
 

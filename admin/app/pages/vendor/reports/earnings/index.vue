@@ -66,8 +66,9 @@
                   </div>
                </div>
                <div class="text-4xl font-black text-gray-900 mb-2 tracking-tighter"><span class="text-gray-400 text-2xl pr-1">৳</span>{{ earningsData?.net_earnings?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00' }}</div>
-               <div class="flex items-center text-[11px] font-black text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full w-fit mt-4">
-                  +15.2% vs last month
+               <div class="flex items-center text-[11px] font-black px-2.5 py-1 rounded-full w-fit mt-4"
+                    :class="(earningsData?.growth_percentage || 0) >= 0 ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50'">
+                  {{ (earningsData?.growth_percentage || 0) >= 0 ? '+' : '' }}{{ earningsData?.growth_percentage || 0 }}% vs last month
                </div>
             </div>
             <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-blue-50 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-700 blur-2xl"></div>
@@ -100,7 +101,7 @@
                   </div>
                </div>
                <div class="text-4xl font-black text-gray-900 mb-2 tracking-tighter"><span class="text-gray-400 text-2xl pr-1">৳</span>{{ earningsData?.platform_fee?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00' }}</div>
-               <div class="text-[11px] font-bold text-gray-400 mt-4 uppercase tracking-widest">10% Commission Rate</div>
+               <div class="text-[11px] font-bold text-gray-400 mt-4 uppercase tracking-widest">{{ earningsData?.commission_rate || 10 }}% Commission Rate</div>
             </div>
             <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-rose-50 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-700 blur-2xl"></div>
             <PieChart class="absolute -right-4 -bottom-4 w-28 h-28 text-rose-600 opacity-5 group-hover:rotate-12 transition-transform duration-500" />
@@ -115,9 +116,18 @@
             <p class="text-xs font-bold text-gray-400 mt-1">Recent sales and payout history</p>
           </div>
           <div class="flex bg-gray-100/50 p-1 rounded-xl w-fit border border-gray-200/50">
-              <button class="px-5 py-2 text-xs font-bold rounded-lg shadow-sm bg-white text-gray-900 ring-1 ring-black/5">All Activity</button>
-              <button class="px-5 py-2 text-xs font-bold rounded-lg text-gray-500 hover:text-gray-900 transition-colors">Payouts</button>
-              <button class="px-5 py-2 text-xs font-bold rounded-lg text-gray-500 hover:text-gray-900 transition-colors">Sales</button>
+              <button 
+                  @click="activeTab = 'all'"
+                  :class="activeTab === 'all' ? 'shadow-sm bg-white text-gray-900 ring-1 ring-black/5' : 'text-gray-500 hover:text-gray-900 transition-colors'"
+                  class="px-5 py-2 text-xs font-bold rounded-lg">All Activity</button>
+              <button 
+                  @click="activeTab = 'payouts'"
+                  :class="activeTab === 'payouts' ? 'shadow-sm bg-white text-gray-900 ring-1 ring-black/5' : 'text-gray-500 hover:text-gray-900 transition-colors'"
+                  class="px-5 py-2 text-xs font-bold rounded-lg">Payouts</button>
+              <button 
+                  @click="activeTab = 'sales'"
+                  :class="activeTab === 'sales' ? 'shadow-sm bg-white text-gray-900 ring-1 ring-black/5' : 'text-gray-500 hover:text-gray-900 transition-colors'"
+                  class="px-5 py-2 text-xs font-bold rounded-lg">Sales</button>
           </div>
         </div>
         <div class="overflow-x-auto">
@@ -132,38 +142,41 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-50">
-              <tr v-for="i in 5" :key="i" class="hover:bg-gray-50/80 transition-colors group">
+              <tr v-for="(tx, index) in filteredLedger" :key="index" class="hover:bg-gray-50/80 transition-colors group">
                 <td class="px-8 py-5">
                    <div class="flex items-center gap-4">
                       <div class="w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
-                           :class="i % 2 === 0 ? 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100' : 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100'">
-                         <ShoppingCart v-if="i % 2 === 0" class="w-5 h-5" />
+                           :class="tx.source === 'order' ? 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100' : 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100'">
+                         <ShoppingCart v-if="tx.source === 'order'" class="w-5 h-5" />
                          <ArrowDownLeft v-else class="w-5 h-5" />
                       </div>
                       <div>
-                         <div class="font-bold text-gray-900 text-sm">#TRX-854{{i}}XQ</div>
-                         <div class="text-xs font-medium text-gray-400">{{ i % 2 === 0 ? 'Order Revenue' : 'Withdrawal Request' }}</div>
+                         <div class="font-bold text-gray-900 text-sm">#TRX-{{ tx.id }}</div>
+                         <div class="text-xs font-medium text-gray-400">{{ tx.source === 'order' ? 'Order Revenue' : (tx.type === 'deposit' ? 'Deposit' : 'Withdrawal Request') }}</div>
                       </div>
                    </div>
                 </td>
                 <td class="px-8 py-5 text-sm font-medium text-gray-500">
-                   <div class="font-bold text-gray-700">Feb {{ 15 - i }}, 2024</div>
-                   <div class="text-xs text-gray-400">14:30 PM</div>
+                   <div class="font-bold text-gray-700">{{ new Date(tx.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) }}</div>
+                   <div class="text-xs text-gray-400">{{ new Date(tx.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) }}</div>
                 </td>
                 <td class="px-8 py-5">
                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-md border border-gray-100 bg-white shadow-sm">
-                      <div class="w-1.5 h-1.5 rounded-full" :class="i % 2 === 0 ? 'bg-indigo-500' : 'bg-emerald-500'"></div>
-                      <span class="text-[11px] font-bold tracking-wide" :class="i % 2 === 0 ? 'text-indigo-700' : 'text-emerald-700'">{{ i % 2 === 0 ? 'Store Sale' : 'Bank Payout' }}</span>
+                      <div class="w-1.5 h-1.5 rounded-full" :class="tx.source === 'order' ? 'bg-indigo-500' : 'bg-emerald-500'"></div>
+                      <span class="text-[11px] font-bold tracking-wide" :class="tx.source === 'order' ? 'text-indigo-700' : 'text-emerald-700'">{{ tx.source === 'order' ? 'Store Sale' : 'Bank Payout' }}</span>
                    </div>
                 </td>
                 <td class="px-8 py-5 text-right">
-                   <div class="font-black text-base tracking-tight" :class="i % 2 === 0 ? 'text-emerald-600' : 'text-gray-900'">
-                      {{ i % 2 === 0 ? '+' : '-' }}৳{{ (5000 * i).toLocaleString() }}
+                   <div class="font-black text-base tracking-tight" :class="tx.source === 'order' ? 'text-emerald-600' : 'text-gray-900'">
+                      {{ tx.source === 'order' || tx.type === 'deposit' ? '+' : '-' }}৳{{ Number(tx.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                    </div>
                 </td>
                 <td class="px-8 py-5">
                   <span class="px-3 py-1 bg-emerald-50 border border-emerald-100/50 text-emerald-600 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm">Completed</span>
                 </td>
+              </tr>
+              <tr v-if="!filteredLedger.length">
+                <td colspan="5" class="px-8 py-10 text-center text-sm text-gray-500 font-medium">No recent transactions found.</td>
               </tr>
             </tbody>
           </table>
@@ -186,9 +199,35 @@ import {
   ShoppingCart,
   ArrowDownLeft
 } from 'lucide-vue-next'
+import { ref, computed, onMounted } from 'vue'
 
 const { getAll } = useCrud()
-const { data: earningsData, pending } = getAll('/vendor/reports/earnings')
+
+const earningsData = ref(null)
+const pending = ref(true)
+
+onMounted(async () => {
+  try {
+    earningsData.value = await getAll('/vendor/reports/earnings')
+  } catch (err) {
+    console.error("Failed to load earnings data:", err)
+  } finally {
+    pending.value = false
+  }
+})
+
+const activeTab = ref('all')
+
+const filteredLedger = computed(() => {
+  if (!earningsData.value || !earningsData.value.ledger) return []
+  if (activeTab.value === 'payouts') {
+    return earningsData.value.ledger.filter(tx => tx.source === 'transaction')
+  }
+  if (activeTab.value === 'sales') {
+    return earningsData.value.ledger.filter(tx => tx.source === 'order')
+  }
+  return earningsData.value.ledger
+})
 
 definePageMeta({
   middleware: 'auth'

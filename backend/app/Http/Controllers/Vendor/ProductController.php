@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Vendor;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -78,9 +79,9 @@ class ProductController extends Controller implements HasMiddleware
         }
 
         foreach ($items as $product) {
-            $product->image = $product->image ? Storage::disk('public')->url($product->image) : null;
-            $product->thumbnail = $product->thumbnail ? Storage::disk('public')->url($product->thumbnail) : null;
-            $product->video = $product->video ? Storage::disk('public')->url($product->video) : null;
+            $product->image = $product->image ?? $product->image;
+            $product->thumbnail = $product->thumbnail ?? $product->thumbnail;
+            $product->video = $product->video ?? $product->video;
             if ($product->gallery) {
                 $product->gallery = array_map(function ($path) {
                     return Storage::disk('public')->url($path);
@@ -158,6 +159,9 @@ class ProductController extends Controller implements HasMiddleware
         $product = Product::create($validated);
         $product->categories()->sync($categoryIds);
 
+        // Invalidate storefront cache so new product appears immediately
+        $this->clearStorefrontCache($product->vendor_id);
+
         // Log initial stock if provided
         if ($product->stock_qty > 0) {
             $product->logStockChange($product->stock_qty, 'initial', null, 'Initial stock on creation');
@@ -206,13 +210,13 @@ class ProductController extends Controller implements HasMiddleware
 
     public function show(Product $product)
     {
-        $product->image = $product->image ? Storage::disk('public')->url($product->image) : null;
-        $product->thumbnail = $product->thumbnail ? Storage::disk('public')->url($product->thumbnail) : null;
-        $product->video = $product->video ? Storage::disk('public')->url($product->video) : null;
+        $product->image = $product->image ?? $product->image;
+        $product->thumbnail = $product->thumbnail ?? $product->thumbnail;
+        $product->video = $product->video ?? $product->video;
         
         if ($product->gallery) {
             $product->gallery = array_map(function ($path) {
-                return Storage::disk('public')->url($path);
+                return $path;
             }, $product->gallery);
         } else {
             $product->gallery = [];
@@ -221,7 +225,7 @@ class ProductController extends Controller implements HasMiddleware
         // Load variants images
         if ($product->variants) {
             foreach ($product->variants as $variant) {
-                $variant->image = $variant->image ? Storage::disk('public')->url($variant->image) : null;
+                $variant->image = $variant->image ?? $variant->image;
             }
         }
 
@@ -323,6 +327,9 @@ class ProductController extends Controller implements HasMiddleware
         $oldStock = $product->stock_qty;
         $product->update($validated);
 
+        // Invalidate storefront cache so update appears immediately
+        $this->clearStorefrontCache($product->vendor_id);
+
         if (isset($validated['stock_qty']) && $validated['stock_qty'] != $oldStock) {
             $product->logStockChange($validated['stock_qty'] - $oldStock, 'adjustment', null, 'Manual stock adjustment on update');
         }
@@ -409,7 +416,11 @@ class ProductController extends Controller implements HasMiddleware
 
     public function destroy(Product $product)
     {
+        $vendorId = $product->vendor_id;
         $product->delete();
+
+        // Invalidate storefront cache so deletion appears immediately
+        $this->clearStorefrontCache($vendorId);
 
         return response()->noContent();
     }
@@ -428,5 +439,16 @@ class ProductController extends Controller implements HasMiddleware
             $variant->image = $variant->image ? Storage::disk('public')->url($variant->image) : null;
         }
         return response()->json($variants);
+    }
+
+    /**
+     * Clear the storefront index cache for both the specific vendor and the global key.
+     */
+    private function clearStorefrontCache(?int $vendorId = null): void
+    {
+        Cache::forget('storefront_index_global');
+        if ($vendorId) {
+            Cache::forget('storefront_index_' . $vendorId);
+        }
     }
 }

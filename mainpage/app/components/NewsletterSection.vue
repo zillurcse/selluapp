@@ -1,5 +1,5 @@
 <template>
-  <section class="py-4 md:py-12 bg-white border-t border-gray-100 relative overflow-hidden">
+  <section class="pt-4 md:pt-12 bg-white border-t border-gray-100 relative overflow-hidden">
     <div class="container mx-auto px-4 sm:px-6 relative">
       <!-- Decorative background blur -->
       <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-indigo-50/50 rounded-full blur-[100px] -z-10 pointer-events-none"></div>

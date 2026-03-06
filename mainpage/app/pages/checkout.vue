@@ -68,12 +68,40 @@
               </div>
             </section>
 
-            <!-- Shipping -->
             <section class="p-6 sm:p-8 border-b border-gray-100">
               <h2 class="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-3">
                 <span class="flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-gray-900 text-xs font-bold">2</span>
                 Shipping Address
               </h2>
+              
+              <!-- Saved Addresses -->
+              <div v-if="authStore.token && savedAddresses.length > 0" class="mb-8">
+                <div class="flex items-center justify-between mb-3">
+                    <label class="block text-sm font-medium text-gray-700">Select a Saved Address</label>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div 
+                    v-for="address in savedAddresses" 
+                    :key="address.id"
+                    @click="selectSavedAddress(address)"
+                    class="border border-gray-200 rounded-xl p-4 cursor-pointer hover:border-black hover:shadow-sm transition-all bg-white relative group"
+                  >
+                    <div class="flex items-start justify-between mb-2">
+                        <span class="font-semibold text-sm text-gray-900">{{ address.name }}</span>
+                        <span v-if="address.is_default" class="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium">Default</span>
+                    </div>
+                    <p class="text-xs text-gray-600 leading-relaxed mb-1">{{ address.line1 }}</p>
+                    <p class="text-xs text-gray-500">{{ address.city }}, {{ address.state }} {{ address.zip }}</p>
+                    <div class="absolute inset-x-0 bottom-0 h-1 bg-black translate-y-full opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all rounded-b-xl"></div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-4 my-6">
+                    <div class="h-px bg-gray-200 flex-1"></div>
+                    <span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Or enter manually</span>
+                    <div class="h-px bg-gray-200 flex-1"></div>
+                </div>
+              </div>
+
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1.5">
@@ -239,7 +267,7 @@
                   <p class="text-sm text-gray-500 mt-0.5">Qty: {{ item.quantity }}</p>
                 </div>
                 <div class="text-sm font-medium text-gray-900">
-                  ${{ (parseFloat(item.price) * item.quantity).toFixed(2) }}
+                  ৳{{ (parseFloat(item.price) * item.quantity).toFixed(2) }}
                 </div>
               </div>
             </div>
@@ -308,6 +336,7 @@ const { cart, cartTotal } = useCart()
 const authStore = useAuthStore()
 const router = useRouter()
 const config = useRuntimeConfig()
+const { trackInitiateCheckout, trackPurchase } = useTracking()
 
 const gateways = ref([])
 const loadingGateways = ref(false)
@@ -322,6 +351,10 @@ const loadingCities = ref(false)
 const shippingCost = ref(0)
 const selectedCity = ref(null)
 const availableCarriers = ref([])
+
+const prefillAddress = ref(null)
+const savedAddresses = ref([])
+const loadingAddresses = ref(false)
 
 const discountTotal = ref(0)
 const appliedOffers = ref([])
@@ -369,6 +402,50 @@ const fetchCities = async (stateId) => {
   } finally {
     loadingCities.value = false
   }
+}
+
+const fetchSavedAddresses = async () => {
+    if (!authStore.token) return
+    loadingAddresses.value = true
+    try {
+        const response = await $fetch(`${config.public.apiBase}/customer/addresses`, {
+            headers: {
+                Authorization: `Bearer ${authStore.token}`
+            }
+        })
+        console.log('Saved addresses response:', response)
+        if (response.addresses) {
+            savedAddresses.value = response.addresses
+        }
+    } catch (error) {
+        console.error('Failed to fetch saved addresses:', error)
+    } finally {
+        loadingAddresses.value = false
+    }
+}
+
+const selectSavedAddress = async (address) => {
+    form.value.first_name = authStore.user?.customer?.first_name || authStore.user?.name.split(' ')[0] || ''
+    form.value.last_name = authStore.user?.customer?.last_name || authStore.user?.name.split(' ').slice(1).join(' ') || ''
+    form.value.full_address = address.line1
+    
+    // Attempt to match state and city by name
+    const stateMatch = states.value.find(s => s.name.toLowerCase() === address.state.toLowerCase())
+    if (stateMatch) {
+        form.value.state_id = stateMatch.id
+        await fetchCities(stateMatch.id)
+        
+        const cityMatch = cities.value.find(c => c.name.toLowerCase() === address.city.toLowerCase())
+        if (cityMatch) {
+            form.value.city_id = cityMatch.id
+            await handleCityChange()
+        } else {
+            form.value.city_id = ''
+        }
+    } else {
+        form.value.state_id = ''
+        form.value.city_id = ''
+    }
 }
 
 const handleStateChange = () => {
@@ -488,16 +565,66 @@ watch(() => cart.value, () => {
   calculateDiscounts()
 }, { deep: true, immediate: true })
 
-onMounted(() => {
+onMounted(async () => {
   if (authStore.user) {
     form.value.email = authStore.user.email || ''
-    const names = (authStore.user.name || '').split(' ')
-    form.value.first_name = names[0] || ''
-    form.value.last_name = names.slice(1).join(' ') || ''
+    
+    if (authStore.user.customer) {
+      const customerInfo = authStore.user.customer
+      
+      form.value.phone = customerInfo.phone || ''
+      isPhoneValid.value = !!form.value.phone
+      
+      if (customerInfo.last_shipping_address) {
+        const address = customerInfo.last_shipping_address
+        form.value.first_name = address.first_name || ''
+        form.value.last_name = address.last_name || ''
+        form.value.full_address = address.address || ''
+        
+        if (address.city_id) {
+            prefillAddress.value = address;
+        }
+      } else {
+        const names = (authStore.user.name || '').split(' ')
+        form.value.first_name = names[0] || ''
+        form.value.last_name = names.slice(1).join(' ') || ''
+      }
+    } else {
+      const names = (authStore.user.name || '').split(' ')
+      form.value.first_name = names[0] || ''
+      form.value.last_name = names.slice(1).join(' ') || ''
+    }
+    
+    fetchSavedAddresses()
   }
   
   fetchGateways()
-  fetchStates()
+  await fetchStates()
+  
+  if (prefillAddress.value && prefillAddress.value.city_id) {
+       try {
+           // We need the state_id for this city. Let's fetch the city's details or we can search through states if backend provided a way.
+           // Since we don't have a direct endpoint for single city, let's try to get all cities if we can, 
+           // but the backend `states` and `cities` endpoints probably don't return all cities at once.
+           // Let's modify the backend UserResource to include the state_id.
+           if (prefillAddress.value.state_id) {
+               form.value.state_id = prefillAddress.value.state_id;
+               await fetchCities(form.value.state_id);
+               form.value.city_id = prefillAddress.value.city_id;
+               await handleCityChange();
+           }
+       } catch (e) {
+           console.error("Failed to preselect city/state", e);
+       }
+  }
+
+  // Fire InitiateCheckout pixel event
+  if (cart.value.length > 0) {
+    trackInitiateCheckout({
+      total: cartTotal.value,
+      itemCount: cart.value.reduce((sum, item) => sum + item.quantity, 0)
+    })
+  }
 })
 
 const validateForm = () => {
@@ -566,6 +693,19 @@ const placeOrder = async () => {
     if (response.success) {
       // Clear cart
       const invoice_number = response.orders && response.orders.length > 0 ? response.orders[0].invoice_number : ''
+      
+      // Fire Purchase tracking event before clearing cart
+      trackPurchase({
+        id: invoice_number || Date.now(),
+        total: cartTotal.value + shippingCost.value - discountTotal.value,
+        items: cart.value.map((item) => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity
+        }))
+      })
+
       cart.value = []
       // Redirect to a success page
       router.push({

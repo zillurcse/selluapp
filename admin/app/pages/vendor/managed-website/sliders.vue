@@ -49,7 +49,10 @@
           class="bg-white rounded-[32px] border border-slate-100 p-8 shadow-sm flex flex-col md:flex-row gap-8 relative overflow-hidden group hover:border-blue-100 transition-all"
         >
           <!-- Image Upload Area -->
-          <div class="w-full md:w-1/3 aspect-[21/9] bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 relative overflow-hidden cursor-pointer hover:bg-slate-100 transition-colors flex items-center justify-center group/img">
+          <div 
+            class="w-full md:w-1/3 aspect-[21/9] bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 relative overflow-hidden cursor-pointer hover:bg-slate-100 transition-colors flex items-center justify-center group/img"
+            @click="openMediaLibrary(index)"
+          >
             <template v-if="slider.previewUrl || slider.uploadedUrl">
               <img :src="slider.previewUrl || slider.uploadedUrl" class="w-full h-full object-cover" />
               <div class="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
@@ -59,15 +62,9 @@
             <template v-else>
               <div class="text-center p-4">
                 <ImageIcon class="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                <span class="text-sm font-bold text-slate-400">Click to upload image<br>(Desktop: 1920x800)</span>
+                <span class="text-sm font-bold text-slate-400">Click to select from library<br>(Desktop: 1920x800)</span>
               </div>
             </template>
-            <input 
-              type="file" 
-              accept="image/*" 
-              class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              @change="(e) => handleImageUpload(e, index)"
-            >
           </div>
 
           <!-- Slider Details -->
@@ -163,52 +160,21 @@
       </div>
     </div>
 
-    <!-- Cropper Modal -->
-    <div v-if="showCropperModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm z-[100]">
-      <div class="bg-white rounded-2xl md:rounded-[32px] w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
-        <div class="p-4 md:p-6 border-b border-slate-100 flex justify-between items-center">
-          <h3 class="text-xl font-black text-slate-800">Crop Image (1920x800)</h3>
-          <button @click="cancelCrop" class="p-2 hover:bg-slate-100 rounded-full transition-colors">
-            <XIcon class="w-6 h-6 text-slate-500" />
-          </button>
-        </div>
-        
-        <div class="flex-1 bg-slate-900 overflow-hidden relative min-h-[400px]">
-          <cropper
-            ref="cropperRef"
-            class="h-full w-full"
-            :src="cropImage"
-            :stencil-props="{
-              aspectRatio: 1920 / 800
-            }"
-            image-restriction="stencil"
-          />
-        </div>
-        
-        <div class="p-4 md:p-6 border-t border-slate-100 flex justify-end gap-3 bg-slate-50">
-          <button 
-            @click="cancelCrop"
-            class="px-6 py-2.5 rounded-xl font-bold text-slate-600 hover:bg-slate-200 transition-colors"
-          >
-            Cancel
-          </button>
-          <button 
-            @click="applyCrop"
-            class="px-8 py-2.5 rounded-xl font-black text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200"
-          >
-            Crop & Save
-          </button>
-        </div>
-      </div>
-    </div>
+    <!-- Media Library Modal -->
+    <AppMediaLibrary
+      :show="showMediaLibrary"
+      :multiple="false"
+      :allowed-types="['image']"
+      type-label="Slider Image"
+      @close="showMediaLibrary = false"
+      @select="onMediaSelected"
+    />
   </div>
 </template>
 
 <script setup>
-import { ChevronLeft, Sliders, Trash2, Plus, Image as ImageIcon, Link as LinkIcon, Save, X as XIcon } from 'lucide-vue-next'
+import { ChevronLeft, Sliders, Trash2, Plus, Image as ImageIcon, Link as LinkIcon, Save } from 'lucide-vue-next'
 import { ref, onMounted } from 'vue'
-import { Cropper } from 'vue-advanced-cropper'
-import 'vue-advanced-cropper/dist/style.css'
 
 definePageMeta({
   middleware: 'auth',
@@ -222,12 +188,10 @@ const pending = ref(true)
 const saving = ref(false)
 
 const sliders = ref([])
-let newFiles = new FormData()
 
-const cropperRef = ref(null)
-const cropImage = ref(null)
-const cropSliderIndex = ref(null)
-const showCropperModal = ref(false)
+// Media Library state
+const showMediaLibrary = ref(false)
+const mediaTargetIndex = ref(null)
 
 const generateId = () => Math.random().toString(36).substr(2, 9)
 
@@ -250,39 +214,22 @@ const removeSlider = (index) => {
   sliders.value.splice(index, 1)
 }
 
-const handleImageUpload = (event, index) => {
-  const file = event.target.files[0]
-  if (!file) return
-  
-  cropImage.value = URL.createObjectURL(file)
-  cropSliderIndex.value = index
-  showCropperModal.value = true
-  
-  // reset file input so the same file can be selected again
-  event.target.value = ''
+// Open the media library for a specific slider index
+const openMediaLibrary = (index) => {
+  mediaTargetIndex.value = index
+  showMediaLibrary.value = true
 }
 
-const cancelCrop = () => {
-  showCropperModal.value = false
-  cropImage.value = null
-  cropSliderIndex.value = null
-}
+// Called when user confirms a media selection
+const onMediaSelected = (file) => {
+  if (mediaTargetIndex.value === null || !file) return
 
-const applyCrop = () => {
-  if (cropperRef.value) {
-    const { canvas } = cropperRef.value.getResult()
-    if (canvas) {
-      canvas.toBlob((blob) => {
-        const file = new File([blob], "cropped_image.jpg", { type: "image/jpeg" })
-        const previewUrl = URL.createObjectURL(file)
-        
-        sliders.value[cropSliderIndex.value].previewUrl = previewUrl
-        sliders.value[cropSliderIndex.value].file = file
-        
-        cancelCrop()
-      }, 'image/jpeg', 0.9)
-    }
-  }
+  sliders.value[mediaTargetIndex.value].uploadedUrl = file.file_url
+  sliders.value[mediaTargetIndex.value].previewUrl = null
+  sliders.value[mediaTargetIndex.value].file = null
+
+  showMediaLibrary.value = false
+  mediaTargetIndex.value = null
 }
 
 const loadSettings = async () => {
@@ -358,4 +305,3 @@ onMounted(() => {
   loadSettings()
 })
 </script>
-

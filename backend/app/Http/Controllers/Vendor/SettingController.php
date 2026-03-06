@@ -128,6 +128,9 @@ class SettingController extends Controller implements HasMiddleware
             }
         }
 
+        // Invalidate storefront cache for this vendor
+        \Illuminate\Support\Facades\Cache::forget('storefront_index_' . $userId);
+
         return response()->json([
             'status' => 'success',
             'message' => 'Settings updated successfully'

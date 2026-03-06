@@ -147,8 +147,8 @@ const loadSettings = async () => {
     const response = await getAll('/vendor/settings?group=spider_intelligence')
     if (response.data) {
       const data = response.data
-      isActive.value = data.isActive === 'true' || data.isActive === true || data.isActive === '1'
-      dynamicScaling.value = data.dynamicScaling === 'true' || data.dynamicScaling === true || data.dynamicScaling === '1'
+      isActive.value = data.isActive === 'true' || data.isActive === true || data.isActive === '1' || data.isActive === 1
+      dynamicScaling.value = data.dynamicScaling === 'true' || data.dynamicScaling === true || data.dynamicScaling === '1' || data.dynamicScaling === 1
       sensitivity.value = data.sensitivity ? parseInt(data.sensitivity) : 65
     }
     

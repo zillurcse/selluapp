@@ -316,8 +316,8 @@ const allSearchableItems = computed(() => {
     )
   }
 
-  if (isVendor.value) {
-    items.push({ to: '/vendor', label: 'Overview', icon: LayoutDashboard, section: 'Vendor Panel' })
+    if (isVendor.value) {
+      items.push({ to: '/vendor', label: 'Overview', icon: LayoutDashboard, section: 'Vendor Panel' })
 
     visibleAttributeLinks.value.forEach(l =>
       items.push({ to: l.to, label: l.label, icon: Grid, section: 'Attributes' })
@@ -492,6 +492,7 @@ const rawOperationsItems = [
   { to: '/vendor/coupon-code',  label: 'Coupon Code',    icon: Tag,            permission: 'coupons.view',       feature: 'Products' },
   { to: '/vendor/promotions',   label: 'Promotions',     icon: Gift,           permission: 'promotions.view',    feature: 'Promotions',   isPro: true },
   { to: '/vendor/fraud-check',  label: 'AI Fraud Check', icon: SearchCheck,    permission: 'fraud_check.view',   feature: 'Fraud Check',  isPro: true },
+  { to: '/vendor/ai-automation', label: 'AI Automation', icon: Sparkles,       permission: 'settings.manage' },
   { to: '/vendor/landing-page', label: 'Landing Page',   icon: LayoutTemplate, permission: 'landing_pages.view', feature: 'Landing Pages',isPro: true },
 ]
 const operationsItems = computed(() => filterItems(rawOperationsItems))

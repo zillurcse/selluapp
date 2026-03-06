@@ -30,7 +30,7 @@
     />
 
     <!-- ===== PROMO BANNERS ===== -->
-    <PromoBanners />
+    <PromoBanners :banners="websiteBanners" />
 
     <!-- ===== TRENDING PRODUCTS ===== -->
     <TrendingProducts 
@@ -51,13 +51,17 @@ import { storeToRefs } from 'pinia'
 import { defineAsyncComponent, shallowRef, watchEffect } from 'vue'
 
 const storefrontStore = useStorefrontStore()
-const { slides, topCategories, trendingProducts: products, categoryWiseProducts, homeLandingPage, promotions } = storeToRefs(storefrontStore)
+const { slides, topCategories, trendingProducts: products, categoryWiseProducts, homeLandingPage, promotions, websiteBanners } = storeToRefs(storefrontStore)
 
 // Fetch initial data from store
 await useAsyncData('storefront-init', async () => {
   await storefrontStore.fetchStorefront()
   return true
 })
+
+// SEO meta tags for homepage
+const { setHomeSeo } = useSeo()
+setHomeSeo()
 
 const { addToCart } = useCart()
 

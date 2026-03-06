@@ -182,6 +182,12 @@
                   <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
                 </button>
               </span>
+              <span v-if="filters.is_trending" class="px-3 py-1 bg-rose-100 text-rose-700 rounded-full text-[10px] font-bold flex items-center gap-2">
+                Trending Only
+                <button @click="filters.is_trending = null" class="hover:text-rose-900">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+              </span>
             </div>
             <div class="flex items-center gap-4">
               <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">Sort By:</span>
@@ -288,6 +294,7 @@ const filters = reactive({
   sort: 'newest',
   search: '',
   promotion: null,
+  is_trending: null,
   offset: 0,
   limit: 10
 })
@@ -314,6 +321,7 @@ const initFiltersFromQuery = () => {
   if (route.query.min_price) filters.min_price = Number(route.query.min_price)
   if (route.query.max_price) filters.max_price = Number(route.query.max_price)
   if (route.query.promotion) filters.promotion = route.query.promotion
+  if (route.query.is_trending) filters.is_trending = route.query.is_trending === 'true' || route.query.is_trending === '1'
 }
 
 initFiltersFromQuery()
@@ -343,7 +351,8 @@ const { data: productsData, pending } = await useAsyncData('products', () =>
       categories: filters.categories.join(','),
       brands: filters.brands.join(','),
       units: filters.units.join(','),
-      specs: filters.specs
+      specs: filters.specs,
+      is_trending: filters.is_trending
     }
   }), {
     watch: [
@@ -355,7 +364,8 @@ const { data: productsData, pending } = await useAsyncData('products', () =>
       () => JSON.stringify(filters.specs),
       () => filters.min_price,
       () => filters.max_price,
-      () => filters.promotion
+      () => filters.promotion,
+      () => filters.is_trending
     ]
   }
 )
@@ -407,7 +417,8 @@ watch([
   () => filters.search, 
   () => filters.specs, 
   () => filters.min_price, 
-  () => filters.max_price
+  () => filters.max_price,
+  () => filters.is_trending
 ], () => {
   filters.offset = 0
   filters.limit = 10
@@ -431,7 +442,8 @@ const loadMore = async (isManual = false) => {
         categories: filters.categories.join(','),
         brands: filters.brands.join(','),
         units: filters.units.join(','),
-        specs: filters.specs
+        specs: filters.specs,
+        is_trending: filters.is_trending
       }
     })
     
@@ -495,6 +507,7 @@ const clearFilters = () => {
   filters.limit = 10
   filters.search = ''
   filters.promotion = null
+  filters.is_trending = null
 }
 
 const toggleFilter = (type, slug) => {
@@ -551,6 +564,7 @@ watch(filters, (newFilters) => {
   if (newFilters.min_price) query.min_price = newFilters.min_price
   if (newFilters.max_price) query.max_price = newFilters.max_price
   if (newFilters.promotion) query.promotion = newFilters.promotion
+  if (newFilters.is_trending) query.is_trending = newFilters.is_trending
   
   router.push({ query, replace: true })
 }, { deep: true })

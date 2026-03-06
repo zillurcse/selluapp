@@ -211,7 +211,7 @@ class ReportController extends Controller implements HasMiddleware
         $vendorId = $request->user()->vendor_id ?? $request->user()->id;
         $period   = $request->get('period', 'monthly');
         $page     = $request->get('page', 1);
-        $perPage  = $request->get('per_page', 10);
+        $perPage  = min((int) $request->get('per_page', 10), 100);
 
         // ── Date range & grouping ─────────────────────────────────────────────
         switch ($period) {
@@ -292,7 +292,7 @@ class ReportController extends Controller implements HasMiddleware
         $vendorId = $request->user()->vendor_id ?? $request->user()->id;
         $period   = $request->get('period', 'monthly');
         $page     = $request->get('page', 1);
-        $perPage  = $request->get('per_page', 10);
+        $perPage  = min((int) $request->get('per_page', 10), 100);
 
         // ── Date range & grouping ─────────────────────────────────────────────
         switch ($period) {
@@ -377,7 +377,7 @@ class ReportController extends Controller implements HasMiddleware
         $vendorId = $request->user()->vendor_id ?? $request->user()->id;
         $period   = $request->get('period', 'monthly');
         $page     = $request->get('page', 1);
-        $perPage  = $request->get('per_page', 10);
+        $perPage  = min((int) $request->get('per_page', 10), 100);
 
         // ── Date range & grouping ─────────────────────────────────────────────
         switch ($period) {
@@ -540,7 +540,14 @@ class ReportController extends Controller implements HasMiddleware
 
         // Apply Sorting
         $sortBy = $request->get('sort_by', 'created_at');
-        $sortOrder = $request->get('sort_order', 'desc');
+        // Prevent SQL Injection by strictly validating sort direction
+        $sortOrder = strtolower($request->get('sort_order', 'desc')) === 'asc' ? 'asc' : 'desc';
+
+        // Allowlist sort columns to prevent errors
+        $allowedSortColumns = ['id', 'name', 'stock_qty', 'sale_price', 'created_at', 'updated_at', 'valuation'];
+        if (!in_array($sortBy, $allowedSortColumns)) {
+            $sortBy = 'created_at';
+        }
 
         if ($sortBy === 'valuation') {
             $query->orderByRaw('stock_qty * sale_price ' . $sortOrder);
@@ -549,8 +556,9 @@ class ReportController extends Controller implements HasMiddleware
         }
 
         // Paginate the results for the table
+        $perPage = min((int) $request->get('per_page', 10), 100);
         $products = $query->select(['id', 'name', 'stock_qty', 'sale_price', 'thumbnail'])
-            ->paginate($request->get('per_page', 10));
+            ->paginate($perPage);
 
         return response()->json([
             'kpi' => [
@@ -572,8 +580,11 @@ class ReportController extends Controller implements HasMiddleware
             'note' => 'nullable|string|max:255',
         ]);
 
-        // Automatically scoped via BelongsToVendor trait
-        $product = \App\Models\Product::where('id', $request->product_id)->firstOrFail();
+        // Explicitly scoped to prevent IDOR, even if global scope is disabled
+        $vendorId = $request->user()->vendor_id ?? $request->user()->id;
+        $product = \App\Models\Product::where('id', $request->product_id)
+            ->where('vendor_id', $vendorId)
+            ->firstOrFail();
 
         $oldStock = $product->stock_qty;
         $adjustment = (int) $request->quantity;
@@ -593,8 +604,9 @@ class ReportController extends Controller implements HasMiddleware
         $product->stock_qty = $newStock;
         $product->save();
 
-        // Log the adjustment using HasStock trait
-        $product->logStockChange($adjustment, 'adjustment', null, $request->note ?? 'Manual adjustment from stock report');
+        // Log the adjustment using HasStock trait. Prevent Stored XSS by stripping tags.
+        $note = $request->note ? strip_tags($request->note) : 'Manual adjustment from stock report';
+        $product->logStockChange($adjustment, 'adjustment', null, $note);
 
         return response()->json([
             'message' => 'Stock adjusted successfully',
@@ -634,16 +646,57 @@ class ReportController extends Controller implements HasMiddleware
         $totalSales = $onlineSales + $posSales;
             
         $vendorProfile = \App\Models\VendorProfile::where('user_id', $vendorId)->first();
-        // Mock commission rate
-        $commissionRate = 0.10; 
-        $platformFee = $totalSales * $commissionRate;
+        // Commission rate (could be fetched from global settings or vendor profile in reality)
+        $commissionRatePercentage = 10; 
+        $platformFee = $totalSales * ($commissionRatePercentage / 100);
         $netEarnings = $totalSales - $platformFee;
+
+        // GROWTH CALCULATION (Last 30 days vs Previous 30 days)
+        $lastMonthStart = now()->subDays(60);
+        $lastMonthEnd = now()->subDays(30);
+        $thisMonthStart = now()->subDays(30);
+        $thisMonthEnd = now();
+
+        $thisMonthSales = \App\Models\Order::where('user_id', $vendorId)
+            ->where('created_at', '>=', $thisMonthStart)->where('created_at', '<=', $thisMonthEnd)
+            ->whereNotIn('status', ['cancelled', 'returned'])->sum('total_amount')
+            + \App\Models\PosSale::where('vendor_id', $vendorId)
+            ->where('created_at', '>=', $thisMonthStart)->where('created_at', '<=', $thisMonthEnd)
+            ->where('status', 'paid')->sum('total');
+
+        $lastMonthSales = \App\Models\Order::where('user_id', $vendorId)
+            ->where('created_at', '>=', $lastMonthStart)->where('created_at', '<=', $lastMonthEnd)
+            ->whereNotIn('status', ['cancelled', 'returned'])->sum('total_amount')
+            + \App\Models\PosSale::where('vendor_id', $vendorId)
+            ->where('created_at', '>=', $lastMonthStart)->where('created_at', '<=', $lastMonthEnd)
+            ->where('status', 'paid')->sum('total');
+
+        $growth = $lastMonthSales > 0 ? (($thisMonthSales - $lastMonthSales) / $lastMonthSales) * 100 : 0;
+
+        // FINANCIAL LEDGER
+        $transactions = \App\Models\Transaction::where('user_id', $vendorId)
+            ->select('id', 'type', 'amount', 'created_at', \DB::raw("'transaction' as source"))
+            ->latest()
+            ->take(10)
+            ->get();
+            
+        $orders = \App\Models\Order::where('user_id', $vendorId)
+            ->whereNotIn('status', ['cancelled', 'returned'])
+            ->select('id', \DB::raw("'order' as type"), 'total_amount as amount', 'created_at', \DB::raw("'order' as source"))
+            ->latest()
+            ->take(10)
+            ->get();
+            
+        $ledger = $transactions->concat($orders)->sortByDesc('created_at')->take(10)->values();
 
         return response()->json([
             'total_sales' => $totalSales,
             'platform_fee' => $platformFee,
             'net_earnings' => $netEarnings,
-            'available_payout' => $vendorProfile ? $vendorProfile->balance : $netEarnings
+            'available_payout' => $vendorProfile ? $vendorProfile->balance : $netEarnings,
+            'growth_percentage' => round($growth, 1),
+            'commission_rate' => $commissionRatePercentage,
+            'ledger' => $ledger
         ]);
     }
 

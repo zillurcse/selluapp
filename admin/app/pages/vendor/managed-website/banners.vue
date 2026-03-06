@@ -54,7 +54,10 @@
           </div>
           
           <!-- Image Upload Area -->
-          <div class="w-full aspect-[4/3] bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 relative overflow-hidden cursor-pointer hover:bg-slate-100 transition-colors flex items-center justify-center group/img mb-6">
+          <div 
+            class="w-full aspect-[4/3] bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 relative overflow-hidden cursor-pointer hover:bg-slate-100 transition-colors flex items-center justify-center group/img mb-6"
+            @click="openMediaLibrary(index)"
+          >
             <template v-if="banner.previewUrl || banner.uploadedUrl">
               <img :src="banner.previewUrl || banner.uploadedUrl" class="w-full h-full object-cover" />
               <div class="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
@@ -64,15 +67,9 @@
             <template v-else>
               <div class="text-center p-4">
                 <ImageIcon class="w-6 h-6 text-slate-300 mx-auto mb-2" />
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Upload Image<br>(~600x450)</span>
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Select from Gallery<br>(~600x450)</span>
               </div>
             </template>
-            <input 
-              type="file" 
-              accept="image/*" 
-              class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              @change="(e) => handleImageUpload(e, index)"
-            >
           </div>
 
           <!-- Banner Details -->
@@ -103,10 +100,19 @@
         </div>
       </div>
     </div>
+    
+    <!-- Media Library Component -->
+    <AppMediaLibrary 
+        :show="isMediaLibraryOpen"
+        @close="isMediaLibraryOpen = false"
+        @select="handleMediaSelect"
+        type-label="Banner Image"
+    />
   </div>
 </template>
 
 <script setup>
+import AppMediaLibrary from '~/components/AppMediaLibrary.vue'
 import { ChevronLeft, Image, Image as ImageIcon, Link as LinkIcon, Save } from 'lucide-vue-next'
 import { ref, onMounted } from 'vue'
 
@@ -127,12 +133,21 @@ const banners = ref([
   { id: 'banner_3', link: '', active: true, previewUrl: null, uploadedUrl: null, file: null },
 ])
 
-const handleImageUpload = (event, index) => {
-  const file = event.target.files[0]
-  if (!file) return
-  
-  banners.value[index].previewUrl = URL.createObjectURL(file)
-  banners.value[index].file = file
+const isMediaLibraryOpen = ref(false)
+const activeBannerIndex = ref(null)
+
+const openMediaLibrary = (index) => {
+  activeBannerIndex.value = index
+  isMediaLibraryOpen.value = true
+}
+
+const handleMediaSelect = (file) => {
+  if (activeBannerIndex.value !== null) {
+    const index = activeBannerIndex.value
+    banners.value[index].uploadedUrl = file.file_url
+    banners.value[index].previewUrl = null
+    banners.value[index].file = null
+  }
 }
 
 const loadSettings = async () => {
