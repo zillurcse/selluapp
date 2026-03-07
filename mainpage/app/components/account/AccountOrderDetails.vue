@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden animate-in fade-in slide-in-from-right-4 duration-500">
+  <div v-if="order" class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden animate-in fade-in slide-in-from-right-4 duration-500">
     <!-- Header -->
     <div class="px-6 py-4 border-b border-gray-50 flex items-center justify-between bg-gray-50/30">
       <div class="flex items-center gap-4">
@@ -124,19 +124,21 @@ const formatDate = (dateStr) => {
 
 const statusClasses = {
   pending: 'bg-yellow-50 text-yellow-700 border border-yellow-100',
+  approved: 'bg-teal-50 text-teal-700 border border-teal-100',
   processing: 'bg-blue-50 text-blue-700 border border-blue-100',
-  shipped: 'bg-purple-50 text-purple-700 border border-purple-100',
-  delivered: 'bg-green-50 text-green-700 border border-green-100',
   courier: 'bg-indigo-50 text-indigo-700 border border-indigo-100',
-  cancelled: 'bg-red-50 text-red-700 border border-red-100'
+  delivered: 'bg-green-50 text-green-700 border border-green-100',
+  cancelled: 'bg-red-50 text-red-700 border border-red-100',
+  returned: 'bg-orange-50 text-orange-700 border border-orange-100'
 }
 
 const timelineSteps = computed(() => {
     const status = props.order.status.toLowerCase()
     return [
         { label: 'Confirmed', completed: true, date: formatDate(props.order.created_at) },
-        { label: 'Processing', completed: ['processing', 'shipped', 'delivered', 'courier'].includes(status) },
-        { label: 'Handed to Courier', completed: ['shipped', 'delivered', 'courier'].includes(status) },
+        { label: 'Approved', completed: ['approved', 'processing', 'courier', 'delivered'].includes(status) },
+        { label: 'Processing', completed: ['processing', 'courier', 'delivered'].includes(status) },
+        { label: 'Handed to Courier', completed: ['courier', 'delivered'].includes(status) },
         { label: 'Delivered', completed: status === 'delivered' }
     ]
 })

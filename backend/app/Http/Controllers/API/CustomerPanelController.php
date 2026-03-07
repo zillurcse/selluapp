@@ -19,7 +19,7 @@ class CustomerPanelController extends Controller
     public function dashboard(Request $request)
     {
         $customer = $this->getCustomer($request);
-        
+
         $totalOrders = 0;
         $totalSpent = 0;
         $recentOrders = collect();
@@ -48,8 +48,8 @@ class CustomerPanelController extends Controller
 
         $stats = [
             [ 'icon' => '📦', 'value' => (string)$totalOrders, 'label' => 'Total Orders' ],
-            [ 'icon' => '❤️', 'value' => '4', 'label' => 'Wishlist Items' ],
-            [ 'icon' => '💰', 'value' => '$' . number_format($totalSpent, 2), 'label' => 'Total Spent' ],
+//            [ 'icon' => '❤️', 'value' => '4', 'label' => 'Wishlist Items' ],
+            [ 'icon' => '💰', 'value' => '৳' . number_format($totalSpent, 2), 'label' => 'Total Spent' ],
             [ 'icon' => '⭐', 'value' => '3', 'label' => 'Reviews Left' ],
         ];
 
@@ -63,7 +63,7 @@ class CustomerPanelController extends Controller
         return response()->json([
             'stats' => $stats,
             'recentOrders' => $recentOrders,
-            'wishlistItems' => $wishlistItems, 
+            'wishlistItems' => $wishlistItems,
         ]);
     }
 
@@ -131,7 +131,7 @@ class CustomerPanelController extends Controller
     {
         $user = $request->user();
         $customer = $this->getCustomer($request);
-        
+
         $validated = $request->validate([
             'firstName' => 'required|string|max:255',
             'lastName' => 'nullable|string|max:255',
@@ -178,7 +178,7 @@ class CustomerPanelController extends Controller
     public function orders(Request $request)
     {
         $customer = $this->getCustomer($request);
-        
+
         if (!$customer) {
             return response()->json(['orders' => []]);
         }
@@ -223,7 +223,7 @@ class CustomerPanelController extends Controller
         $addresses = \App\Models\CustomerAddress::where('user_id', $request->user()->id)
             ->oldest()
             ->get();
-            
+
         return response()->json(['addresses' => $addresses]);
     }
 

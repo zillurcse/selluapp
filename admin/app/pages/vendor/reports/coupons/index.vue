@@ -9,9 +9,9 @@
       </div>
       
       <div class="flex items-center gap-3">
-        <button class="flex items-center gap-2 bg-emerald-600 px-6 py-2 rounded-xl text-sm font-bold text-white hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100">
+        <NuxtLink to="/vendor/coupon-code" class="flex items-center gap-2 bg-emerald-600 px-6 py-2 rounded-xl text-sm font-bold text-white hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100">
            Manage Coupons
-        </button>
+        </NuxtLink>
       </div>
     </div>
 

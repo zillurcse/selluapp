@@ -38,6 +38,12 @@
       @add-to-cart="addToCart"
     />
 
+    <!-- ===== INFINITE CATEGORY PRODUCTS ===== -->
+    <InfiniteCategoryProducts 
+      :startOffset="categoryWiseProducts?.length || 0"
+      @add-to-cart="addToCart" 
+    />
+
     <!-- ===== FEATURED LOOKBOOK ===== -->
     <LookbookSection />
 

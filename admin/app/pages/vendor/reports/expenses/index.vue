@@ -11,7 +11,7 @@
         <button class="flex items-center gap-2 bg-white border border-gray-200 px-4 py-2 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all shadow-sm">
           <Download class="w-4 h-4" /> Export PDF
         </button>
-        <button class="flex items-center gap-2 bg-rose-600 px-6 py-2 rounded-xl text-sm font-bold text-white hover:bg-rose-700 transition-all shadow-lg shadow-rose-100">
+        <button @click="showAddModal = true" class="flex items-center gap-2 bg-rose-600 px-6 py-2 rounded-xl text-sm font-bold text-white hover:bg-rose-700 transition-all shadow-lg shadow-rose-100">
           <Plus class="w-4 h-4" /> Add Expense
         </button>
       </div>
@@ -216,7 +216,7 @@
                 </td>
                 <td class="px-10 py-6">
                   <span
-                    class="px-3 py-1 rounded-full text-[10px] font-black tracking-widest"
+                    class="px-3 py-1 rounded-full text-[10px] font-black tracking-widest capitalize"
                     :class="statusClass(expense.status)"
                   >
                     {{ expense.status || '—' }}
@@ -270,6 +270,60 @@
         </div>
       </div>
     </template>
+
+    <!-- Add Expense Modal -->
+    <div v-if="showAddModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm">
+      <div class="bg-white rounded-[2.5rem] w-full max-w-lg shadow-2xl overflow-hidden relative">
+        <div class="p-8 border-b border-gray-100 flex items-center justify-between">
+          <h3 class="text-2xl font-black text-gray-900">Add New Expense</h3>
+          <button @click="showAddModal = false" class="p-2 text-gray-400 hover:text-gray-900 transition-colors rounded-full hover:bg-gray-100">
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+        
+        <form @submit.prevent="submitExpense" class="p-8 space-y-6">
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2">Expense Title <span class="text-rose-500">*</span></label>
+            <input v-model="form.title" type="text" required placeholder="e.g. Office Supplies" class="w-full px-4 py-3 bg-gray-50 border-transparent focus:border-rose-500 focus:bg-white focus:ring-0 rounded-xl transition-all font-medium text-gray-900" />
+          </div>
+          
+          <div class="grid grid-cols-2 gap-6">
+            <div>
+              <label class="block text-sm font-bold text-gray-700 mb-2">Amount (৳) <span class="text-rose-500">*</span></label>
+              <input v-model="form.amount" type="number" step="0.01" min="0" required placeholder="0.00" class="w-full px-4 py-3 bg-gray-50 border-transparent focus:border-rose-500 focus:bg-white focus:ring-0 rounded-xl transition-all font-medium text-gray-900" />
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-gray-700 mb-2">Date <span class="text-rose-500">*</span></label>
+              <input v-model="form.expense_date" type="date" required class="w-full px-4 py-3 bg-gray-50 border-transparent focus:border-rose-500 focus:bg-white focus:ring-0 rounded-xl transition-all font-medium text-gray-900" />
+            </div>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2">Status <span class="text-rose-500">*</span></label>
+            <select v-model="form.status" required class="w-full px-4 py-3 bg-gray-50 border-transparent focus:border-rose-500 focus:bg-white focus:ring-0 rounded-xl transition-all font-medium text-gray-900">
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2">Description</label>
+            <textarea v-model="form.description" rows="3" placeholder="Optional details..." class="w-full px-4 py-3 bg-gray-50 border-transparent focus:border-rose-500 focus:bg-white focus:ring-0 rounded-xl transition-all font-medium text-gray-900"></textarea>
+          </div>
+
+          <div class="flex items-center justify-end gap-4 pt-4 border-t border-gray-100">
+            <button type="button" @click="showAddModal = false" class="px-6 py-3 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-100 transition-all">
+              Cancel
+            </button>
+            <button type="submit" :disabled="isSubmitting" class="px-6 py-3 rounded-xl text-sm font-bold text-white bg-rose-600 hover:bg-rose-700 transition-all shadow-lg shadow-rose-100 disabled:opacity-50 flex items-center gap-2">
+              <div v-if="isSubmitting" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              <span>{{ isSubmitting ? 'Saving...' : 'Save Expense' }}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -285,6 +339,7 @@ import {
   Settings2,
   Receipt,
   Search,
+  X,
 } from 'lucide-vue-next'
 
 definePageMeta({ middleware: 'auth' })
@@ -313,15 +368,26 @@ function goToPage(pg) {
   currentPage.value = pg
 }
 
-// ── Fetch ─────────────────────────────────────────────────────────────────────
+// ── Search & Fetch ────────────────────────────────────────────────────────────
+const searchQuery = ref('')
+
 const { data: expensesData, pending, refresh } = useFetch(
-  () => `/vendor/reports/expenses?period=${period.value}&page=${currentPage.value}`,
+  () => `/vendor/reports/expenses?period=${period.value}&page=${currentPage.value}&search=${searchQuery.value}`,
   {
     baseURL: config.public.apiBase,
     headers: { Authorization: `Bearer ${authToken.value}` },
     watch: false,
   }
 )
+
+let searchTimeout = null
+watch(searchQuery, () => {
+  if (searchTimeout) clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    currentPage.value = 1
+    refresh()
+  }, 500)
+})
 
 watch([period, currentPage], () => refresh())
 
@@ -367,9 +433,6 @@ const pageNumbers = computed(() => {
   return range
 })
 
-// ── Search ────────────────────────────────────────────────────────────────────
-const searchQuery = ref('')
-
 const filteredExpenses = computed(() => {
   const list = expensesData.value?.recent_expenses?.data ?? []
   if (!searchQuery.value.trim()) return list
@@ -388,10 +451,58 @@ function fmt(val) {
 
 function statusClass(status) {
   const map = {
-    paid:    'bg-emerald-50 text-emerald-600',
-    pending: 'bg-amber-50 text-amber-600',
-    unpaid:  'bg-rose-50 text-rose-600',
+    paid:     'bg-emerald-50 text-emerald-600',
+    approved: 'bg-emerald-50 text-emerald-600',
+    pending:  'bg-amber-50 text-amber-600',
+    unpaid:   'bg-rose-50 text-rose-600',
+    rejected: 'bg-rose-50 text-rose-600',
   }
   return map[status?.toLowerCase()] ?? 'bg-gray-100 text-gray-500'
+}
+
+// ── Add Expense ───────────────────────────────────────────────────────────────
+const showAddModal = ref(false)
+const isSubmitting = ref(false)
+
+const form = ref({
+  title: '',
+  amount: '',
+  expense_date: new Date().toISOString().split('T')[0],
+  status: 'pending',
+  description: '',
+})
+
+async function submitExpense() {
+  if (isSubmitting.value) return
+  isSubmitting.value = true
+
+  try {
+    const res = await $fetch('/vendor/reports/expenses', {
+      method: 'POST',
+      baseURL: config.public.apiBase,
+      headers: { Authorization: `Bearer ${authToken.value}` },
+      body: form.value,
+    })
+
+    // Reset form
+    form.value = {
+      title: '',
+      amount: '',
+      expense_date: new Date().toISOString().split('T')[0],
+      status: 'pending',
+      description: '',
+    }
+    
+    showAddModal.value = false
+    currentPage.value = 1
+    refresh() // Reload data
+    
+    // In a real app, you might want to show a success toast here
+  } catch (err) {
+    console.error('Failed to save expense', err)
+    alert(err?.data?.message || 'Something went wrong. Please try again.')
+  } finally {
+    isSubmitting.value = false
+  }
 }
 </script>

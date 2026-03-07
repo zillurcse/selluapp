@@ -15,7 +15,8 @@ export const useStorefrontStore = defineStore('storefront', {
         homeLandingPage: null as any,
         promotions: [] as any[],
         websiteBanners: [] as any[],
-        marketing: null as any
+        marketing: null as any,
+        customPages: [] as any[]
     }),
 
     actions: {
@@ -73,6 +74,9 @@ export const useStorefrontStore = defineStore('storefront', {
 
             // 0. Marketing Settings
             this.marketing = data.marketing || null
+
+            // 0. Custom Pages
+            this.customPages = data.custom_pages || []
 
             // 0. Vendor Profile
             this.vendorProfile = data.vendor || null

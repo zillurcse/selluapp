@@ -375,7 +375,7 @@ const updateStatus = async () => {
     if(!order.value) return;
     statusUpdating.value = true
     try {
-        await updateItem(`/api/vendor/orders/${order.value.id}?type=${orderType.value}`, {
+        await updateItem(`/vendor/orders/${order.value.id}?type=${orderType.value}`, {
            status: orderStatus.value
         })
         emit('updated')

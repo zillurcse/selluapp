@@ -170,13 +170,15 @@ class StorefrontController extends Controller
             $categoryWiseProducts = $categoryWiseProductsQuery->get();
 
             // format products
-            $this->formatProducts($featuredProducts);
-            $this->formatProducts($trendingProducts);
+            $featuredProducts = \App\Http\Resources\Storefront\ProductResource::collection($featuredProducts)->resolve();
+            $trendingProducts = \App\Http\Resources\Storefront\ProductResource::collection($trendingProducts)->resolve();
 
             // format products for each category
-            foreach ($categoryWiseProducts as $category) {
-                $this->formatProducts($category->products);
-            }
+            $categoryWiseProducts = $categoryWiseProducts->map(function ($category) {
+                $cat = $category->toArray();
+                $cat['products'] = \App\Http\Resources\Storefront\ProductResource::collection($category->products)->resolve();
+                return $cat;
+            });
 
             // Fetch active promotions
             $promotionsQuery = \App\Models\Promotion::where('is_active', true)
@@ -238,6 +240,19 @@ class StorefrontController extends Controller
                 ->get()
                 ->pluck('value', 'key');
 
+            // Fetch custom pages
+            $customPagesSettings = ShopSetting::where('user_id', $userId)
+                ->where('group', 'custom_pages')
+                ->first();
+
+            $customPages = [];
+            if ($customPagesSettings && isset($customPagesSettings->value)) {
+                $decoded = json_decode($customPagesSettings->value, true);
+                if (json_last_error() === JSON_ERROR_NONE && isset($decoded['pages'])) {
+                    $customPages = $decoded['pages'];
+                }
+            }
+
             return response()->json([
                 'sliders' => $sliders,
                 'website_banners' => $websiteBanners,
@@ -249,7 +264,8 @@ class StorefrontController extends Controller
                 'units' => $units,
                 'vendor' => $vendorProfile,
                 'promotions' => $promotions,
-                'marketing' => $marketingSettings
+                'marketing' => $marketingSettings,
+                'custom_pages' => reset($customPages) === false && count($customPages) > 0 && isset($customPages[0]) ? $customPages : array_values($customPages) // Ensure it's a list
             ]);
         });
     }
@@ -415,7 +431,7 @@ class StorefrontController extends Controller
             $total = (clone $query)->count();
             $items = $query->offset($offset)->limit($limit)->get();
             
-            $this->formatProducts($items);
+            $items = \App\Http\Resources\Storefront\ProductResource::collection($items)->resolve();
             
             return response()->json([
                 'data' => $items,
@@ -428,8 +444,9 @@ class StorefrontController extends Controller
 
         $perPage = $request->get('per_page', 10);
         $products = $query->paginate($perPage);
-
-        $this->formatProducts($products->getCollection());
+        $products->getCollection()->transform(function ($product) {
+            return (new \App\Http\Resources\Storefront\ProductResource($product))->resolve();
+        });
 
         return response()->json($products);
     }
@@ -437,6 +454,44 @@ class StorefrontController extends Controller
     public function categories()
     {
         return response()->json(Category::where('is_active', true)->whereNull('parent_id')->get());
+    }
+
+    public function infiniteCategories(Request $request)
+    {
+        $tenantId = $this->resolveTenantId($request);
+        
+        $perPage = $request->get('limit', 1); // Load 1 category per request
+        
+        $query = Category::where('is_active', true)
+            ->whereNull('parent_id')
+            ->whereHas('products', function($q) use ($tenantId) {
+                $q->where('is_active', true)
+                  ->where('status', 'published');
+                if ($tenantId) {
+                    $q->where('vendor_id', $tenantId);
+                }
+            })
+            ->with(['products' => function($q) use ($tenantId) {
+                $q->where('is_active', true)
+                  ->where('status', 'published')
+                  ->with(['categories', 'brand']);
+                if ($tenantId) {
+                    $q->where('vendor_id', $tenantId);
+                }
+                $q->latest()->take(12);
+            }])
+            ->latest();
+
+        $categories = $query->paginate($perPage);
+
+        // format products for each category
+        $categories->getCollection()->transform(function ($category) {
+            $cat = $category->toArray();
+            $cat['products'] = \App\Http\Resources\Storefront\ProductResource::collection($category->products)->resolve();
+            return $cat;
+        });
+
+        return response()->json($categories);
     }
 
     public function brands()
@@ -456,8 +511,7 @@ class StorefrontController extends Controller
             ->where('status', 'published')
             ->firstOrFail();
         $product->load(['categories', 'brand', 'unit', 'vendor.vendorProfile', 'variants.attributes.attribute']);
-        $this->formatSingleProduct($product);
-        return response()->json($product);
+        return response()->json(new \App\Http\Resources\Storefront\ProductResource($product));
     }
 
     public function vendor($slug)
@@ -471,8 +525,9 @@ class StorefrontController extends Controller
             ->where('status', 'published')
             ->latest()
             ->paginate(12);
-
-        $this->formatProducts($products->getCollection());
+        $products->getCollection()->transform(function ($product) {
+            return (new \App\Http\Resources\Storefront\ProductResource($product))->resolve();
+        });
 
         // Get categories that have products from this vendor
         $categoryIds = \Illuminate\Support\Facades\DB::table('category_product')
@@ -529,8 +584,7 @@ class StorefrontController extends Controller
             ->where('is_active', true)
             ->where('status', 'published')
             ->get();
-
-        $this->formatProducts($products);
+        $products = \App\Http\Resources\Storefront\ProductResource::collection($products)->resolve();
 
         $vendorProfile = \App\Models\VendorProfile::where('user_id', $landingPage->vendor_id)->first();
         if ($vendorProfile) {
@@ -573,35 +627,7 @@ class StorefrontController extends Controller
         return response()->json(['success' => true, 'data' => $cities]);
     }
 
-    private function formatProducts($products)
-    {
-        foreach ($products as $product) {
-            $this->formatSingleProduct($product);
-        }
-    }
 
-    private function formatSingleProduct($product)
-    {
-        $product->image_url = $product->image ?? $product->image;
-        $product->thumbnail_url = $product->thumbnail ?? $product->thumbnail;
-        if ($product->gallery) {
-            $product->gallery_urls = array_map(function ($path) {
-                return $path;
-            }, $product->gallery);
-        }
-
-        if ($product->vendor && $product->vendor->vendorProfile) {
-            $profile = $product->vendor->vendorProfile;
-            $profile->logo_url = $profile->logo ?? $profile->logo;
-            $profile->banner_url = $profile->banner ?? $profile->banner;
-        }
-
-        if ($product->variants) {
-            foreach ($product->variants as $variant) {
-                $variant->image_url = $variant->image ?? $variant->image;
-            }
-        }
-    }
 
     public function estimateShipping(Request $request)
     {

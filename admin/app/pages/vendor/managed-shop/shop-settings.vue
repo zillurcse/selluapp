@@ -310,6 +310,7 @@ const { $toast } = useNuxtApp()
 const { getAll, createItem } = useCrud()
 
 const form = reactive({
+  userName: '',
   name: '',
   phone: '',
   email: '',
@@ -345,10 +346,39 @@ const handleMediaSelection = (selected) => {
 const loadSettings = async () => {
   try {
     pending.value = true
+    
+    // Load generic shop settings
     const response = await getAll('/vendor/settings?group=shop_settings')
-    if (response.data) {
+    if (response?.data) {
       Object.assign(form, response.data)
     }
+
+    // Load profile specific settings
+    try {
+      const profileResponse = await getAll('/vendor/profile')
+      const userData = profileResponse?.data || profileResponse
+      
+      if (userData) {
+        form.userName = userData.name || ''
+        const vProfile = userData.vendor_profile
+        if (vProfile) {
+          if (vProfile.store_name) form.name = vProfile.store_name
+          if (vProfile.phone) form.phone = vProfile.phone
+          if (vProfile.email) form.email = vProfile.email
+          if (vProfile.address) form.address = vProfile.address
+          if (vProfile.description) form.details = vProfile.description
+          
+          if (vProfile.logo) {
+            form.logo = vProfile.logo.startsWith('http') 
+              ? vProfile.logo 
+              : `/storage/${vProfile.logo}`
+          }
+        }
+      }
+    } catch (profileError) {
+      console.error('Failed to load profile data:', profileError)
+    }
+
   } catch (error) {
     if (error.response?.status !== 404) {
       $toast.error('Failed to load settings')
@@ -362,11 +392,35 @@ const saveSettings = async () => {
   try {
     saving.value = true
 
+    // 1. Save Profile Data
+    const profilePayload = {
+      name: form.userName || form.name || 'Vendor', // Required by ProfileController validation
+      store_name: form.name,
+      phone: form.phone,
+      email: form.email,
+      address: form.address,
+      description: form.details,
+      logo: form.logo
+    }
+    
+    await createItem('/vendor/profile', profilePayload)
+
+    // 2. Save Generic Settings (exclude profile fields to avoid duplication)
+    const settingsPayload = { ...form }
+    delete settingsPayload.userName
+    delete settingsPayload.name
+    delete settingsPayload.phone
+    delete settingsPayload.email
+    delete settingsPayload.address
+    delete settingsPayload.details
+    delete settingsPayload.logo
+
     await createItem('/vendor/settings', {
       group: 'shop_settings',
-      settings: form
+      settings: settingsPayload
     })
 
+    navigateTo('/vendor/managed-shop/shop-settings')
   } catch (error) {
     console.error(error)
     $toast.error('Failed to save settings')

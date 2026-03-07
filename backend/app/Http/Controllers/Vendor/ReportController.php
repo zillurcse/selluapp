@@ -438,6 +438,15 @@ class ReportController extends Controller implements HasMiddleware
         ])->values()->toArray();
 
         // ── Recent Expenses (paginated) ───────────────────────────────────────
+        if ($request->has('search') && !empty($request->search)) {
+            $search = strtolower($request->search);
+            $baseQuery->where(function ($q) use ($search) {
+                $q->whereRaw('LOWER(title) LIKE ?', ["%{$search}%"])
+                  ->orWhereRaw('LOWER(description) LIKE ?', ["%{$search}%"])
+                  ->orWhereRaw('LOWER(status) LIKE ?', ["%{$search}%"]);
+            });
+        }
+
         $recent = (clone $baseQuery)
             ->latest('expense_date')
             ->paginate($perPage, ['*'], 'page', $page);
@@ -453,6 +462,33 @@ class ReportController extends Controller implements HasMiddleware
             'breakdown'        => $breakdown,
             'recent_expenses'  => $recent,
         ]);
+    }
+
+    public function storeExpense(Request $request)
+    {
+        $request->validate([
+            'title'        => 'required|string|max:255',
+            'amount'       => 'required|numeric|min:0',
+            'expense_date' => 'required|date',
+            'status'       => 'required|string|in:pending,approved,rejected',
+            'description'  => 'nullable|string',
+        ]);
+
+        $vendorId = $request->user()->vendor_id ?? $request->user()->id;
+
+        $expense = \App\Models\VendorExpense::create([
+            'user_id'      => $vendorId,
+            'title'        => $request->title,
+            'amount'       => $request->amount,
+            'expense_date' => $request->expense_date,
+            'status'       => strtolower($request->status),
+            'description'  => $request->description,
+        ]);
+
+        return response()->json([
+            'message' => 'Expense added successfully',
+            'expense' => $expense
+        ], 201);
     }
 
     public function coupons(Request $request)

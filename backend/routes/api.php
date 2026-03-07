@@ -25,6 +25,7 @@ Route::get('/storefront/vendors/{slug}', [StorefrontController::class, 'vendor']
 Route::get('/storefront/categories', function () {
     return \App\Models\Category::where('is_active', true)->whereNull('parent_id')->get();
 });
+Route::get('/storefront/infinite-categories', [StorefrontController::class, 'infiniteCategories']);
 Route::get('/storefront/states', [StorefrontController::class, 'states']);
 Route::get('/storefront/cities', [StorefrontController::class, 'cities']);
 Route::get('/storefront/products/{product}/reviews', [StorefrontController::class, 'reviews']);
@@ -222,6 +223,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('returns', [\App\Http\Controllers\Vendor\ReportController::class, 'returns']);
             Route::get('cancels', [\App\Http\Controllers\Vendor\ReportController::class, 'cancels']);
             Route::get('expenses', [\App\Http\Controllers\Vendor\ReportController::class, 'expenses']);
+            Route::post('expenses', [\App\Http\Controllers\Vendor\ReportController::class, 'storeExpense']);
             Route::get('coupons', [\App\Http\Controllers\Vendor\ReportController::class, 'coupons']);
             Route::get('product-performance', [\App\Http\Controllers\Vendor\ReportController::class, 'productPerformance']);
             Route::get('stock', [\App\Http\Controllers\Vendor\ReportController::class, 'stock']);

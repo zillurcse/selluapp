@@ -95,28 +95,22 @@
         </div>
 
         <!-- Pages Dropdown (Hover) -->
-        <div class="relative h-full flex items-center group/nav">
+        <div v-if="storefrontStore.customPages && storefrontStore.customPages.length > 0" class="relative h-full flex items-center group/nav">
           <button class="nav-link-tailwind flex items-center gap-1">
             Pages 
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-300 group-hover/nav:rotate-180"><path d="m6 9 6 6 6-6"/></svg>
           </button>
           
           <div class="absolute top-full left-1/2 -translate-x-1/2 translate-y-4 opacity-0 invisible group-hover/nav:opacity-100 group-hover/nav:visible group-hover/nav:translate-y-0 transition-all duration-500 bg-white/95 backdrop-blur-xl border border-gray-100 rounded-2xl p-2 flex flex-col gap-1 shadow-2xl z-[100] min-w-[220px]">
-             <NuxtLink to="/about" class="dropdown-item-tailwind">About Us</NuxtLink>
-             <NuxtLink to="/collections" class="dropdown-item-tailwind">Collections</NuxtLink>
+             <template>
+               <NuxtLink v-for="page in storefrontStore.customPages" :key="page.id" :to="`/pages/${page.slug}`" class="dropdown-item-tailwind">
+                 {{ page.title }}
+               </NuxtLink>
+               <div class="border-t border-gray-50 my-1"></div>
+             </template>
+             <!-- <NuxtLink to="/about" class="dropdown-item-tailwind">About Us</NuxtLink>
              <NuxtLink to="/contact" class="dropdown-item-tailwind">Contact</NuxtLink>
-             <NuxtLink to="/faq" class="dropdown-item-tailwind">FAQ</NuxtLink>
-             
-             <div class="relative group/nested">
-               <button class="dropdown-item-tailwind flex items-center justify-between w-full">
-                 More 
-                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-               </button>
-               <div class="absolute left-full top-0 ml-1 opacity-0 invisible group-hover/nested:opacity-100 group-hover/nested:visible bg-white/95 backdrop-blur-xl border border-gray-100 rounded-xl p-2 flex flex-col gap-1 shadow-2xl min-w-[200px]">
-                 <NuxtLink to="/terms" class="dropdown-item-tailwind">Terms & Conditions</NuxtLink>
-                 <NuxtLink to="/privacy" class="dropdown-item-tailwind">Privacy Policy</NuxtLink>
-               </div>
-             </div>
+             <NuxtLink to="/faq" class="dropdown-item-tailwind">FAQ</NuxtLink> -->
           </div>
         </div>
 
@@ -175,8 +169,8 @@
 </template>
 
 <script setup lang="ts">
-import { useAuthStore } from '~/stores/useAuthStore'
-import { useStorefrontStore } from '~/stores/useStorefrontStore'
+// import { useAuthStore } from '~/stores/useAuthStore'
+// import { useStorefrontStore } from '~/stores/useStorefrontStore'
 import { toast } from 'vue-sonner'
 
 const { toggleCart, cartCount } = useCart()

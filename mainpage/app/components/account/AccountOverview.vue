@@ -22,22 +22,22 @@
             <div class="text-xs text-gray-400 mt-0.5">{{ order.date }} · {{ order.items }} item{{ order.items > 1 ? 's' : '' }}</div>
           </div>
           <div class="text-right shrink-0">
-            <div class="font-bold text-gray-900 text-sm">${{ order.total }}</div>
+            <div class="font-bold text-gray-900 text-sm">৳ {{ order.total }}</div>
             <div class="flex items-center gap-2 mt-1 ml-auto">
-                <button @click="$emit('view-details', order.order)" class="p-2 hover:bg-gray-100 rounded-lg transition border border-gray-100 bg-white cursor-pointer group flex items-center justify-center" title="View Details">
+                <button @click="$emit('view-details', order.order_details || order)" class="p-2 hover:bg-gray-100 rounded-lg transition border border-gray-100 bg-white cursor-pointer group flex items-center justify-center" title="View Details">
                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-gray-500 group-hover:text-gray-900 transition-colors">
                       <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
                       <circle cx="12" cy="12" r="3"/>
                    </svg>
                 </button>
-                <button @click="$emit('track-order', order.order)" class="text-[10px] font-black text-gray-900 bg-gray-50 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition border border-gray-100 cursor-pointer">Track →</button>
+                <button @click="$emit('track-order', order.order_details || order)" class="text-[10px] font-black text-gray-900 bg-gray-50 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition border border-gray-100 cursor-pointer">Track →</button>
             </div>
           </div>
         </div>
       </div>
     </div>
     <!-- Wishlist Preview -->
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+    <!-- <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
       <div class="flex items-center justify-between mb-5">
         <h2 class="font-bold text-gray-900">Wishlist</h2>
         <button @click="$emit('nav', 'wishlist')" class="text-xs font-bold text-violet-600 hover:text-violet-700 transition border-none bg-transparent cursor-pointer">View all →</button>
@@ -49,7 +49,7 @@
           <div class="text-xs text-gray-500">${{ item.price }}</div>
         </div>
       </div>
-    </div>
+    </div> -->
   </div>
 </template>
 
