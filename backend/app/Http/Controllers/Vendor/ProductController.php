@@ -114,17 +114,23 @@ class ProductController extends Controller implements HasMiddleware
             $validated['sku'] = null;
         }
 
-        // Handle File Uploads
+        // Handle File Uploads or Full URLs from Media Library
         if ($request->hasFile('image')) {
             $validated['image'] = $request->file('image')->store('products/images', 'public');
+        } elseif (isset($validated['image']) && str_contains($validated['image'], '/storage/')) {
+            $validated['image'] = Str::after($validated['image'], '/storage/');
         }
 
         if ($request->hasFile('thumbnail')) {
             $validated['thumbnail'] = $request->file('thumbnail')->store('products/thumbnails', 'public');
+        } elseif (isset($validated['thumbnail']) && str_contains($validated['thumbnail'], '/storage/')) {
+            $validated['thumbnail'] = Str::after($validated['thumbnail'], '/storage/');
         }
 
         if ($request->hasFile('video')) {
             $validated['video'] = $request->file('video')->store('products/videos', 'public');
+        } elseif (isset($validated['video']) && str_contains($validated['video'], '/storage/')) {
+            $validated['video'] = Str::after($validated['video'], '/storage/');
         }
 
         // Handle Gallery Uploads with ordering support
@@ -175,6 +181,10 @@ class ProductController extends Controller implements HasMiddleware
                     $variantImage = null;
                     if ($request->hasFile("variants_image_{$index}")) {
                         $variantImage = $request->file("variants_image_{$index}")->store('products/variants', 'public');
+                    } elseif (isset($variantData['image']) && str_contains($variantData['image'], '/storage/')) {
+                        $variantImage = Str::after($variantData['image'], '/storage/');
+                    } else {
+                        $variantImage = $variantData['image'] ?? null;
                     }
 
                     $variant = $product->variants()->create([
@@ -261,20 +271,26 @@ class ProductController extends Controller implements HasMiddleware
             $validated['sku'] = null;
         }
 
-        // Handle File Uploads with cleanup
+        // Handle File Uploads or Full URLs with cleanup
         if ($request->hasFile('image')) {
             if ($product->image) Storage::disk('public')->delete($product->image);
             $validated['image'] = $request->file('image')->store('products/images', 'public');
+        } elseif (isset($validated['image']) && str_contains($validated['image'], '/storage/')) {
+            $validated['image'] = Str::after($validated['image'], '/storage/');
         }
 
         if ($request->hasFile('thumbnail')) {
             if ($product->thumbnail) Storage::disk('public')->delete($product->thumbnail);
             $validated['thumbnail'] = $request->file('thumbnail')->store('products/thumbnails', 'public');
+        } elseif (isset($validated['thumbnail']) && str_contains($validated['thumbnail'], '/storage/')) {
+            $validated['thumbnail'] = Str::after($validated['thumbnail'], '/storage/');
         }
 
         if ($request->hasFile('video')) {
             if ($product->video) Storage::disk('public')->delete($product->video);
             $validated['video'] = $request->file('video')->store('products/videos', 'public');
+        } elseif (isset($validated['video']) && str_contains($validated['video'], '/storage/')) {
+            $validated['video'] = Str::after($validated['video'], '/storage/');
         }
 
         // Handle Gallery Uploads with ordering support
@@ -335,7 +351,7 @@ class ProductController extends Controller implements HasMiddleware
         }
 
         // Handle variants processing
-        if ($request->has('variants') && isset($validated['has_variants']) && $validated['has_variants']) {
+        if ($request->has('variants') && isset($validated['has_variants']) && $validated['has_variants'] && !empty($request->variants)) {
             $variantsData = json_decode($request->variants, true);
             if (is_array($variantsData)) {
                 $keptVariantIds = [];
@@ -343,15 +359,16 @@ class ProductController extends Controller implements HasMiddleware
                     $variantImage = null;
                     $hasNewImage = $request->hasFile("variants_image_{$index}");
 
-                    if ($hasNewImage) {
-                        $variantImage = $request->file("variants_image_{$index}")->store('products/variants', 'public');
-                    }
-
                     if (isset($variantData['id'])) {
                         $variant = $product->variants()->find($variantData['id']);
                         if ($variant) {
-                            if ($hasNewImage && $variant->image) {
-                                \Illuminate\Support\Facades\Storage::disk('public')->delete($variant->image);
+                            if ($hasNewImage) {
+                                if ($variant->image) \Illuminate\Support\Facades\Storage::disk('public')->delete($variant->image);
+                                $variantImage = $request->file("variants_image_{$index}")->store('products/variants', 'public');
+                            } elseif (isset($variantData['image']) && str_contains($variantData['image'], '/storage/')) {
+                                $variantImage = Str::after($variantData['image'], '/storage/');
+                            } else {
+                                $variantImage = $variantData['image'] ?? $variant->image;
                             }
                             
                             $oldVStock = $variant->stock_qty;
@@ -359,7 +376,7 @@ class ProductController extends Controller implements HasMiddleware
                                 'sku' => !empty($variantData['sku']) ? $variantData['sku'] : null,
                                 'price' => $variantData['price'] ?? $variant->price,
                                 'stock_qty' => $variantData['stock_qty'] ?? $variant->stock_qty,
-                                'image' => $hasNewImage ? $variantImage : ($variantData['image'] ?? $variant->image),
+                                'image' => $variantImage,
                                 'is_active' => $variantData['is_active'] ?? $variant->is_active,
                             ]);
 
@@ -369,6 +386,12 @@ class ProductController extends Controller implements HasMiddleware
                             $keptVariantIds[] = $variant->id;
                         }
                     } else {
+                        if ($hasNewImage) {
+                            $variantImage = $request->file("variants_image_{$index}")->store('products/variants', 'public');
+                        } elseif (isset($variantData['image']) && str_contains($variantData['image'], '/storage/')) {
+                            $variantImage = Str::after($variantData['image'], '/storage/');
+                        }
+
                         $variant = $product->variants()->create([
                             'sku' => !empty($variantData['sku']) ? $variantData['sku'] : null,
                             'price' => $variantData['price'] ?? $product->sale_price,
@@ -389,15 +412,15 @@ class ProductController extends Controller implements HasMiddleware
                 }
 
                 // Delete variants not in the kept list
-                $variantsToDelete = $product->variants()->whereNotIn('id', $keptVariantIds)->get();
-                foreach ($variantsToDelete as $vdel) {
+                $product->variants()->whereNotIn('id', $keptVariantIds)->get()->each(function($vdel) {
                     if ($vdel->image) {
                         \Illuminate\Support\Facades\Storage::disk('public')->delete($vdel->image);
                     }
                     $vdel->delete();
-                }
+                });
             }
-        } else if (isset($validated['has_variants']) && !$validated['has_variants']) {
+        }
+ else if (isset($validated['has_variants']) && !$validated['has_variants']) {
             // Delete all variants if turned off
             foreach ($product->variants as $vdel) {
                 if ($vdel->image) {

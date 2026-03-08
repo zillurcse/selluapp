@@ -35,7 +35,7 @@ class StoreProductRequest extends FormRequest
             'sale_price' => 'required|numeric',
             'discount_price' => 'nullable|numeric',
             'stock_qty' => 'nullable|integer',
-            'weight' => 'nullable|numeric|min:0',
+            'weight' => 'required|numeric|min:0',
             'has_variants' => 'boolean',
             'is_featured' => 'boolean',
             'is_special' => 'boolean',

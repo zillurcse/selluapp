@@ -15,9 +15,22 @@
       </p>
 
       <!-- Order Details Card -->
-      <div v-if="orderNumber" class="bg-gray-50 rounded-2xl p-6 mb-10 border border-gray-100">
-        <span class="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">Invoice Number</span>
-        <span class="text-lg font-mono font-bold text-gray-900">{{ orderNumber }}</span>
+      <div v-if="orderNumber || earnedPoints" class="grid grid-cols-1 gap-4 mb-10">
+        <div v-if="orderNumber" class="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+          <span class="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">Invoice Number</span>
+          <span class="text-lg font-mono font-bold text-gray-900">{{ orderNumber }}</span>
+        </div>
+        
+        <!-- Loyalty points earned -->
+        <div v-if="earnedPoints > 0" class="bg-purple-50 rounded-2xl p-6 border border-purple-100 animate-fade-in" style="animation-delay: 0.3s">
+          <div class="flex items-center justify-center gap-2 mb-1">
+             <span class="text-2xl">✨</span>
+             <span class="block text-xs font-bold text-purple-400 uppercase tracking-widest">Loyalty Reward</span>
+             <span class="text-2xl">✨</span>
+          </div>
+          <span class="text-2xl font-black text-purple-700">+{{ earnedPoints }} Points</span>
+          <p class="text-[10px] text-purple-400 font-medium mt-1 italic">Keep shopping to earn more rewards!</p>
+        </div>
       </div>
 
       <!-- Actions -->
@@ -30,10 +43,10 @@
         </NuxtLink>
         <NuxtLink 
           v-if="authStore.isLoggedIn"
-          to="/customer/orders" 
+          to="/account" 
           class="block w-full py-4 bg-white text-gray-700 border border-gray-200 rounded-2xl font-semibold hover:bg-gray-50 transition-colors"
         >
-          View My Orders
+          View My Profile
         </NuxtLink>
       </div>
 
@@ -50,6 +63,7 @@
 const route = useRoute()
 const authStore = useAuthStore()
 const orderNumber = computed(() => route.query.invoice_number)
+const earnedPoints = computed(() => parseInt(route.query.earned_points || '0'))
 
 useHead({
   title: 'Thank You | Order Confirmed',

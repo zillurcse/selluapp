@@ -16,8 +16,8 @@ class StorefrontController extends Controller
 {
     private function resolveTenantId(Request $request)
     {
-//        $domain = $request->header('X-Tenant-Domain') ?? $request->query('domain');
         $domain = 'vendor3.test';
+        // $domain = $request->header('X-Tenant-Domain') ?? $request->query('domain');
 
         if (!$domain) {
             return null; // No specific tenant
@@ -33,9 +33,10 @@ class StorefrontController extends Controller
             return $customSetting->user_id;
         }
 
-        // Check subDomain (Assuming main domain e.g. "demo.selluee.test")
+        // Check subDomain (Assuming main domain e.g. "demo.selluee.test" or "demo.localhost")
         $parts = explode('.', $domain);
-        if (count($parts) > 2) {
+        // If we have at least one dot, the first part might be a subdomain
+        if (count($parts) >= 2) {
             $subdomain = $parts[0];
             $subSetting = ShopSetting::where('group', 'shop_domain')
                 ->where('key', 'subDomain')
@@ -265,7 +266,8 @@ class StorefrontController extends Controller
                 'vendor' => $vendorProfile,
                 'promotions' => $promotions,
                 'marketing' => $marketingSettings,
-                'custom_pages' => reset($customPages) === false && count($customPages) > 0 && isset($customPages[0]) ? $customPages : array_values($customPages) // Ensure it's a list
+                'custom_pages' => reset($customPages) === false && count($customPages) > 0 && isset($customPages[0]) ? $customPages : array_values($customPages),
+                'loyalty_program' => ShopSetting::where('user_id', $userId)->where('group', 'loyalty_program')->get()->pluck('value', 'key')
             ]);
         });
     }
@@ -562,7 +564,8 @@ class StorefrontController extends Controller
             'vendor' => $vendorProfile,
             'products' => $products,
             'categories' => $categories,
-            'sliders' => $sliders
+            'sliders' => $sliders,
+            'loyalty_program' => ShopSetting::where('user_id', $user->id)->where('group', 'loyalty_program')->get()->pluck('value', 'key')
         ]);
     }
 
@@ -595,7 +598,8 @@ class StorefrontController extends Controller
         return response()->json([
             'landing_page' => $landingPage,
             'products' => $products,
-            'vendor' => $vendorProfile
+            'vendor' => $vendorProfile,
+            'loyalty_program' => ShopSetting::where('user_id', $landingPage->vendor_id)->where('group', 'loyalty_program')->get()->pluck('value', 'key')
         ]);
     }
 

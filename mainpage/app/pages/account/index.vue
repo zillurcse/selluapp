@@ -20,6 +20,9 @@
               <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
               Active Member
             </span>
+            <span v-if="user.loyalty_points > 0" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-700 text-xs font-bold rounded-full border border-purple-100 italic">
+              ✨ {{ user.loyalty_points }} Points
+            </span>
             <NuxtLink to="/" class="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition">
               ← Back to Shop
             </NuxtLink>

@@ -216,6 +216,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('business-settings', [App\Http\Controllers\Vendor\BusinessSettingController::class, 'index']);
         Route::post('business-settings', [App\Http\Controllers\Vendor\BusinessSettingController::class, 'update']);
 
+        // Loyalty Routes
+        Route::get('loyalty-settings', [\App\Http\Controllers\Vendor\LoyaltyController::class, 'getSettings']);
+        Route::post('loyalty-settings', [\App\Http\Controllers\Vendor\LoyaltyController::class, 'updateSettings']);
+        Route::get('loyalty-logs', [\App\Http\Controllers\Vendor\LoyaltyController::class, 'getLogs']);
+
         // Reports Routes
         Route::prefix('reports')->group(function () {
             Route::get('overview', [\App\Http\Controllers\Vendor\ReportController::class, 'overview']);

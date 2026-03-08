@@ -293,8 +293,77 @@
                 <span class="font-medium text-gray-900">{{ `৳${shippingCost.toFixed(2)}` }}</span>
               </div>
               <div class="flex justify-between text-sm text-gray-600">
-                <span>Taxes</span>
                 <span class="font-medium text-gray-900">Calculated at next step</span>
+              </div>
+
+              <!-- Loyalty Points Earned Info -->
+              <div v-if="isLoyaltyActive && potentialPoints > 0" class="flex items-center gap-2 p-3 bg-purple-50 rounded-xl border border-purple-100 text-purple-700 animate-fade-in mt-4">
+                 <span class="text-xl">✨</span>
+                 <div>
+                    <p class="text-[10px] font-black uppercase tracking-wider leading-none mb-1 opacity-70">Loyalty Reward</p>
+                    <p class="text-xs font-bold leading-tight">You will earn <span class="text-sm font-black underline decoration-2">{{ potentialPoints }} points</span> with this order!</p>
+                 </div>
+              </div>
+
+              <!-- Message if underneath min order -->
+              <div v-else-if="isLoyaltyActive" class="flex items-center gap-2 p-3 bg-gray-50 rounded-xl border border-gray-100 text-gray-500 animate-fade-in mt-4">
+                 <span class="text-xl">💡</span>
+                 <div>
+                    <p class="text-[10px] font-black uppercase tracking-wider leading-none mb-1 opacity-70">Loyalty Program</p>
+                    <p class="text-xs font-semibold leading-tight">Add more items to start earning loyalty points!</p>
+                 </div>
+              </div>
+
+              <!-- Loyalty Points Redemption -->
+              <div v-if="isLoyaltyActive && userLoyaltyBalance > 0" class="pt-4 mt-2 border-t border-gray-100">
+                <div class="flex items-center justify-between p-3 bg-indigo-50 rounded-xl border border-indigo-100">
+                  <div class="flex items-center gap-2">
+                    <span class="text-xl">🎁</span>
+                    <div>
+                      <p class="text-[10px] font-black uppercase tracking-wider leading-none mb-1 text-indigo-400">Redeem Points</p>
+                      <p class="text-xs font-bold text-indigo-700 leading-tight">You have {{ userLoyaltyBalance }} points</p>
+                    </div>
+                  </div>
+                  <button 
+                    @click="useLoyaltyPoints = !useLoyaltyPoints"
+                    :class="[
+                      'px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-tighter transition-all',
+                      useLoyaltyPoints ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'bg-white text-indigo-600 border border-indigo-200 hover:bg-indigo-50'
+                    ]"
+                  >
+                    {{ useLoyaltyPoints ? 'Applied' : 'Apply' }}
+                  </button>
+                </div>
+                <p v-if="useLoyaltyPoints && loyaltyRedemptionDiscount > 0" class="mt-2 text-[10px] text-indigo-500 font-bold px-1 italic">
+                  ✨ ৳{{ loyaltyRedemptionDiscount.toFixed(2) }} discount applied (Redeeming {{ redeemablePoints }} points)
+                </p>
+                <p v-if="useLoyaltyPoints && loyaltyRedemptionDiscount <= 0 && loyaltyMessage" class="mt-2 text-[10px] text-rose-500 font-bold px-1">
+                  ⚠️ {{ loyaltyMessage }}
+                </p>
+              </div>
+
+              <!-- Coupon Input -->
+              <div class="pt-4 mt-2 border-t border-gray-100">
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Have a coupon code?</label>
+                <div class="flex gap-2">
+                  <input 
+                    v-model="couponCode" 
+                    type="text" 
+                    placeholder="Enter code" 
+                    class="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
+                    :class="{'border-red-300 bg-red-50': couponError}"
+                    @keyup.enter="calculateDiscounts"
+                    @input="couponError = ''"
+                  />
+                  <button 
+                    @click="calculateDiscounts"
+                    :disabled="calculatingDiscount || !couponCode"
+                    class="px-4 py-2 bg-gray-100 text-gray-900 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Apply
+                  </button>
+                </div>
+                <p v-if="couponError" class="mt-2 text-xs text-red-500 font-medium animate-shake">{{ couponError }}</p>
               </div>
             </div>
             
@@ -337,6 +406,30 @@ const authStore = useAuthStore()
 const router = useRouter()
 const config = useRuntimeConfig()
 const { trackInitiateCheckout, trackPurchase } = useTracking()
+const storefrontStore = useStorefrontStore()
+
+const isLoyaltyActive = computed(() => {
+  const loyalty = storefrontStore.loyaltyProgram
+  if (!loyalty) return false
+  const v = loyalty.is_enabled
+  // Loose equality covers '1' == 1, and we check common truths
+  return v == '1' || v == 1 || v == true || v == 'true' || v == 'on'
+})
+
+const potentialPoints = computed(() => {
+  const loyalty = storefrontStore.loyaltyProgram
+  if (!isLoyaltyActive.value) return 0
+  
+  const subtotal = cartTotal.value - discountTotal.value
+  const minOrder = parseFloat(loyalty.min_order_total || '0')
+  
+  if (subtotal < minOrder) return 0
+  
+  const earningRate = parseFloat(loyalty.point_earning_rate || '0') // points per 100
+  if (earningRate <= 0) return 0
+  
+  return Math.floor((subtotal / 100) * earningRate)
+})
 
 const gateways = ref([])
 const loadingGateways = ref(false)
@@ -359,6 +452,14 @@ const loadingAddresses = ref(false)
 const discountTotal = ref(0)
 const appliedOffers = ref([])
 const calculatingDiscount = ref(false)
+const couponCode = ref('')
+const couponError = ref('')
+
+const useLoyaltyPoints = ref(false)
+const userLoyaltyBalance = ref(0)
+const loyaltyRedemptionDiscount = ref(0)
+const redeemablePoints = ref(0)
+const loyaltyMessage = ref('')
 
 const form = ref({
   email: '',
@@ -514,13 +615,20 @@ const calculateDiscounts = async () => {
         items: cart.value.map(item => ({
           id: item.id,
           quantity: item.quantity
-        }))
+        })),
+        coupon_code: couponCode.value,
+        use_loyalty_points: useLoyaltyPoints.value,
+        email: form.value.email
       }
     })
 
     if (response.success) {
       discountTotal.value = response.data.discount_total || 0
       appliedOffers.value = response.data.applied_offers || []
+      couponError.value = response.data.coupon_error || ''
+      loyaltyRedemptionDiscount.value = response.data.loyalty_discount || 0
+      redeemablePoints.value = response.data.redeemable_points || 0
+      loyaltyMessage.value = response.data.loyalty_message || ''
     }
   } catch (error) {
     console.error('Failed to calculate discounts:', error)
@@ -565,9 +673,26 @@ watch(() => cart.value, () => {
   calculateDiscounts()
 }, { deep: true, immediate: true })
 
+watch(useLoyaltyPoints, () => {
+  calculateDiscounts()
+})
+
 onMounted(async () => {
   if (authStore.user) {
     form.value.email = authStore.user.email || ''
+    
+    // Fetch latest loyalty balance
+    try {
+      const profileData = await $fetch(`${config.public.apiBase}/customer/profile`, {
+        headers: { Authorization: `Bearer ${useTokenStore().token}` }
+      })
+      if (profileData && profileData.user) {
+        userLoyaltyBalance.value = profileData.user.loyalty_points || 0
+      }
+    } catch (e) {
+      console.error('Failed to fetch user profile for loyalty balance:', e)
+      userLoyaltyBalance.value = authStore.user.loyalty_points || 0
+    }
     
     if (authStore.user.customer) {
       const customerInfo = authStore.user.customer
@@ -600,6 +725,15 @@ onMounted(async () => {
   
   fetchGateways()
   await fetchStates()
+  
+  // Ensure we have storefront data (loyalty settings depend on this)
+  if (!storefrontStore.loyaltyProgram) {
+    try {
+      await storefrontStore.fetchStorefront()
+    } catch (e) {
+      console.error('Failed to fetch storefront in checkout:', e)
+    }
+  }
   
   if (prefillAddress.value && prefillAddress.value.city_id) {
        try {
@@ -682,12 +816,16 @@ const placeOrder = async () => {
       items: cart.value.map(item => ({
         id: item.id,
         quantity: item.quantity
-      }))
+      })),
+      coupon_code: couponCode.value
     }
 
     const response = await $fetch(`${config.public.apiBase}/storefront/checkout`, {
       method: 'POST',
-      body: orderData
+      body: {
+        ...orderData,
+        use_loyalty_points: useLoyaltyPoints.value
+      }
     })
 
     if (response.success) {
@@ -710,7 +848,10 @@ const placeOrder = async () => {
       // Redirect to a success page
       router.push({
         path: '/thank-you',
-        query: { invoice_number: invoice_number }
+        query: { 
+          invoice_number: invoice_number,
+          earned_points: potentialPoints.value
+        }
       })
     }
   } catch (error) {
@@ -746,6 +887,16 @@ const placeOrder = async () => {
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.animate-shake {
+  animation: shake 0.2s ease-in-out 0s 2;
 }
 
 /* Tel Input Styling */

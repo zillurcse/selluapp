@@ -48,9 +48,8 @@ class CustomerPanelController extends Controller
 
         $stats = [
             [ 'icon' => '📦', 'value' => (string)$totalOrders, 'label' => 'Total Orders' ],
-//            [ 'icon' => '❤️', 'value' => '4', 'label' => 'Wishlist Items' ],
             [ 'icon' => '💰', 'value' => '৳' . number_format($totalSpent, 2), 'label' => 'Total Spent' ],
-            [ 'icon' => '⭐', 'value' => '3', 'label' => 'Reviews Left' ],
+            [ 'icon' => '⭐', 'value' => (string)($customer ? $customer->loyalty_points : 0), 'label' => 'Loyalty Points' ],
         ];
 
         $wishlistItems = [
@@ -80,6 +79,7 @@ class CustomerPanelController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'initials' => $initials,
+                'loyalty_points' => $customer ? $customer->loyalty_points : 0,
             ],
             'profile' => [
                 'firstName' => $customer ? $customer->first_name : $nameParts[0],

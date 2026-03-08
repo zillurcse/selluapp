@@ -10,6 +10,7 @@ class OfferCalculationService
     /**
      * @param array $cartItems array of items like ['product_id' => 1, 'variant_id' => null, 'price' => 100, 'quantity' => 2]
      * @param int|null $vendorId The vendor ID to fetch offers for
+     * @param string|null $couponCode The coupon code provided by the user
      * @return array [
      *     'original_total' => float, 
      *     'discount_total' => float, 
@@ -18,7 +19,7 @@ class OfferCalculationService
      *     'items' => array // Items with 'applied_offers' keys attached
      * ]
      */
-    public function calculateDiscounts(array $cartItems, ?int $vendorId = null): array
+    public function calculateDiscounts(array $cartItems, ?int $vendorId = null, ?string $couponCode = null): array
     {
         // Calculate original total before any discounts
         $originalTotal = 0;
@@ -84,20 +85,59 @@ class OfferCalculationService
             }
         }
 
+        // Apply Manual Coupon Code
+        $couponError = null;
+        if ($couponCode) {
+            $coupon = \App\Models\Coupon::where('code', $couponCode)->first();
+
+            if (!$coupon) {
+                $couponError = "Invalid coupon code.";
+            } elseif (!$coupon->is_active) {
+                $couponError = "This coupon is no longer active.";
+            } elseif ($coupon->start_date > now()) {
+                $couponError = "This coupon is not yet valid.";
+            } elseif ($coupon->end_date < now()) {
+                $couponError = "This coupon has expired.";
+            } elseif ($originalTotal < $coupon->min_purchase) {
+                $couponError = "Minimum purchase of ৳{$coupon->min_purchase} required for this coupon.";
+            } else {
+                $couponDiscount = 0;
+                if ($coupon->discount_type === 'percentage') {
+                    $couponDiscount = ($originalTotal * ($coupon->discount_amount / 100));
+                    if ($coupon->max_discount && $couponDiscount > $coupon->max_discount) {
+                        $couponDiscount = $coupon->max_discount;
+                    }
+                } else {
+                    $couponDiscount = $coupon->discount_amount;
+                }
+
+                if ($couponDiscount > 0) {
+                    $discountTotal += $couponDiscount;
+                    $appliedOffersLog[] = [
+                        'offer_id' => $coupon->id,
+                        'offer_title' => "Coupon: {$coupon->code}",
+                        'discount_applied' => round($couponDiscount, 2),
+                        'is_coupon' => true
+                    ];
+                }
+            }
+        }
+
         // Ensure we never discount more than the cart value
         $discountTotal = min($discountTotal, $originalTotal);
 
-        return $this->formatResult($cartItems, $originalTotal, $discountTotal, $appliedOffersLog);
+        return $this->formatResult($cartItems, $originalTotal, $discountTotal, $appliedOffersLog, $couponError);
     }
 
-    private function formatResult(array $cartItems, float $originalTotal, float $discountTotal, array $appliedOffersLog): array
+    private function formatResult(array $cartItems, float $originalTotal, float $discountTotal, array $appliedOffersLog, ?string $couponError = null): array
     {
         return [
             'original_total' => round($originalTotal, 2),
             'discount_total' => round($discountTotal, 2),
             'final_total' => round(max(0, $originalTotal - $discountTotal), 2),
             'applied_offers' => $appliedOffersLog,
-            'items' => $cartItems
+            'items' => $cartItems,
+            'coupon_error' => $couponError
         ];
     }
 }

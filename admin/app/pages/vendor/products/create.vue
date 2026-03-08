@@ -118,9 +118,9 @@
                 <input v-model="form.stock_qty" type="number" placeholder="0" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white" required />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Weight (kg)</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Weight (kg) <span class="text-red-500">*</span></label>
                 <div class="relative">
-                    <input v-model="form.weight" type="number" step="0.01" min="0" placeholder="0.00" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white pr-10" />
+                    <input v-model="form.weight" type="number" step="0.01" min="0" placeholder="0.00" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white pr-10" required />
                     <span class="absolute right-3 top-2.5 text-gray-400 dark:text-slate-500 text-xs font-semibold">kg</span>
                 </div>
               </div>
@@ -740,14 +740,14 @@ const openMediaLibrary = (mode, index = null) => {
 const handleMediaSelection = (selected) => {
     if (mediaModalMode.value === 'thumbnail') {
         thumbnailPreview.value = selected.file_url
-        form.value.image = selected.file_path
+        form.value.image = selected.file_url
     } else if (mediaModalMode.value === 'gallery') {
         const newImages = Array.isArray(selected) ? selected : [selected]
         newImages.forEach(img => {
-            if (!galleryItems.value.some(item => item.path === img.file_path)) {
+            if (!galleryItems.value.some(item => item.path === img.file_url)) {
                 galleryItems.value.push({
                     id: img.id,
-                    path: img.file_path,
+                    path: img.file_url,
                     preview: img.file_url,
                     source: 'existing'
                 })
@@ -756,7 +756,7 @@ const handleMediaSelection = (selected) => {
     } else if (mediaModalMode.value === 'variant') {
         if (targetVariantIndex.value !== null) {
             generatedVariants.value[targetVariantIndex.value].imagePreview = selected.file_url
-            generatedVariants.value[targetVariantIndex.value].imagePath = selected.file_path
+            generatedVariants.value[targetVariantIndex.value].imagePath = selected.file_url
         }
     }
 }
@@ -775,7 +775,7 @@ const form = ref({
   sale_price: '',
   discount_price: '',
   stock_qty: '',
-  weight: '',
+  weight: 0.5,
   has_variants: false,
   is_featured: false,
   is_special: false,

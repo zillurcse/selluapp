@@ -71,6 +71,7 @@ import {
   Cpu, 
   ShieldAlert, 
   Bug,
+  Gift,
   ArrowRight
 } from 'lucide-vue-next'
 
@@ -167,6 +168,13 @@ const managementCards = [
     iconBg: 'bg-orange-600',
     isPro: true,
     to: '/vendor/managed-shop/spider-intelligence'
+  },
+  {
+    title: 'Loyalty Program',
+    description: 'A professional loyalty program to reward your customers with points for every purchase.',
+    icon: Gift,
+    iconBg: 'bg-purple-600',
+    to: '/vendor/managed-shop/loyalty-program'
   }
 ]
 definePageMeta({

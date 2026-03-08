@@ -54,6 +54,7 @@
                     <tr class="bg-gray-50 dark:bg-gray-700 border-b border-gray-100 dark:border-gray-600">
                         <th class="py-4 px-6 font-semibold text-xs text-gray-500 dark:text-gray-300 uppercase tracking-wider">Name</th>
                         <th class="py-4 px-6 font-semibold text-xs text-gray-500 dark:text-gray-300 uppercase tracking-wider">Contact</th>
+                        <th class="py-4 px-6 font-semibold text-xs text-gray-500 dark:text-gray-300 uppercase tracking-wider">Points</th>
                         <th class="py-4 px-6 font-semibold text-xs text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
                         <th class="py-4 px-6 font-semibold text-xs text-gray-500 dark:text-gray-300 uppercase tracking-wider text-right">Actions</th>
                     </tr>
@@ -72,6 +73,13 @@
                             <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                                 <PhoneIcon class="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
                                 {{ customer.phone }}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+                                <span class="font-black text-gray-900 dark:text-white">{{ customer.loyalty_points || 0 }}</span>
+                                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Pts</span>
                             </div>
                         </td>
                         <td class="px-6 py-4">

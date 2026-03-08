@@ -86,25 +86,89 @@ class CheckoutController extends Controller
             'items' => 'required|array|min:1',
             'items.*.id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|integer|min:1',
+            'coupon_code' => 'nullable|string',
+            'use_loyalty_points' => 'nullable|boolean',
+            'email' => 'nullable|email',
         ]);
 
         $cartItems = [];
         $vendorId = null;
+        $subtotal = 0;
 
         foreach ($validated['items'] as $item) {
             $product = Product::find($item['id']);
             if (!$vendorId) $vendorId = $product->vendor_id;
             
+            $price = (float)($product->discount_price ?: $product->sale_price);
+            $subtotal += ($price * $item['quantity']);
+
             $cartItems[] = [
                 'product_id' => $product->id,
-                'price' => (float)($product->discount_price ?: $product->sale_price),
+                'price' => $price,
                 'quantity' => $item['quantity'],
                 'category_id' => $product->category_id
             ];
         }
 
         $service = new OfferCalculationService();
-        $result = $service->calculateDiscounts($cartItems, $vendorId);
+        $result = $service->calculateDiscounts($cartItems, $vendorId, $validated['coupon_code'] ?? null);
+
+        // Loyalty Point Redemption Calculation
+        $loyaltyDiscount = 0;
+        $redeemablePoints = 0;
+        $loyaltyMessage = '';
+        
+        if (($validated['use_loyalty_points'] ?? false) && $validated['email']) {
+            if ($result['discount_total'] > 0) {
+                $loyaltyMessage = 'Loyalty points cannot be used with other coupons or offers.';
+            } else {
+                $customer = Customer::where('vendor_id', $vendorId)
+                    ->where('email', $validated['email'])
+                    ->first();
+                
+                if ($customer && $customer->loyalty_points > 0) {
+                    $loyaltySettings = ShopSetting::where('group', 'loyalty_program')
+                        ->where('user_id', $vendorId)
+                        ->get()
+                        ->pluck('value', 'key');
+                    
+                    $isLoyaltyActive = isset($loyaltySettings['is_enabled']) && in_array($loyaltySettings['is_enabled'], [true, 'true', '1'], true);
+                    
+                    if ($isLoyaltyActive) {
+                        // Calculate redeemable subtotal: Only products WITHOUT discount_price
+                        $redeemableSubtotal = 0;
+                        foreach ($validated['items'] as $item) {
+                            $product = Product::find($item['id']);
+                            if ($product && !$product->discount_price) {
+                                $redeemableSubtotal += ($product->sale_price * $item['quantity']);
+                            }
+                        }
+
+                        if ($redeemableSubtotal <= 0) {
+                            $loyaltyMessage = 'Loyalty points can only be used on normal priced products.';
+                        } else {
+                            $pointValue = isset($loyaltySettings['point_value']) ? (float)$loyaltySettings['point_value'] : 0.1;
+                            $maxPossibleDiscount = $redeemableSubtotal;
+                            
+                            $potentialLoyaltyDiscount = $customer->loyalty_points * $pointValue;
+                            
+                            if ($potentialLoyaltyDiscount > $maxPossibleDiscount) {
+                                $loyaltyDiscount = $maxPossibleDiscount;
+                                $redeemablePoints = ceil($maxPossibleDiscount / $pointValue);
+                            } else {
+                                $loyaltyDiscount = $potentialLoyaltyDiscount;
+                                $redeemablePoints = $customer->loyalty_points;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        $result['loyalty_discount'] = $loyaltyDiscount;
+        $result['redeemable_points'] = $redeemablePoints;
+        $result['loyalty_message'] = $loyaltyMessage;
+        $result['discount_total'] += $loyaltyDiscount;
 
         return response()->json([
             'success' => true,
@@ -127,6 +191,8 @@ class CheckoutController extends Controller
             'items.*.quantity' => 'required|integer|min:1',
             'note' => 'nullable|string',
             'carrier' => 'nullable|string',
+            'coupon_code' => 'nullable|string',
+            'use_loyalty_points' => 'nullable|boolean',
         ]);
 
         $city = \App\Models\City::findOrFail($validated['city_id']);
@@ -206,8 +272,65 @@ class CheckoutController extends Controller
 
                 // Apply Promotions
                 $calculationService = new OfferCalculationService();
-                $discountResult = $calculationService->calculateDiscounts($offerCartItems, $vendorId);
+                $discountResult = $calculationService->calculateDiscounts($offerCartItems, $vendorId, $validated['coupon_code'] ?? null);
                 $discountAmount = $discountResult['discount_total'];
+                
+                // Loyalty Point Redemption
+                $loyaltyDiscount = 0;
+                $pointsToRedeem = 0;
+                if (($validated['use_loyalty_points'] ?? false) && $customer->loyalty_points > 0 && $discountAmount == 0) {
+                    $loyaltySettings = \App\Models\ShopSetting::where('user_id', $vendorId)
+                        ->where('group', 'loyalty_program')
+                        ->get()
+                        ->pluck('value', 'key');
+                    
+                    $isLoyaltyActive = isset($loyaltySettings['is_enabled']) && in_array($loyaltySettings['is_enabled'], [true, 'true', '1'], true);
+                    
+                    if ($isLoyaltyActive) {
+                        // Calculate redeemable subtotal: Only products WITHOUT discount_price
+                        $redeemableSubtotal = 0;
+                        foreach ($vendorItems as $vi) {
+                            if (!$vi['product']->discount_price) {
+                                $redeemableSubtotal += ($vi['product']->sale_price * $vi['quantity']);
+                            }
+                        }
+
+                        if ($redeemableSubtotal > 0) {
+                            $pointValue = isset($loyaltySettings['point_value']) ? (float)$loyaltySettings['point_value'] : 0.1;
+                            $maxDis = $redeemableSubtotal;
+                            
+                            $potentialDis = $customer->loyalty_points * $pointValue;
+                            
+                            if ($potentialDis > $maxDis) {
+                                $loyaltyDiscount = $maxDis;
+                                $pointsToRedeem = ceil($maxDis / $pointValue);
+                            } else {
+                                $loyaltyDiscount = $potentialDis;
+                                $pointsToRedeem = $customer->loyalty_points;
+                            }
+
+                            if ($pointsToRedeem > 0) {
+                                $customer->decrement('loyalty_points', $pointsToRedeem);
+                                \App\Models\LoyaltyPointLog::create([
+                                    'customer_id' => $customer->id,
+                                    'vendor_id' => $vendorId,
+                                    'points' => -$pointsToRedeem,
+                                    'description' => "Points redeemed for order discount",
+                                ]);
+                                
+                                $discountAmount += $loyaltyDiscount;
+                                // Add to applied promotions for tracking
+                                $appliedPromos = $discountResult['applied_offers'] ?? [];
+                                $appliedPromos[] = [
+                                    'name' => 'Loyalty Points Redemption',
+                                    'discount' => $loyaltyDiscount,
+                                    'points_redeemed' => $pointsToRedeem
+                                ];
+                                $discountResult['applied_offers'] = $appliedPromos;
+                            }
+                        }
+                    }
+                }
                 
                 // Prepare carts collection for getShippingCost helper
                 $carts = collect();
@@ -313,6 +436,41 @@ class CheckoutController extends Controller
                         'total_price' => $price * $vi['quantity'],
                     ]);
                 }
+
+                // --- Loyalty Program Integration ---
+                $loyaltySettings = \App\Models\ShopSetting::where('user_id', $vendorId)
+                    ->where('group', 'loyalty_program')
+                    ->get()
+                    ->pluck('value', 'key');
+                
+                $isLoyaltyActive = isset($loyaltySettings['is_enabled']) && in_array($loyaltySettings['is_enabled'], [true, 'true', '1'], true);
+                
+                if ($isLoyaltyActive) {
+                    $earningRate = isset($loyaltySettings['point_earning_rate']) ? (float)$loyaltySettings['point_earning_rate'] : 1; // points per 100 currency
+                    $minOrderTotal = isset($loyaltySettings['min_order_total']) ? (float)$loyaltySettings['min_order_total'] : 0;
+
+                    $eligibleAmount = $subtotal - $discountAmount;
+
+                    if ($eligibleAmount >= $minOrderTotal) {
+                        $earnedPoints = floor(($eligibleAmount / 100) * $earningRate);
+
+                        if ($earnedPoints > 0) {
+                            $customer->increment('loyalty_points', $earnedPoints);
+
+                            \App\Models\LoyaltyPointLog::create([
+                                'customer_id' => $customer->id,
+                                'vendor_id' => $vendorId,
+                                'order_id' => $order->id,
+                                'points' => $earnedPoints,
+                                'description' => "Points earned for order #" . $order->invoice_number,
+                            ]);
+
+                            // Attach earned points to order object for frontend visibility
+                            $order->earned_points = $earnedPoints;
+                        }
+                    }
+                }
+                // -----------------------------------
 
                 $orders[] = $order;
             }

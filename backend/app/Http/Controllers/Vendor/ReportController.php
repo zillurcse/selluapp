@@ -495,20 +495,65 @@ class ReportController extends Controller implements HasMiddleware
     {
         $vendorId = $request->user()->vendor_id ?? $request->user()->id;
 
-        // Total discount given via orders
-        $couponsImpact = \App\Models\Order::where('user_id', $vendorId)
-            ->sum('discount_amount');
+        // Fetch all coupons for this vendor
+        $coupons = \App\Models\Coupon::where('vendor_id', $vendorId)->get();
 
-        $activeCoupons = \App\Models\Coupon::where('vendor_id', $vendorId)
-            ->where('is_active', true)
-            ->count();
+        // Fetch all orders for this vendor that are not cancelled or returned
+        $orders = \App\Models\Order::where('user_id', $vendorId)
+            ->whereNotIn('status', ['cancelled', 'returned'])
+            ->whereNotNull('applied_promotions')
+            ->get(['id', 'applied_promotions', 'total_amount', 'subtotal']);
 
-        $totalCoupons = \App\Models\Coupon::where('vendor_id', $vendorId)->count();
+        $couponStats = $coupons->map(function ($coupon) use ($orders) {
+            $filteredOrders = $orders->filter(function ($order) use ($coupon) {
+                $appliedPromotions = is_array($order->applied_promotions) 
+                    ? $order->applied_promotions 
+                    : json_decode($order->applied_promotions, true);
+                
+                if (!$appliedPromotions) return false;
+
+                foreach ($appliedPromotions as $promo) {
+                    if (isset($promo['is_coupon']) && $promo['is_coupon'] && $promo['offer_id'] == $coupon->id) {
+                        return true;
+                    }
+                }
+                return false;
+            });
+
+            $totalDiscount = $filteredOrders->sum(function ($order) use ($coupon) {
+                $appliedPromotions = is_array($order->applied_promotions) 
+                    ? $order->applied_promotions 
+                    : json_decode($order->applied_promotions, true);
+                
+                foreach ($appliedPromotions as $promo) {
+                    if (isset($promo['is_coupon']) && $promo['is_coupon'] && $promo['offer_id'] == $coupon->id) {
+                        return (float) $promo['discount_applied'];
+                    }
+                }
+                return 0;
+            });
+
+            return [
+                'id' => $coupon->id,
+                'code' => $coupon->code,
+                'type' => $coupon->discount_type,
+                'status' => $coupon->is_active ? 'active' : 'inactive',
+                'usage_limit' => $coupon->usage_limit,
+                'orders_count' => $filteredOrders->count(),
+                'orders_sum_discount_amount' => $totalDiscount,
+                'orders_sum_total_amount' => $filteredOrders->sum('total_amount'),
+            ];
+        })->sortByDesc('orders_count')->values();
+
+        $totalRedemptions = $couponStats->sum('orders_count');
+        $totalDiscountGiven = $couponStats->sum('orders_sum_discount_amount');
 
         return response()->json([
-            'total_discount_given' => (float) $couponsImpact,
-            'active_coupons'       => $activeCoupons,
-            'total_coupons'        => $totalCoupons,
+            'kpi' => [
+                'total_redemptions' => $totalRedemptions,
+                'total_discount_given' => $totalDiscountGiven,
+            ],
+            'top_coupons' => $couponStats,
         ]);
     }
 

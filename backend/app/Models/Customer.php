@@ -55,4 +55,9 @@ class Customer extends Model
     {
         return $this->hasMany(PosSale::class, 'customer_id');
     }
+
+    public function loyaltyPointLogs(): HasMany
+    {
+        return $this->hasMany(LoyaltyPointLog::class, 'customer_id');
+    }
 }

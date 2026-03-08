@@ -16,7 +16,8 @@ export const useStorefrontStore = defineStore('storefront', {
         promotions: [] as any[],
         websiteBanners: [] as any[],
         marketing: null as any,
-        customPages: [] as any[]
+        customPages: [] as any[],
+        loyaltyProgram: null as any
     }),
 
     actions: {
@@ -80,6 +81,9 @@ export const useStorefrontStore = defineStore('storefront', {
 
             // 0. Vendor Profile
             this.vendorProfile = data.vendor || null
+
+            // 0. Loyalty Program
+            this.loyaltyProgram = data.loyalty_program || null
 
             // 0.1 Home Landing Page
             if (data.landing_page) {

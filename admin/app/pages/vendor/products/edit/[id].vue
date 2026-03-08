@@ -239,7 +239,7 @@
           <h2 class="text-base font-bold text-slate-900 dark:text-white mb-4">Inventory Codes</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5 uppercase tracking-tighter font-black opacity-60">SKU (Stock Keeping Unit)</label>
+              <label class="block text-sm text-gray-700 dark:text-slate-300 mb-1.5 uppercase tracking-tighter font-black opacity-60">SKU (Stock Keeping Unit)</label>
               <div class="flex gap-2">
                  <input v-model="form.sku" type="text" placeholder="Ex: UORLA-14464" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all bg-white dark:bg-slate-900 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 font-bold uppercase"  />
                  <button @click="generateRandomSku" type="button" class="px-4 py-2 bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors shadow-sm">
@@ -315,9 +315,9 @@
                 <input v-model="form.stock_qty" type="number" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all bg-white dark:bg-slate-900 text-gray-900 dark:text-white" required />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Weight (kg)</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Weight (kg) <span class="text-red-500">*</span></label>
                 <div class="relative">
-                  <input v-model="form.weight" type="number" step="0.01" min="0" placeholder="0.00" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all bg-white dark:bg-slate-900 text-gray-900 dark:text-white pr-10" />
+                  <input v-model="form.weight" type="number" step="0.01" min="0" placeholder="0.00" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all bg-white dark:bg-slate-900 text-gray-900 dark:text-white pr-10" required />
                   <span class="absolute right-3 top-2.5 text-gray-400 dark:text-slate-500 text-xs font-semibold">kg</span>
                 </div>
               </div>
@@ -860,14 +860,14 @@ const handleMediaSelection = (selection) => {
         // Single selection for thumbnail
         const file = Array.isArray(selection) ? selection[0] : selection
         if (file) {
-            form.value.image = getUrl(file)
-            thumbnailPreview.value = getUrl(file)
+            form.value.image = file.file_url || getUrl(file)
+            thumbnailPreview.value = file.file_url || getUrl(file)
         }
     } else if (mediaModalMode.value === 'gallery') {
         // Multiple selections for gallery
         const selections = Array.isArray(selection) ? selection : [selection]
         selections.forEach(file => {
-            const url = getUrl(file)
+            const url = file.file_url || getUrl(file)
             if (url && !galleryItems.value.find(item => item.value === url)) {
                 galleryItems.value.push({
                     id: file.id,
@@ -882,8 +882,9 @@ const handleMediaSelection = (selection) => {
         const file = Array.isArray(selection) ? selection[0] : selection
         const variant = generatedVariants.value[targetVariantIndex.value]
         if (variant && file) {
-            variant.imagePath = getUrl(file)
-            variant.imagePreview = getUrl(file)
+            const url = file.file_url || getUrl(file)
+            variant.imagePath = url
+            variant.imagePreview = url
         }
     }
 }
