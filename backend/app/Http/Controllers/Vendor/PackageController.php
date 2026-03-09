@@ -33,6 +33,8 @@ class PackageController extends Controller
         }
 
         $billingCycle = $request->input('billing_cycle', 'monthly');
+        $paymentMethod = $request->input('payment_method', 'stripe'); // default to stripe for card
+        $paymentRef = $request->input('payment_ref');
         
         $price = $package->price;
         if ($billingCycle === 'yearly') {
@@ -49,7 +51,8 @@ class PackageController extends Controller
             'billing_cycle' => $billingCycle,
             'starts_at' => now(),
             'ends_at' => $endsAt,
-            'payment_method' => 'system',
+            'payment_method' => $paymentMethod,
+            'notes' => $paymentRef ? "Payment Reference: {$paymentRef}" : null,
         ]);
 
         if ($price > 0) {
@@ -59,8 +62,8 @@ class PackageController extends Controller
                 'amount' => $price,
                 'currency' => 'USD',
                 'status' => 'pending',
-                'payment_method' => 'system',
-                'payment_ref' => 'REF-' . strtoupper(uniqid()),
+                'payment_method' => $paymentMethod,
+                'payment_ref' => $paymentRef ?: 'REF-' . strtoupper(uniqid()),
                 'paid_at' => null,
             ]);
         }
@@ -69,5 +72,16 @@ class PackageController extends Controller
             'message' => "Upgrade request for {$package->name} plan submitted. It is pending admin approval.",
             'user' => $user->fresh(['vendorProfile.package', 'roles.permissions'])
         ]);
+    }
+
+    public function history()
+    {
+        $user = auth()->user();
+        $subscriptions = \App\Models\Subscription::with('package')
+            ->where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+            
+        return response()->json($subscriptions);
     }
 }

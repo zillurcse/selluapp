@@ -65,12 +65,51 @@
       </div>
 
       <!-- Footer Link -->
-       <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" class="flex items-center text-red-600 hover:text-red-700 font-medium text-sm transition-colors cursor-pointer">
-          <PlayCircle class="w-4 h-4 mr-2" />
+       <button 
+          @click="showVideoModal = true"
+          class="flex items-center text-rose-600 hover:text-rose-700 font-bold text-sm transition-all cursor-pointer group hover:scale-105 active:scale-95 bg-white dark:bg-slate-900 px-6 py-3 rounded-full shadow-sm border border-slate-100 dark:border-slate-800"
+       >
+          <PlayCircle class="w-5 h-5 mr-2 group-hover:fill-rose-50 transition-colors" />
           Watch Tutorial Video
-       </a>
+       </button>
 
     </div>
+
+    <!-- Video Modal -->
+    <Transition
+      enter-active-class="transition duration-300 ease-out"
+      enter-from-class="opacity-0 scale-95"
+      enter-to-class="opacity-100 scale-100"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="opacity-100 scale-100"
+      leave-to-class="opacity-0 scale-95"
+    >
+      <div v-if="showVideoModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-10">
+        <!-- Backdrop -->
+        <div @click="showVideoModal = false" class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"></div>
+        
+        <!-- Modal Content -->
+        <div class="relative w-full max-w-5xl bg-black rounded-3xl overflow-hidden shadow-2xl border border-slate-800/50 aspect-video group">
+          <!-- Close Button -->
+          <button 
+            @click="showVideoModal = false"
+            class="absolute top-4 right-4 z-10 p-2 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full text-white transition-all transform hover:rotate-90 group-hover:opacity-100 md:opacity-0"
+          >
+            <X class="w-6 h-6" />
+          </button>
+
+          <!-- Iframe -->
+          <iframe 
+            class="w-full h-full"
+            src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1" 
+            title="YouTube video player" 
+            frameborder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+            allowfullscreen
+          ></iframe>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -82,8 +121,11 @@ import {
   Layers, 
   FileText, 
   Settings,
-  PlayCircle 
+  PlayCircle,
+  X
 } from 'lucide-vue-next'
+
+const showVideoModal = ref(false)
 
 definePageMeta({
   middleware: 'auth',

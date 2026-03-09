@@ -13,15 +13,41 @@
         </div>
       </NuxtLink>
       
-      <div class="flex items-center gap-8">
-        <button class="text-sm font-bold uppercase tracking-widest hover:text-indigo-400 transition-colors">Search</button>
-        <button class="relative group">
-          <div class="absolute -top-1 -right-1 w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div>
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      <div class="flex items-center gap-6">
+        <!-- Cart Button -->
+        <button class="relative group p-2 rounded-xl hover:bg-white/10 transition-all" @click="toggleCart">
+          <div v-if="cartCount > 0" class="absolute -top-1 -right-1 w-5 h-5 bg-indigo-500 rounded-full flex items-center justify-center text-[10px] font-black animate-pulse">{{ cartCount }}</div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
         </button>
-        <button class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-all">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-        </button>
+
+        <!-- User Dropdown -->
+        <div class="relative" ref="profileDropdown">
+          <template v-if="authStore.isAuthenticated">
+            <button @click="isProfileOpen = !isProfileOpen" class="w-10 h-10 rounded-xl bg-white text-black flex items-center justify-center font-black text-sm hover:scale-105 active:scale-95 transition-all shadow-lg shadow-white/10">
+              {{ userInitials }}
+            </button>
+            
+            <div 
+              v-if="isProfileOpen"
+              class="absolute top-full right-0 mt-4 bg-black/90 backdrop-blur-2xl border border-white/10 rounded-2xl p-2 flex flex-col shadow-2xl z-[100] min-w-[220px] animate-slide-up-short"
+            >
+              <div class="px-4 py-3 border-b border-white/5 mb-2">
+                <div class="text-[0.8rem] font-bold text-white truncate">{{ authStore.user?.name }}</div>
+                <div class="text-[0.7rem] font-medium text-white/40 truncate">{{ authStore.user?.email }}</div>
+              </div>
+              <NuxtLink v-for="link in accountLinks" :key="link.to" :to="link.to" @click="isProfileOpen = false" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-[0.85rem] font-bold text-white/60 hover:text-white hover:bg-white/5 transition-all">
+                <span class="text-base opacity-70">{{ link.icon }}</span> {{ link.label }}
+              </NuxtLink>
+              <div class="border-t border-white/5 my-1"></div>
+              <button @click="handleLogout" class="w-full text-left flex items-center gap-3 px-4 py-2.5 rounded-xl text-[0.85rem] font-bold text-rose-400 hover:text-rose-500 hover:bg-rose-500/5 transition-all">
+                <span class="text-base">🚪</span> Sign out
+              </button>
+            </div>
+          </template>
+          <template v-else>
+            <NuxtLink to="/login" class="px-6 py-2.5 rounded-xl bg-white text-black font-black text-xs uppercase tracking-widest hover:bg-indigo-500 hover:text-white transition-all shadow-lg shadow-white/5">Login</NuxtLink>
+          </template>
+        </div>
       </div>
     </nav>
 
@@ -243,7 +269,8 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { toast } from 'vue-sonner'
 
 const props = defineProps({
   data: {
@@ -252,6 +279,10 @@ const props = defineProps({
   }
 })
 
+const { toggleCart, cartCount } = useCart()
+const authStore = useAuthStore()
+const storefrontStore = useStorefrontStore()
+
 const product = computed(() => props.data.products?.[0] || {})
 const vendor = computed(() => props.data.vendor || {})
 const settings = computed(() => props.data.landingPage?.settings || {})
@@ -259,6 +290,49 @@ const settings = computed(() => props.data.landingPage?.settings || {})
 const quantity = ref(1)
 const activeColor = ref('#1a1a1a')
 const activeNavTab = ref('Overview')
+const isProfileOpen = ref(false)
+const profileDropdown = ref(null)
+
+const userInitials = computed(() => {
+  if (!authStore.user?.name) return 'U'
+  const names = authStore.user.name.split(' ')
+  if (names.length >= 2) {
+    return (names[0][0] + names[1][0]).toUpperCase()
+  }
+  return authStore.user.name.substring(0, 2).toUpperCase()
+})
+
+const handleLogout = async () => {
+  try {
+    await authStore.logout()
+    isProfileOpen.value = false
+    toast.success('Successfully logged out')
+  } catch (error) {
+    console.error('Logout error:', error)
+    toast.error('Failed to log out')
+  }
+}
+
+const handleClickOutside = (event) => {
+  if (profileDropdown.value && !profileDropdown.value.contains(event.target)) {
+    isProfileOpen.value = false
+  }
+}
+
+const accountLinks = [
+  { to: '/account', label: 'Dashboard', icon: '🏠' },
+  { to: '/account', label: 'My Orders', icon: '📦' },
+  { to: '/account', label: 'Wishlist', icon: '❤️' },
+  { to: '/account', label: 'Profile Settings', icon: '👤' },
+]
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 
 const colors = [
   { name: 'Obsidian', hex: '#1a1a1a' },
@@ -357,6 +431,15 @@ const floatingPoints = computed(() => {
 
 .animate-float {
   animation: float 4s ease-in-out infinite;
+}
+
+@keyframes slideUpShort {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-up-short {
+  animation: slideUpShort 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
 /* Hide scrollbar but keep functionality */

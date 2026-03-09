@@ -21,34 +21,37 @@
     <CategoryGrid :categories="topCategories" />
 
     <!-- ===== PROMOTIONS SECTION ===== -->
-    <PromotionSection :promotions="promotions" />
+    <LazyPromotionSection v-if="promotions?.length" :promotions="promotions" />
 
     <!-- ===== CATEGORY WISE PRODUCTS ===== -->
-    <CategoryWiseProducts 
+    <LazyCategoryWiseProducts 
+      v-if="categoryWiseProducts?.length"
       :categories="categoryWiseProducts" 
       @add-to-cart="addToCart"
     />
 
     <!-- ===== PROMO BANNERS ===== -->
-    <PromoBanners :banners="websiteBanners" />
+    <LazyPromoBanners v-if="websiteBanners?.length" :banners="websiteBanners" />
 
     <!-- ===== TRENDING PRODUCTS ===== -->
-    <TrendingProducts 
+    <LazyTrendingProducts 
+      v-if="products?.length"
       :products="products" 
       @add-to-cart="addToCart"
     />
 
     <!-- ===== INFINITE CATEGORY PRODUCTS ===== -->
-    <InfiniteCategoryProducts 
+    <LazyInfiniteCategoryProducts 
+      v-if="categoryWiseProducts"
       :startOffset="categoryWiseProducts?.length || 0"
       @add-to-cart="addToCart" 
     />
 
     <!-- ===== FEATURED LOOKBOOK ===== -->
-    <LookbookSection />
+    <LazyLookbookSection />
 
     <!-- ===== NEWSLETTER ===== -->
-    <NewsletterSection />
+    <LazyNewsletterSection />
   </div>
 </template>
 
@@ -59,10 +62,12 @@ import { defineAsyncComponent, shallowRef, watchEffect } from 'vue'
 const storefrontStore = useStorefrontStore()
 const { slides, topCategories, trendingProducts: products, categoryWiseProducts, homeLandingPage, promotions, websiteBanners } = storeToRefs(storefrontStore)
 
-// Fetch initial data from store
-await useAsyncData('storefront-init', async () => {
-  await storefrontStore.fetchStorefront()
-  return true
+// Fetch essential initial data (Sliders, Categories, Settings)
+await useAsyncData('storefront-essential', () => storefrontStore.fetchStorefront('essential'))
+
+// Fetch remaining data after hydrate
+onMounted(() => {
+  storefrontStore.fetchStorefront('full')
 })
 
 // SEO meta tags for homepage

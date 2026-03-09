@@ -16,8 +16,16 @@
           </div>
         </div>
 
-        <!-- Billing Toggle -->
-        <div class="flex items-center gap-4 bg-white p-1.5 border border-slate-200 rounded-[20px] shadow-sm self-start md:self-center">
+        <div class="flex items-center gap-4">
+          <NuxtLink 
+            to="/vendor/upgrade-package/history" 
+            class="px-6 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm"
+          >
+            <History class="w-4 h-4" /> Purchase History
+          </NuxtLink>
+          
+          <!-- Billing Toggle -->
+          <div class="flex items-center gap-4 bg-white p-1.5 border border-slate-200 rounded-[20px] shadow-sm">
           <button 
             @click="isYearly = false"
             :class="['px-6 py-2.5 text-sm font-black rounded-[14px] transition-all', !isYearly ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/20' : 'text-slate-500 hover:text-slate-900']"
@@ -31,6 +39,7 @@
             Yearly
             <span class="absolute -top-3 -right-2 px-2 py-0.5 bg-emerald-500 text-white text-[9px] font-black rounded-full uppercase tracking-tighter ring-2 ring-white">20% OFF</span>
           </button>
+          </div>
         </div>
       </div>
     </div>
@@ -122,14 +131,19 @@
               :disabled="plan.isCurrent || isProcessing"
               :class="[
                 'w-full py-5 rounded-2xl font-black text-lg transition-all active:scale-[0.98] shadow-lg flex items-center justify-center gap-3 group/btn',
-                (plan.isCurrent || isProcessing)
-                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none' 
-                  : (plan.featured 
-                    ? 'bg-slate-900 text-white hover:bg-black shadow-slate-900/20' 
-                    : 'bg-white border-2 border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white')
+                isProcessing
+                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'
+                  : (plan.isCurrent
+                    ? 'bg-emerald-500 text-white cursor-default shadow-emerald-500/20'
+                    : (plan.featured 
+                      ? 'bg-slate-900 text-white hover:bg-black shadow-slate-900/20' 
+                      : 'bg-white border-2 border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white'))
               ]"
             >
-              <span v-if="plan.isCurrent">Active Plan</span>
+              <template v-if="plan.isCurrent">
+                <Check class="w-6 h-6" stroke-width="4" />
+                <span>Current Plan</span>
+              </template>
               <span v-else-if="isProcessing">Processing...</span>
               <template v-else>
                 {{ plan.cta }}
@@ -169,7 +183,8 @@ import {
   Rocket, 
   Crown, 
   ShieldCheck, 
-  HeartHandshake
+  HeartHandshake,
+  History
 } from 'lucide-vue-next'
 
 import { toast } from 'vue-sonner'

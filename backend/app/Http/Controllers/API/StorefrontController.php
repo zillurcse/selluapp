@@ -16,8 +16,7 @@ class StorefrontController extends Controller
 {
     private function resolveTenantId(Request $request)
     {
-        $domain = 'vendor3.test';
-        // $domain = $request->header('X-Tenant-Domain') ?? $request->query('domain');
+        $domain = $request->header('X-Tenant-Domain') ?? $request->query('domain');
 
         if (!$domain) {
             return null; // No specific tenant
@@ -67,9 +66,10 @@ class StorefrontController extends Controller
 
         $userId = $tenantId ?? 5; // fallback to 5 for default global sliders
 
-        $cacheKey = 'storefront_index_' . ($tenantId ?? 'global');
+        $isEssential = $request->query('only') === 'essential';
+        $cacheKey = 'storefront_index_' . ($tenantId ?? 'global') . ($isEssential ? '_essential' : '_full');
 
-        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 600, function () use ($tenantId, $userId) {
+        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 600, function () use ($tenantId, $userId, $isEssential) {
             $query = ShopSetting::where('user_id', $userId);
             $query->where('group', 'website_sliders');
             $sliders = $query->get()->pluck('value', 'key')->map(function ($val, $key) {
@@ -85,7 +85,8 @@ class StorefrontController extends Controller
                 return $parsedVal;
             });
 
-            $featuredProductsQuery = Product::with(['categories', 'brand', 'vendor.vendorProfile'])
+            $featuredProductsQuery = Product::with(['categories:id,name,slug', 'brand:id,name,slug', 'vendor.vendorProfile:id,user_id,store_name,store_slug'])
+                ->select('id', 'name', 'sale_price', 'slug', 'image', 'thumbnail', 'vendor_id', 'brand_id', 'is_featured', 'is_active', 'status')
                 ->where('is_featured', true)
                 ->where('is_active', true)
                 ->where('status', 'published')
@@ -98,7 +99,8 @@ class StorefrontController extends Controller
 
             $featuredProducts = $featuredProductsQuery->get();
 
-            $trendingProductsQuery = Product::with(['categories', 'brand'])
+            $trendingProductsQuery = Product::with(['categories:id,name,slug', 'brand:id,name,slug'])
+                ->select('id', 'name', 'sale_price', 'slug', 'image', 'thumbnail', 'vendor_id', 'brand_id', 'is_active', 'status', 'is_trending')
                 ->where('is_trending', true)
                 ->where('is_active', true)
                 ->where('status', 'published')
@@ -135,12 +137,24 @@ class StorefrontController extends Controller
             // Vendor Profile info if tenant
             $vendorProfile = null;
             if ($tenantId) {
-                $profile = \App\Models\VendorProfile::where('user_id', $tenantId)->first();
+                $profile = \App\Models\VendorProfile::where('user_id', $tenantId)
+                    ->select('id', 'user_id', 'store_name', 'store_slug', 'logo', 'banner')
+                    ->first();
                 if ($profile) {
-                    $profile->logo_url = $profile->logo ?? $profile->logo;
-                    $profile->banner_url = $profile->banner ?? $profile->banner;
+                    $profile->logo_url = $profile->logo;
+                    $profile->banner_url = $profile->banner;
                     $vendorProfile = $profile;
                 }
+            }
+
+            if ($isEssential) {
+                return response()->json([
+                    'sliders' => $sliders,
+                    'categories' => $categories,
+                    'vendor' => $vendorProfile,
+                    'loyalty_program' => ShopSetting::where('user_id', $userId)->where('group', 'loyalty_program')->get()->pluck('value', 'key'),
+                    'marketing' => ShopSetting::where('user_id', $userId)->where('group', 'marketing_social')->get()->pluck('value', 'key')
+                ]);
             }
 
             $brands = \App\Models\Brand::where('is_active', true)->latest()->get();
@@ -159,11 +173,12 @@ class StorefrontController extends Controller
                 ->with(['products' => function($q) use ($tenantId) {
                     $q->where('is_active', true)
                       ->where('status', 'published')
-                      ->with(['categories', 'brand']);
+                      ->select('products.id', 'products.name', 'products.sale_price', 'products.slug', 'products.image', 'products.thumbnail', 'products.vendor_id', 'products.brand_id', 'products.is_active', 'products.status')
+                      ->with(['categories:id,name,slug', 'brand:id,name,slug']);
                     if ($tenantId) {
                         $q->where('vendor_id', $tenantId);
                     }
-                    $q->latest()->take(8);
+                    $q->orderBy('products.created_at', 'desc')->take(8);
                 }])
                 ->latest()
                 ->take(3);
@@ -480,7 +495,7 @@ class StorefrontController extends Controller
                 if ($tenantId) {
                     $q->where('vendor_id', $tenantId);
                 }
-                $q->latest()->take(12);
+                $q->orderBy('products.created_at', 'desc')->take(12);
             }])
             ->latest();
 

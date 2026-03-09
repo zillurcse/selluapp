@@ -317,6 +317,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Packages
         Route::get('packages', [App\Http\Controllers\Vendor\PackageController::class, 'index']);
+        Route::get('packages/history', [App\Http\Controllers\Vendor\PackageController::class, 'history']);
         Route::post('packages/{package}/purchase', [App\Http\Controllers\Vendor\PackageController::class, 'purchase']);
     });
 });

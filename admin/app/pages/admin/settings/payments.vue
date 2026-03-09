@@ -84,6 +84,37 @@
           </div>
           
           <div class="p-8 space-y-8 overflow-y-auto">
+            <!-- Templates (Show only when creating) -->
+            <div v-if="!editingId" class="space-y-4">
+              <h3 class="text-xs font-black text-indigo-600 uppercase tracking-widest border-b border-indigo-50 pb-2">Quick Templates</h3>
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <button @click="applyTemplate('bkash')" class="p-3 bg-slate-50 hover:bg-indigo-50 border border-slate-100 dark:bg-slate-800 dark:border-slate-700 rounded-2xl transition-all flex flex-col items-center gap-2 group">
+                  <div class="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                    <Wallet class="w-5 h-5 text-pink-500" />
+                  </div>
+                  <span class="text-[10px] font-black uppercase text-slate-600 dark:text-slate-300">bKash</span>
+                </button>
+                <button @click="applyTemplate('nagad')" class="p-3 bg-slate-50 hover:bg-orange-50 border border-slate-100 dark:bg-slate-800 dark:border-slate-700 rounded-2xl transition-all flex flex-col items-center gap-2 group">
+                  <div class="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                    <Wallet class="w-5 h-5 text-orange-500" />
+                  </div>
+                  <span class="text-[10px] font-black uppercase text-slate-600 dark:text-slate-300">Nagad</span>
+                </button>
+                <button @click="applyTemplate('rocket')" class="p-3 bg-slate-50 hover:bg-purple-50 border border-slate-100 dark:bg-slate-800 dark:border-slate-700 rounded-2xl transition-all flex flex-col items-center gap-2 group">
+                  <div class="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                    <Wallet class="w-5 h-5 text-purple-500" />
+                  </div>
+                  <span class="text-[10px] font-black uppercase text-slate-600 dark:text-slate-300">Rocket</span>
+                </button>
+                <button @click="applyTemplate('bank')" class="p-3 bg-slate-50 hover:bg-emerald-50 border border-slate-100 dark:bg-slate-800 dark:border-slate-700 rounded-2xl transition-all flex flex-col items-center gap-2 group">
+                  <div class="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                    <Banknote class="w-5 h-5 text-emerald-500" />
+                  </div>
+                  <span class="text-[10px] font-black uppercase text-slate-600 dark:text-slate-300">Bank</span>
+                </button>
+              </div>
+            </div>
+
             <!-- Basic Info -->
             <div class="space-y-6">
               <h3 class="text-xs font-black text-indigo-600 uppercase tracking-widest border-b border-indigo-50 pb-2">Basic Info</h3>
@@ -112,6 +143,8 @@
                     <option value="Banknote">Banknote</option>
                     <option value="Zap">Zap</option>
                     <option value="Globe">Globe</option>
+                    <option value="Smartphone">Smartphone</option>
+                    <option value="Send">Send</option>
                   </select>
                 </div>
                 <div class="space-y-2">
@@ -169,7 +202,12 @@
                         <option value="text">Text</option>
                         <option value="password">Password</option>
                         <option value="select">Select</option>
+                        <option value="textarea">Textarea</option>
                       </select>
+                    </div>
+                    <div class="space-y-1">
+                      <label class="text-[10px] font-black text-indigo-400 uppercase">Value (Admin Details)</label>
+                      <input v-model="field.value" type="text" placeholder="e.g. 017XXXXX" class="w-full px-3 py-2 bg-indigo-50 dark:bg-slate-900 border border-indigo-100 dark:border-slate-700 rounded-lg text-xs outline-none focus:ring-2 focus:ring-indigo-500/50" />
                     </div>
                     <div class="space-y-1">
                       <label class="text-[10px] font-black text-slate-400 uppercase">Placeholder</label>
@@ -211,7 +249,7 @@
 </template>
 
 <script setup>
-import { Plus, CreditCard, Settings, Pencil, Trash2, X, Loader2, Wallet, Banknote, Zap, Globe } from 'lucide-vue-next'
+import { Plus, CreditCard, Settings, Pencil, Trash2, X, Loader2, Wallet, Banknote, Zap, Globe, Smartphone, Send } from 'lucide-vue-next'
 import { ref, onMounted } from 'vue'
 import { toast } from 'vue-sonner'
 
@@ -353,8 +391,51 @@ const confirmDelete = async (method) => {
 }
 
 const getIcon = (iconName) => {
-  const icons = { CreditCard, Wallet, Banknote, Zap, Globe }
+  const icons = { CreditCard, Wallet, Banknote, Zap, Globe, Smartphone, Send }
   return icons[iconName] || CreditCard
+}
+
+const applyTemplate = (type) => {
+  if (type === 'bkash') {
+    form.value.name = 'bKash'
+    form.value.slug = 'bkash'
+    form.value.icon = 'Wallet'
+    form.value.description = 'Accept payments via bKash Personal/Agent/Merchant.'
+    form.value.config_fields = [
+      { name: 'number', label: 'bKash Number', type: 'text', placeholder: '01XXXXXXXXX' },
+      { name: 'type', label: 'Account Type', type: 'select', options: ['Personal', 'Agent', 'Merchant'] },
+    ]
+  } else if (type === 'nagad') {
+    form.value.name = 'Nagad'
+    form.value.slug = 'nagad'
+    form.value.icon = 'Wallet'
+    form.value.description = 'Accept payments via Nagad Personal/Agent/Merchant.'
+    form.value.config_fields = [
+      { name: 'number', label: 'Nagad Number', type: 'text', placeholder: '01XXXXXXXXX' },
+      { name: 'type', label: 'Account Type', type: 'select', options: ['Personal', 'Agent', 'Merchant'] },
+    ]
+  } else if (type === 'rocket') {
+    form.value.name = 'Rocket'
+    form.value.slug = 'rocket'
+    form.value.icon = 'Wallet'
+    form.value.description = 'Accept payments via Rocket Personal/Agent/Merchant.'
+    form.value.config_fields = [
+      { name: 'number', label: 'Rocket Number', type: 'text', placeholder: '01XXXXXXXXX' },
+      { name: 'type', label: 'Account Type', type: 'select', options: ['Personal', 'Agent', 'Merchant'] },
+    ]
+  } else if (type === 'bank') {
+    form.value.name = 'Manual Bank Transfer'
+    form.value.slug = 'manual-bank'
+    form.value.icon = 'Banknote'
+    form.value.description = 'Direct bank transfer with manual verification.'
+    form.value.config_fields = [
+      { name: 'bank_name', label: 'Bank Name', type: 'text', placeholder: 'e.g. Dutch Bangla Bank' },
+      { name: 'account_name', label: 'Account Name', type: 'text', placeholder: 'e.g. John Doe' },
+      { name: 'account_number', label: 'Account Number', type: 'text', placeholder: 'e.g. 1012XXXXXXXX' },
+      { name: 'branch_name', label: 'Branch Name', type: 'text', placeholder: 'e.g. Banani Branch' },
+      { name: 'instruction', label: 'Payment Instructions', type: 'textarea', placeholder: 'Step-by-step instructions for the customer...' },
+    ]
+  }
 }
 
 onMounted(fetchPaymentMethods)

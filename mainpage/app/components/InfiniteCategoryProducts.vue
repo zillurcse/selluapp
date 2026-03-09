@@ -3,7 +3,7 @@
     <section 
       v-for="(category, index) in loadedCategories" 
       :key="category.id" 
-      class="pt-12 md:pt-20" 
+      class="pt-2 md:pt-8" 
       :class="(index + startOffset) % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'"
     >
       <div class="container mx-auto px-4 sm:px-6">

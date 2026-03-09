@@ -1,5 +1,5 @@
 <template>
-  <section v-if="promotions && promotions.length > 0" class="pt-12 bg-white">
+  <section v-if="promotions && promotions.length > 0" class="bg-white">
     <div class="container mx-auto px-4 sm:px-6">
       <!-- Section Header -->
       <div class="flex items-center justify-between mb-10">

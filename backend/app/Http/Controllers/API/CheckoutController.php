@@ -52,11 +52,29 @@ class CheckoutController extends Controller
         foreach ($adminMethods as $method) {
             $slug = $method->slug;
             if (isset($savedConfig[$slug]) && $savedConfig[$slug]['active']) {
+                $instruction = null;
+                $vConfig = $savedConfig[$slug]['config'] ?? [];
+
+                if ($slug === 'bkash' && isset($vConfig['number'])) {
+                    $instruction = "Please send money to bKash " . ($vConfig['type'] ?? 'Personal') . " number: " . $vConfig['number'];
+                } elseif ($slug === 'nagad' && isset($vConfig['number'])) {
+                    $instruction = "Please send money to Nagad " . ($vConfig['type'] ?? 'Personal') . " number: " . $vConfig['number'];
+                } elseif ($slug === 'rocket' && isset($vConfig['number'])) {
+                    $instruction = "Please send money to Rocket " . ($vConfig['type'] ?? 'Personal') . " number: " . $vConfig['number'];
+                } elseif ($slug === 'manual-bank' && isset($vConfig['account_number'])) {
+                    $instruction = "Bank: " . ($vConfig['bank_name'] ?? 'N/A') . "\n" .
+                                   "Account Name: " . ($vConfig['account_name'] ?? 'N/A') . "\n" .
+                                   "Account Number: " . $vConfig['account_number'] . "\n" .
+                                   "Branch: " . ($vConfig['branch_name'] ?? 'N/A') . "\n" .
+                                   ($vConfig['instruction'] ?? '');
+                }
+
                 $gateways[] = [
                     'slug' => $slug,
                     'name' => $method->name,
                     'type' => 'admin',
                     'icon' => $method->icon,
+                    'instruction' => $instruction,
                 ];
             }
         }
