@@ -125,7 +125,7 @@
               </button>
               
               <div class="flex gap-2">
-                 <button class="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white text-white hover:text-black transition-all">
+                 <button @click="handleAddToCart(prod)" class="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white text-white hover:text-black transition-all">
                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
                  </button>
               </div>
@@ -190,9 +190,19 @@ const props = defineProps({
   }
 })
 
+import { toast } from 'vue-sonner'
+
 const showcaseProducts = computed(() => props.data.products || [])
 const vendor = computed(() => props.data.vendor || {})
 const settings = computed(() => props.data.landingPage?.settings || {})
+
+const { addToCart: cartAddToCart } = useCart()
+
+const handleAddToCart = (product) => {
+  if (!product?.id) return
+  cartAddToCart({ product_id: product.id, quantity: 1 })
+  toast.success(`${product.name} added to cart!`)
+}
 
 const keyFeatures = computed(() => {
   if (settings.value.features && settings.value.features.length > 0) {

@@ -48,6 +48,7 @@ Route::post('/checkout/estimate-shipping', [StorefrontController::class, 'estima
 Route::post('/storefront/checkout', [\App\Http\Controllers\API\CheckoutController::class, 'placeOrder']);
 Route::post('/storefront/checkout/calculate-discount', [\App\Http\Controllers\API\CheckoutController::class, 'getDiscount']);
 Route::post('/storefront/checkout/payment-methods', [\App\Http\Controllers\API\CheckoutController::class, 'getPaymentMethods']);
+Route::post('/storefront/checkout/verify-otp', [\App\Http\Controllers\API\CheckoutController::class, 'verifyOtp']);
 
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -306,8 +307,18 @@ Route::middleware('auth:sanctum')->group(function () {
         // Suppliers CRUD
         Route::apiResource('suppliers', App\Http\Controllers\Vendor\SupplierController::class);
 
+        // Notifications
+        Route::get('notifications', [App\Http\Controllers\Vendor\NotificationController::class, 'index']);
+        Route::get('notifications/unread-count', [App\Http\Controllers\Vendor\NotificationController::class, 'unreadCount']);
+        Route::post('notifications/{id}/read', [App\Http\Controllers\Vendor\NotificationController::class, 'markRead']);
+        Route::post('notifications/read-all', [App\Http\Controllers\Vendor\NotificationController::class, 'markAllRead']);
+
         // Landing Pages
         Route::apiResource('landing-pages', App\Http\Controllers\Vendor\LandingPageController::class);
+
+        // SMS Templates
+        Route::post('sms-templates/test', [App\Http\Controllers\Vendor\SmsTemplateController::class, 'test']);
+        Route::apiResource('sms-templates', App\Http\Controllers\Vendor\SmsTemplateController::class);
 
         // Staff Management
         Route::apiResource('staff', App\Http\Controllers\Vendor\VendorStaffController::class);

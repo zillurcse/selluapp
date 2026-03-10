@@ -21,32 +21,41 @@
       </div>
 
       <!-- Cards Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full mb-12">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5 w-full mb-12">
         
         <!-- Single Product Landing Page -->
-        <NuxtLink to="/vendor/landing-page/single" class="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl p-6 text-center shadow-sm hover:shadow-md transition-shadow group flex flex-col items-center h-full">
+        <NuxtLink to="/vendor/landing-page/create?type=single" class="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl p-6 text-center shadow-sm hover:shadow-md transition-shadow group flex flex-col items-center h-full">
           <div class="bg-purple-600 p-3 rounded-xl mb-4 group-hover:scale-110 transition-transform">
             <Box class="w-8 h-8 text-white" />
           </div>
-          <h3 class="font-bold text-gray-900 dark:text-white mb-2">Single Product Landing Page</h3>
+          <h3 class="font-bold text-gray-900 dark:text-white mb-2">Single Product</h3>
           <p class="text-xs text-gray-500 dark:text-slate-400 leading-relaxed">Build a landing page for a single product to increase sales.</p>
         </NuxtLink>
 
         <!-- Multiple Products Landing Page -->
         <div class="relative h-full">
              <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full z-10 shadow-sm">PRO</span>
-             <NuxtLink to="/vendor/landing-page/multiple" class="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl p-6 text-center shadow-sm hover:shadow-md transition-shadow group flex flex-col items-center h-full">
-              <div class="bg-blue-600 p-3 rounded-xl mb-4 group-hover:scale-110 transition-transform">
+             <NuxtLink to="/vendor/landing-page/create?type=multiple" class="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl p-6 text-center shadow-sm hover:shadow-md transition-shadow group flex flex-col items-center h-full">
+              <div class="bg-orange-500 p-3 rounded-xl mb-4 group-hover:scale-110 transition-transform">
                 <Layers class="w-8 h-8 text-white" />
               </div>
-              <h3 class="font-bold text-gray-900 dark:text-white mb-2">Multiple Products Landing Page</h3>
-              <p class="text-xs text-gray-500 dark:text-slate-400 leading-relaxed">Showcase 3-4 products together on a single landing page.</p>
+              <h3 class="font-bold text-gray-900 dark:text-white mb-2">Multi Product</h3>
+              <p class="text-xs text-gray-500 dark:text-slate-400 leading-relaxed">Showcase 2-4 products together on a single landing page.</p>
             </NuxtLink>
         </div>
 
+        <!-- Common Landing Page -->
+        <NuxtLink to="/vendor/landing-page/create?type=common" class="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl p-6 text-center shadow-sm hover:shadow-md transition-shadow group flex flex-col items-center h-full">
+          <div class="bg-emerald-600 p-3 rounded-xl mb-4 group-hover:scale-110 transition-transform">
+            <Globe class="w-8 h-8 text-white" />
+          </div>
+          <h3 class="font-bold text-gray-900 dark:text-white mb-2">Common Page</h3>
+          <p class="text-xs text-gray-500 dark:text-slate-400 leading-relaxed">Default store page shown when no specific page is chosen.</p>
+        </NuxtLink>
+
         <!-- All Landing Pages -->
         <NuxtLink to="/vendor/landing-page/all" class="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl p-6 text-center shadow-sm hover:shadow-md transition-shadow group flex flex-col items-center h-full">
-          <div class="bg-green-600 p-3 rounded-xl mb-4 group-hover:scale-110 transition-transform">
+          <div class="bg-blue-600 p-3 rounded-xl mb-4 group-hover:scale-110 transition-transform">
             <FileText class="w-8 h-8 text-white" />
           </div>
           <h3 class="font-bold text-gray-900 dark:text-white mb-2">All Landing Pages</h3>
@@ -58,8 +67,8 @@
           <div class="bg-yellow-600 p-3 rounded-xl mb-4 group-hover:scale-110 transition-transform">
             <Settings class="w-8 h-8 text-white" />
           </div>
-          <h3 class="font-bold text-gray-900 dark:text-white mb-2">Landing Page Settings</h3>
-          <p class="text-xs text-gray-500 dark:text-slate-400 leading-relaxed">From this page you can set landing page delivery charge, footer text etc.</p>
+          <h3 class="font-bold text-gray-900 dark:text-white mb-2">Settings</h3>
+          <p class="text-xs text-gray-500 dark:text-slate-400 leading-relaxed">Set delivery charges, footer text and more.</p>
         </NuxtLink>
 
       </div>
@@ -119,6 +128,7 @@ import {
   LayoutTemplate, 
   Box, 
   Layers, 
+  Globe,
   FileText, 
   Settings,
   PlayCircle,

@@ -36,14 +36,18 @@ class LandingPageController extends Controller implements HasMiddleware
 
     public function store(Request $request)
     {
+        $type = $request->input('landing_page_type', 'single');
+
         $validated = $request->validate([
-            'landing_page_type' => 'required|string',
-            'product_id' => 'required|exists:products,id',
-            'template_name' => 'required|string',
-            'title' => 'required|string|max:255',
-            'settings' => 'nullable|array',
-            'status' => 'nullable|string',
-            'is_home' => 'nullable|boolean',
+            'landing_page_type'  => 'required|string|in:single,multiple,common',
+            'product_id'         => $type === 'common' ? 'nullable|exists:products,id' : 'required|exists:products,id',
+            'template_name'      => 'required|string',
+            'title'              => 'required|string|max:255',
+            'settings'           => 'nullable|array',
+            'status'             => 'nullable|string|in:active,draft',
+            'is_home'            => 'nullable|boolean',
+            'campaign_start_at'  => 'nullable|date',
+            'campaign_end_at'    => 'nullable|date|after_or_equal:campaign_start_at',
         ]);
 
         if (!empty($validated['is_home'])) {
@@ -57,15 +61,15 @@ class LandingPageController extends Controller implements HasMiddleware
 
         return response()->json([
             'message' => 'Landing page created successfully',
-            'data' => $landingPage->load('product'),
-            'status' => 201
+            'data'    => $landingPage->load('product'),
+            'status'  => 201
         ], 201);
     }
 
     public function show($id)
     {
         $landingPage = LandingPage::findOrFail($id);
-        
+
         if ($landingPage->vendor_id !== auth()->id()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
@@ -80,13 +84,18 @@ class LandingPageController extends Controller implements HasMiddleware
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
+        $type = $request->input('landing_page_type', $landingPage->landing_page_type);
+
         $validated = $request->validate([
-            'product_id' => 'nullable|exists:products,id',
-            'template_name' => 'nullable|string',
-            'title' => 'nullable|string|max:255',
-            'settings' => 'nullable|array',
-            'status' => 'nullable|string',
-            'is_home' => 'nullable|boolean',
+            'landing_page_type'  => 'nullable|string|in:single,multiple,common',
+            'product_id'         => $type === 'common' ? 'nullable|exists:products,id' : 'nullable|exists:products,id',
+            'template_name'      => 'nullable|string',
+            'title'              => 'nullable|string|max:255',
+            'settings'           => 'nullable|array',
+            'status'             => 'nullable|string|in:active,draft',
+            'is_home'            => 'nullable|boolean',
+            'campaign_start_at'  => 'nullable|date',
+            'campaign_end_at'    => 'nullable|date',
         ]);
 
         if (!empty($validated['is_home'])) {
@@ -103,8 +112,8 @@ class LandingPageController extends Controller implements HasMiddleware
 
         return response()->json([
             'message' => 'Landing page updated successfully',
-            'data' => $landingPage->load('product'),
-            'status' => 200
+            'data'    => $landingPage->load('product'),
+            'status'  => 200
         ]);
     }
 
@@ -120,7 +129,7 @@ class LandingPageController extends Controller implements HasMiddleware
 
         return response()->json([
             'message' => 'Landing page deleted successfully',
-            'status' => 200
+            'status'  => 200
         ]);
     }
 }

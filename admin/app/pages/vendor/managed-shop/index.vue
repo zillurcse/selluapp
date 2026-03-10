@@ -154,6 +154,13 @@ const managementCards = [
     to: '/vendor/managed-shop/third-party-apis'
   },
   {
+    title: 'SMS Templates',
+    description: 'Manage automated SMS templates for OTP, orders, and more.',
+    icon: MessageSquare,
+    iconBg: 'bg-indigo-600',
+    to: '/vendor/managed-shop/sms-templates'
+  },
+  {
     title: 'Block Fake Order',
     description: 'Identify and block suspicious or fake orders.',
     icon: ShieldAlert,

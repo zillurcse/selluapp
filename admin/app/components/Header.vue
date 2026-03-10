@@ -47,10 +47,70 @@
           <Monitor :size="15" />
         </NuxtLink>
 
-        <button class="hdr-icon-btn hdr-icon-btn--bell" title="Notifications">
-          <Bell :size="15" />
-          <span class="notif-dot"></span>
-        </button>
+        <!-- Notification Bell -->
+        <div class="notif-wrap" ref="notifRef">
+          <button
+            class="hdr-icon-btn hdr-icon-btn--bell"
+            title="Notifications"
+            @click="toggleNotif"
+          >
+            <Bell :size="15" />
+            <span v-if="notifStore.unreadCount > 0" class="notif-badge">
+              {{ notifStore.unreadCount > 99 ? '99+' : notifStore.unreadCount }}
+            </span>
+          </button>
+
+          <!-- Notification Dropdown -->
+          <transition name="notif">
+            <div v-if="notifStore.isOpen" class="notif-panel">
+              <!-- Header -->
+              <div class="notif-panel-head">
+                <span class="notif-panel-title">Notifications</span>
+                <button
+                  v-if="notifStore.unreadCount > 0"
+                  class="notif-mark-all"
+                  @click="notifStore.markAllRead()"
+                >
+                  Mark all read
+                </button>
+              </div>
+
+              <!-- Body: list -->
+              <div class="notif-list">
+                <div v-if="notifStore.notifications.length === 0" class="notif-empty">
+                  <BellOff :size="28" class="notif-empty-icon" />
+                  <span>No notifications yet</span>
+                </div>
+
+                <div
+                  v-for="n in notifStore.notifications"
+                  :key="n.id"
+                  class="notif-item"
+                  :class="{ 'notif-item--unread': !n.is_read }"
+                  @click="handleNotifClick(n)"
+                >
+                  <div class="notif-icon-wrap" :class="n.type === 'new_order' ? 'notif-icon--order' : 'notif-icon--customer'">
+                    <ShoppingBag v-if="n.type === 'new_order'" :size="14" />
+                    <UserPlus v-else :size="14" />
+                  </div>
+                  <div class="notif-content">
+                    <p class="notif-title">{{ n.title }}</p>
+                    <p class="notif-msg">{{ n.message }}</p>
+                    <span class="notif-time">{{ timeAgo(n.created_at) }}</span>
+                  </div>
+                  <div v-if="!n.is_read" class="notif-unread-dot"></div>
+                </div>
+              </div>
+
+              <!-- Footer -->
+              <div class="notif-panel-foot">
+                <NuxtLink to="/vendor/orders" class="notif-foot-link" @click="notifStore.isOpen = false">
+                  View all orders
+                </NuxtLink>
+              </div>
+            </div>
+          </transition>
+        </div>
       </div>
 
       <!-- Divider -->
@@ -119,10 +179,13 @@ import {
   RotateCcw,
   Monitor,
   Bell,
+  BellOff,
   Menu,
   LogOut,
   User,
   ChevronRight,
+  ShoppingBag,
+  UserPlus,
 } from 'lucide-vue-next'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 
@@ -132,8 +195,11 @@ const router = useRouter()
 const route = useRoute()
 const config = useRuntimeConfig()
 const sidebar = useSidebar()
+const notifStore = useNotificationStore()
+
 const isDropdownOpen = ref(false)
 const dropdownRef = ref(null)
+const notifRef = ref(null)
 
 const currentPageTitle = computed(() => {
   const path = route.path
@@ -160,11 +226,20 @@ const userRoleLabel = computed(() => {
 
 const toggleDropdown = () => {
   isDropdownOpen.value = !isDropdownOpen.value
+  if (isDropdownOpen.value) notifStore.isOpen = false
+}
+
+const toggleNotif = () => {
+  notifStore.toggleOpen()
+  if (notifStore.isOpen) isDropdownOpen.value = false
 }
 
 const closeDropdown = (e) => {
   if (dropdownRef.value && !dropdownRef.value.contains(e.target)) {
     isDropdownOpen.value = false
+  }
+  if (notifRef.value && !notifRef.value.contains(e.target)) {
+    notifStore.isOpen = false
   }
 }
 
@@ -173,8 +248,40 @@ const handleLogout = async () => {
   await auth.logout()
 }
 
-onMounted(() => document.addEventListener('click', closeDropdown))
-onUnmounted(() => document.removeEventListener('click', closeDropdown))
+const handleNotifClick = async (n) => {
+  if (!n.is_read) await notifStore.markRead(n.id)
+  const link = n.data?.link
+  if (link) {
+    notifStore.isOpen = false
+    router.push(link)
+  }
+}
+
+/**
+ * Simple "time ago" helper.
+ * Returns e.g. "2m ago", "3h ago", "1d ago"
+ */
+const timeAgo = (dateStr) => {
+  if (!dateStr) return ''
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  const days = Math.floor(hrs / 24)
+  return `${days}d ago`
+}
+
+onMounted(() => {
+  document.addEventListener('click', closeDropdown)
+  notifStore.startPolling(30000)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', closeDropdown)
+  notifStore.stopPolling()
+})
 </script>
 
 <style scoped>
@@ -320,18 +427,205 @@ onUnmounted(() => document.removeEventListener('click', closeDropdown))
 .dark .hdr-icon-btn { color: #4b5563; }
 .dark .hdr-icon-btn:hover { background-color: #1a1f2e; color: #9ca3af; }
 
-/* Bell with dot */
-.notif-dot {
+/* ─── Notification Badge ─────────────────────────────────────────────────────── */
+.notif-badge {
   position: absolute;
-  top: 7px;
-  right: 7px;
-  width: 5px;
-  height: 5px;
+  top: 4px;
+  right: 4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 8px;
+  background-color: #ef4444;
+  border: 1.5px solid #fff;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.dark .notif-badge { border-color: #0f1117; }
+
+/* ─── Notification Wrap ──────────────────────────────────────────────────────── */
+.notif-wrap { position: relative; }
+
+/* ─── Notification Panel ─────────────────────────────────────────────────────── */
+.notif-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  width: 340px;
+  background-color: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.12), 0 2px 8px -2px rgba(0, 0, 0, 0.06);
+  z-index: 50;
+  overflow: hidden;
+}
+.dark .notif-panel {
+  background-color: #161b27;
+  border-color: #1e2330;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.notif-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 14px 10px;
+  border-bottom: 1px solid #f3f4f6;
+}
+.dark .notif-panel-head { border-bottom-color: #1e2330; }
+
+.notif-panel-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+}
+.dark .notif-panel-title { color: #f3f4f6; }
+
+.notif-mark-all {
+  font-size: 11px;
+  font-weight: 500;
+  color: #4f46e5;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s;
+}
+.notif-mark-all:hover { color: #3730a3; }
+.dark .notif-mark-all { color: #818cf8; }
+
+/* ─── Notification List ──────────────────────────────────────────────────────── */
+.notif-list {
+  max-height: 320px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.notif-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 16px;
+  color: #9ca3af;
+  font-size: 13px;
+}
+.notif-empty-icon { color: #d1d5db; }
+.dark .notif-empty-icon { color: #374151; }
+
+/* ─── Notification Item ──────────────────────────────────────────────────────── */
+.notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid #f9fafb;
+  transition: background-color 0.15s;
+  position: relative;
+}
+.notif-item:last-child { border-bottom: none; }
+.notif-item:hover { background-color: #f9fafb; }
+.dark .notif-item { border-bottom-color: #1a1f2e; }
+.dark .notif-item:hover { background-color: #1a1f2e; }
+
+.notif-item--unread { background-color: #fafafe; }
+.dark .notif-item--unread { background-color: #13182199; }
+
+.notif-icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.notif-icon--order {
+  background-color: #ede9fe;
+  color: #7c3aed;
+}
+.dark .notif-icon--order { background-color: rgba(124, 58, 237, 0.15); color: #a78bfa; }
+
+.notif-icon--customer {
+  background-color: #ecfdf5;
+  color: #059669;
+}
+.dark .notif-icon--customer { background-color: rgba(5, 150, 105, 0.15); color: #34d399; }
+
+.notif-content { flex: 1; min-width: 0; }
+
+.notif-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dark .notif-title { color: #f3f4f6; }
+
+.notif-msg {
+  font-size: 11.5px;
+  color: #6b7280;
+  margin: 0 0 3px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.dark .notif-msg { color: #9ca3af; }
+
+.notif-time {
+  font-size: 10.5px;
+  color: #9ca3af;
+}
+
+.notif-unread-dot {
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background-color: #4f46e5;
-  border: 1.5px solid #fff;
+  flex-shrink: 0;
+  margin-top: 6px;
 }
-.dark .notif-dot { border-color: #0f1117; }
+.dark .notif-unread-dot { background-color: #818cf8; }
+
+/* ─── Panel Footer ───────────────────────────────────────────────────────────── */
+.notif-panel-foot {
+  padding: 8px 14px;
+  border-top: 1px solid #f3f4f6;
+  text-align: center;
+}
+.dark .notif-panel-foot { border-top-color: #1e2330; }
+
+.notif-foot-link {
+  font-size: 12px;
+  font-weight: 500;
+  color: #4f46e5;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.notif-foot-link:hover { color: #3730a3; }
+.dark .notif-foot-link { color: #818cf8; }
+
+/* ─── Notification transition ────────────────────────────────────────────────── */
+.notif-enter-active, .notif-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.notif-enter-from, .notif-leave-to {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.97);
+}
 
 /* ─── User Button ────────────────────────────────────────────────────────────── */
 .user-menu-wrap { position: relative; }

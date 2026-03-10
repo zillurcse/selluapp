@@ -16,8 +16,9 @@ class StorefrontController extends Controller
 {
     private function resolveTenantId(Request $request)
     {
-        $domain = $request->header('X-Tenant-Domain') ?? $request->query('domain');
+        // $domain = $request->header('X-Tenant-Domain') ?? $request->query('domain');
 
+        $domain = 'vendor3.test';
         if (!$domain) {
             return null; // No specific tenant
         }
@@ -590,19 +591,45 @@ class StorefrontController extends Controller
             ->where('status', 'active')
             ->firstOrFail();
 
-        $productIds = [];
-        if ($landingPage->landing_page_type === 'multiple') {
-            $productIds = $landingPage->settings['product_ids'] ?? [$landingPage->product_id];
-        } else {
-            $productIds = [$landingPage->product_id];
-        }
+        $products = [];
 
-        $products = Product::with(['categories', 'brand', 'unit', 'vendor.vendorProfile'])
-            ->whereIn('id', $productIds)
-            ->where('is_active', true)
-            ->where('status', 'published')
-            ->get();
-        $products = \App\Http\Resources\Storefront\ProductResource::collection($products)->resolve();
+        if ($landingPage->landing_page_type === 'common') {
+            // Common type: no specific products, return empty or featured products from vendor
+            $vendorProducts = Product::with(['categories', 'brand', 'unit', 'vendor.vendorProfile'])
+                ->where('vendor_id', $landingPage->vendor_id)
+                ->where('is_active', true)
+                ->where('status', 'published')
+                ->latest()
+                ->take(8)
+                ->get();
+            $products = \App\Http\Resources\Storefront\ProductResource::collection($vendorProducts)->resolve();
+        } else {
+            // Single or Multiple: resolve product IDs in order
+            if ($landingPage->landing_page_type === 'multiple') {
+                $productIds = $landingPage->settings['product_ids'] ?? [$landingPage->product_id];
+            } else {
+                $productIds = [$landingPage->product_id];
+            }
+
+            $productIds = array_filter($productIds);
+
+            if (!empty($productIds)) {
+                // Preserve admin-set order using FIELD() or collect sort
+                $productMap = Product::with(['categories', 'brand', 'unit', 'vendor.vendorProfile'])
+                    ->whereIn('id', $productIds)
+                    ->where('is_active', true)
+                    ->where('status', 'published')
+                    ->get()
+                    ->keyBy('id');
+
+                $ordered = collect($productIds)
+                    ->filter(fn($id) => $productMap->has($id))
+                    ->map(fn($id) => $productMap[$id])
+                    ->values();
+
+                $products = \App\Http\Resources\Storefront\ProductResource::collection($ordered)->resolve();
+            }
+        }
 
         $vendorProfile = \App\Models\VendorProfile::where('user_id', $landingPage->vendor_id)->first();
         if ($vendorProfile) {
@@ -612,8 +639,8 @@ class StorefrontController extends Controller
 
         return response()->json([
             'landing_page' => $landingPage,
-            'products' => $products,
-            'vendor' => $vendorProfile,
+            'products'     => $products,
+            'vendor'       => $vendorProfile,
             'loyalty_program' => ShopSetting::where('user_id', $landingPage->vendor_id)->where('group', 'loyalty_program')->get()->pluck('value', 'key')
         ]);
     }

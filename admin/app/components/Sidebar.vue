@@ -41,6 +41,8 @@
           ref="searchInputRef"
           v-model="searchQuery"
           type="text"
+          name="sidebar-search"
+          autocomplete="off"
           placeholder="Search menu..."
           class="search-input"
           @keydown.escape="clearSearch"

@@ -11,11 +11,13 @@ use App\Models\ShopSetting;
 use App\Models\FraudCheck;
 use App\Models\User;
 use App\Services\Offers\OfferCalculationService;
+use App\Services\SmsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
+use Carbon\Carbon;
 
 class CheckoutController extends Controller
 {
@@ -214,6 +216,7 @@ class CheckoutController extends Controller
         ]);
 
         $city = \App\Models\City::findOrFail($validated['city_id']);
+        $ip = $request->ip();
 
         DB::beginTransaction();
         try {
@@ -380,39 +383,73 @@ class CheckoutController extends Controller
                 
                 $totalAmount = ($subtotal - $discountAmount) + (float)$shippingCost;
 
-                // Check Spider Intelligence Settings
-                $spiderIntelligenceSettings = ShopSetting::where('user_id', $vendorId)
-                    ->where('group', 'spider_intelligence')
+                // --- Fraud Detection Logic ---
+                $fraudSettings = ShopSetting::where('user_id', $vendorId)
+                    ->where('group', 'fraud_check')
                     ->get()
                     ->pluck('value', 'key');
 
-                $isSpiderActive = isset($spiderIntelligenceSettings['isActive']) && in_array($spiderIntelligenceSettings['isActive'], [true, 'true', '1'], true);
-                $sensitivity = isset($spiderIntelligenceSettings['sensitivity']) ? (int)$spiderIntelligenceSettings['sensitivity'] : 65;
+                $blacklist = isset($fraudSettings['blacklist']) ? (is_array($fraudSettings['blacklist']) ? $fraudSettings['blacklist'] : json_decode($fraudSettings['blacklist'], true)) : [];
                 
+                // 1. Manual Blacklist Check
+                if (in_array($ip, $blacklist) || in_array($validated['phone'], $blacklist)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Your access has been restricted due to suspicious activity.',
+                    ], 403);
+                }
+
                 $riskScore = 0;
-                $requiresManualReview = false;
                 $fraudFlags = [];
 
-                if ($isSpiderActive) {
-                    // Mock risk score calculation (random for now, could be based on order traits)
-                    $riskScore = rand(0, 100);
-                    $threshold = 100 - $sensitivity; // e.g. Sensitivity 65 => threshold 35
+                // 2. IP Rate Limiting Rule
+                $ipRule = isset($fraudSettings['ip_rate_limiting']) ? (is_array($fraudSettings['ip_rate_limiting']) ? $fraudSettings['ip_rate_limiting'] : json_decode($fraudSettings['ip_rate_limiting'], true)) : null;
+                if ($ipRule && ($ipRule['enabled'] ?? false)) {
+                    $recentOrdersCount = Order::where('user_id', $vendorId)
+                        ->where(function($q) use ($ip) {
+                            $q->where('shipping_address', 'like', "%{$ip}%");
+                        })
+                        ->where('created_at', '>=', now()->subHour())
+                        ->count();
                     
-                    if ($riskScore > $threshold) {
-                        $requiresManualReview = true;
-                        if ($riskScore > 80) {
-                            $fraudFlags[] = 'High risk IP address detected.';
-                        } else {
-                            $fraudFlags[] = 'Unusual purchasing pattern.';
-                        }
+                    if ($recentOrdersCount >= 3) {
+                        $riskScore += 40;
+                        $fraudFlags[] = 'Multiple orders from same IP in a short period.';
                     }
+                }
+
+                // 3. Behavior Analysis Rule
+                $behaviorRule = isset($fraudSettings['behavior_analysis']) ? (is_array($fraudSettings['behavior_analysis']) ? $fraudSettings['behavior_analysis'] : json_decode($fraudSettings['behavior_analysis'], true)) : null;
+                if ($behaviorRule && ($behaviorRule['enabled'] ?? false)) {
+                     // Check for repeated checkout attempts with same phone/email in last 10 mins
+                     $attempts = Order::where('user_id', $vendorId)
+                        ->where(function($q) use ($validated) {
+                            $q->where('email', $validated['email'])
+                              ->orWhere('phone', $validated['phone']);
+                        })
+                        ->where('created_at', '>=', now()->subMinutes(10))
+                        ->count();
+                    
+                    if ($attempts >= 2) {
+                        $riskScore += 30;
+                        $fraudFlags[] = 'Repeated checkout attempts detected.';
+                    }
+                }
+
+                // Determine if manual review or verification is needed
+                $requiresManualReview = $riskScore >= 40;
+                $requiresPhoneVerification = false;
+                
+                $phoneRule = isset($fraudSettings['phone_verification']) ? (is_array($fraudSettings['phone_verification']) ? $fraudSettings['phone_verification'] : json_decode($fraudSettings['phone_verification'], true)) : null;
+                if ($phoneRule && ($phoneRule['enabled'] ?? false) && $riskScore >= 30) {
+                    $requiresPhoneVerification = true;
                 }
 
                 $order = Order::create([
                     'user_id' => $vendorId, // Vendor ID
                     'customer_id' => $customer->id,
                     'invoice_number' => 'ORD-' . strtoupper(Str::random(10)),
-                    'status' => 'pending',
+                    'status' => $requiresPhoneVerification ? 'pending_verification' : 'pending',
                     'type' => 'normal',
                     'subtotal' => $subtotal,
                     'discount_amount' => $discountAmount,
@@ -422,6 +459,8 @@ class CheckoutController extends Controller
                     'payment_method' => $validated['payment_method'],
                     'payment_status' => 'unpaid',
                     'requires_manual_review' => $requiresManualReview,
+                    'risk_score' => $riskScore,
+                    'risk_flags' => $fraudFlags,
                     'shipping_address' => json_encode([
                         'first_name' => $validated['first_name'],
                         'last_name' => $validated['last_name'],
@@ -430,9 +469,26 @@ class CheckoutController extends Controller
                         'address' => $validated['full_address'],
                         'city' => $city->name,
                         'city_id' => $city->id,
+                        'ip' => $ip
                     ]),
                     'notes' => $validated['note'] ?? null,
                 ]);
+
+                if ($requiresPhoneVerification) {
+                    $otp = (string)rand(100000, 999999);
+                    $order->update([
+                        'otp_code' => $otp,
+                        'otp_expires_at' => now()->addMinutes(10)
+                    ]);
+
+                    // Send SMS
+                    try {
+                        $smsService = new SmsService($vendorId);
+                        $smsService->send($validated['phone'], 'otp', ['otp' => $otp]);
+                    } catch (\Exception $e) {
+                        \Illuminate\Support\Facades\Log::error("Failed to send OTP SMS: " . $e->getMessage());
+                    }
+                }
 
                 if ($requiresManualReview) {
                     FraudCheck::create([
@@ -490,10 +546,35 @@ class CheckoutController extends Controller
                 }
                 // -----------------------------------
 
+                // --- Order notification for Vendor ---
+                if (!$requiresPhoneVerification) {
+                    \App\Models\Notification::create([
+                        'user_id' => $vendorId,
+                        'type'    => 'new_order',
+                        'title'   => 'New Order Received',
+                        'message' => 'Order ' . $order->invoice_number . ' has been placed for ৳' . number_format($order->total_amount, 2) . '.',
+                        'data'    => [
+                            'order_id'       => $order->id,
+                            'invoice_number' => $order->invoice_number,
+                            'link'           => '/vendor/orders',
+                        ],
+                    ]);
+                }
+                // ------------------------------------
+
                 $orders[] = $order;
             }
 
             DB::commit();
+
+            if (isset($requiresPhoneVerification) && $requiresPhoneVerification && count($orders) === 1) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Verification required. Please enter the OTP sent to your phone.',
+                    'requires_verification' => true,
+                    'order_id' => $orders[0]->id,
+                ], 202);
+            }
 
             return response()->json([
                 'success' => true,
@@ -508,5 +589,57 @@ class CheckoutController extends Controller
                 'message' => 'Failed to place order: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Verify OTP for an order
+     */
+    public function verifyOtp(Request $request)
+    {
+        $request->validate([
+            'order_id' => 'required|exists:orders,id',
+            'otp' => 'required|string|size:6',
+        ]);
+
+        $order = Order::findOrFail($request->order_id);
+
+        if ($order->otp_code !== $request->otp) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid OTP code.',
+            ], 422);
+        }
+
+        if ($order->otp_expires_at && now()->gt($order->otp_expires_at)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'OTP has expired. Please request a new one.',
+            ], 422);
+        }
+
+        $order->update([
+            'status' => 'pending',
+            'otp_code' => null,
+            'otp_expires_at' => null,
+            'requires_manual_review' => false // Auto-verify if OTP is correct
+        ]);
+
+        // Send notification to vendor now that it's verified
+        \App\Models\Notification::create([
+            'user_id' => $order->user_id,
+            'type'    => 'new_order',
+            'title'   => 'New Order Received (Verified)',
+            'message' => 'Order ' . $order->invoice_number . ' has been verified and placed for ৳' . number_format($order->total_amount, 2) . '.',
+            'data'    => [
+                'order_id'       => $order->id,
+                'invoice_number' => $order->invoice_number,
+                'link'           => '/vendor/orders',
+            ],
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Order verified successfully!',
+        ]);
     }
 }

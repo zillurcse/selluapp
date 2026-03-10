@@ -23,10 +23,15 @@ class LandingPage extends Model
         'settings',
         'status',
         'is_home',
+        'campaign_start_at',
+        'campaign_end_at',
     ];
 
     protected $casts = [
         'settings' => 'array',
+        'campaign_start_at' => 'datetime',
+        'campaign_end_at' => 'datetime',
+        'is_home' => 'boolean',
     ];
 
     public function vendor()

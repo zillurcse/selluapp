@@ -120,8 +120,8 @@
               >+</button>
             </div>
             
-            <button class="flex-1 py-5 rounded-2xl bg-white text-black font-black uppercase tracking-[0.2em] text-sm hover:scale-[1.02] active:scale-[0.98] transition-all duration-500 shadow-[0_20px_40px_-10px_rgba(255,255,255,0.1)] flex items-center justify-center gap-3 group">
-              {{ settings.cta_text || 'Add To Collection' }}
+            <button @click="handleAddToCart" class="flex-1 py-5 rounded-2xl bg-white text-black font-black uppercase tracking-[0.2em] text-sm hover:scale-[1.02] active:scale-[0.98] transition-all duration-500 shadow-[0_20px_40px_-10px_rgba(255,255,255,0.1)] flex items-center justify-center gap-3 group">
+              {{ settings.cta_text || 'Add To Cart' }}
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="translate-x-0 group-hover:translate-x-2 transition-transform"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </button>
 
@@ -247,7 +247,7 @@
       </div>
     </section>
 
-    <!-- Modern Footer Tab Bar (Sticky Style) -->
+    <!-- Sticky CTA Bar -->
     <div class="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 px-4 w-full max-w-2xl">
       <div class="bg-black/40 backdrop-blur-2xl border border-white/10 rounded-full p-2 flex items-center justify-around shadow-2xl shadow-indigo-500/10">
         <button 
@@ -260,7 +260,9 @@
           {{ tab }}
         </button>
         <div class="w-px h-6 bg-white/10 mx-2"></div>
-        <button class="bg-indigo-500 px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-indigo-400 transition-colors">
+        <!-- Countdown if campaign end set -->
+        <span v-if="campaignCountdown" class="text-[10px] font-black text-amber-400 px-3">⏱ {{ campaignCountdown }}</span>
+        <button @click="handleAddToCart" class="bg-indigo-500 px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-indigo-400 transition-colors">
           {{ settings.cta_text ? `${settings.cta_text} — ৳${product.sale_price}` : `Order Now — ৳${product.sale_price}` }}
         </button>
       </div>
@@ -279,19 +281,42 @@ const props = defineProps({
   }
 })
 
-const { toggleCart, cartCount } = useCart()
+const { toggleCart, cartCount, addToCart: cartAddToCart } = useCart()
 const authStore = useAuthStore()
 const storefrontStore = useStorefrontStore()
 
 const product = computed(() => props.data.products?.[0] || {})
 const vendor = computed(() => props.data.vendor || {})
 const settings = computed(() => props.data.landingPage?.settings || {})
+const landingPage = computed(() => props.data.landingPage || {})
 
 const quantity = ref(1)
 const activeColor = ref('#1a1a1a')
 const activeNavTab = ref('Overview')
 const isProfileOpen = ref(false)
 const profileDropdown = ref(null)
+
+// Add to Cart
+const handleAddToCart = () => {
+  if (!product.value?.id) return
+  cartAddToCart({ product_id: product.value.id, quantity: quantity.value })
+  toast.success(`${product.value.name} added to cart!`)
+}
+
+// Campaign countdown
+const campaignCountdown = ref('')
+let countdownInterval = null
+const updateCountdown = () => {
+  const endAt = landingPage.value?.campaign_end_at
+  if (!endAt) { campaignCountdown.value = ''; return }
+  const diff = new Date(endAt) - new Date()
+  if (diff <= 0) { campaignCountdown.value = 'Offer Ended'; return }
+  const d = Math.floor(diff / 86400000)
+  const h = Math.floor((diff % 86400000) / 3600000)
+  const m = Math.floor((diff % 3600000) / 60000)
+  const s = Math.floor((diff % 60000) / 1000)
+  campaignCountdown.value = d > 0 ? `${d}d ${h}h ${m}m` : `${h}h ${m}m ${s}s`
+}
 
 const userInitials = computed(() => {
   if (!authStore.user?.name) return 'U'
@@ -328,10 +353,13 @@ const accountLinks = [
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+  updateCountdown()
+  countdownInterval = setInterval(updateCountdown, 1000)
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
+  if (countdownInterval) clearInterval(countdownInterval)
 })
 
 const colors = [

@@ -38,24 +38,41 @@
           <div class="space-y-2 relative">
             <label class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider ml-1">Provider</label>
             <select v-model="sms.provider" class="w-full h-14 px-6 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-semibold text-slate-700 dark:text-slate-200 appearance-none">
-              <option value="Twilio">Twilio</option>
+              <!-- <option value="Twilio">Twilio</option>
               <option value="Infobip">Infobip</option>
               <option value="SSL Wireless (Local)">SSL Wireless (Local)</option>
-              <option value="Mim SMS">Mim SMS</option>
+              <option value="Mim SMS">Mim SMS</option> -->
+              <option value="SMS Bangladesh">SMS Bangladesh</option>
             </select>
             <ChevronDown class="w-5 h-5 text-slate-400 dark:text-slate-500 absolute right-4 top-10 pointer-events-none" />
           </div>
-          <div class="space-y-2 relative">
+
+          <template v-if="sms.provider === 'SMS Bangladesh'">
+            <div class="space-y-2 relative">
+              <label class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider ml-1">Username</label>
+              <input v-model="sms.username" type="text" autocomplete="off" placeholder="SMS Bangladesh Email" class="w-full h-14 px-6 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-semibold text-slate-700 dark:text-slate-200">
+            </div>
+            <div class="space-y-2 relative">
+              <label class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider ml-1">Password</label>
+              <input v-model="sms.password" :type="showSmsKey ? 'text' : 'password'" autocomplete="new-password" placeholder="••••••••" class="w-full h-14 px-6 pr-12 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-semibold text-slate-700 dark:text-slate-200">
+              <button @click="showSmsKey = !showSmsKey" class="absolute right-4 top-10 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                <EyeOff v-if="showSmsKey" class="w-4 h-4" />
+                <Eye v-else class="w-4 h-4" />
+              </button>
+            </div>
+          </template>
+
+          <div v-else class="space-y-2 relative">
             <label class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider ml-1">API Key</label>
-            <input v-model="sms.apiKey" :type="showSmsKey ? 'text' : 'password'" placeholder="••••••••••••••••" class="w-full h-14 px-6 pr-12 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-semibold text-slate-700 dark:text-slate-200">
+            <input v-model="sms.apiKey" :type="showSmsKey ? 'text' : 'password'" autocomplete="off" placeholder="••••••••••••••••" class="w-full h-14 px-6 pr-12 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-semibold text-slate-700 dark:text-slate-200">
             <button @click="showSmsKey = !showSmsKey" class="absolute right-4 top-10 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
               <EyeOff v-if="showSmsKey" class="w-4 h-4" />
               <Eye v-else class="w-4 h-4" />
             </button>
           </div>
           <div class="space-y-2">
-            <label class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider ml-1">Sender ID</label>
-            <input v-model="sms.senderId" type="text" placeholder="e.g. SHOPNAME" class="w-full h-14 px-6 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-semibold text-slate-700 dark:text-slate-200">
+            <label class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider ml-1">Sender ID / Masking</label>
+            <input v-model="sms.senderId" type="text" autocomplete="off" placeholder="e.g. SHOPNAME" class="w-full h-14 px-6 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-semibold text-slate-700 dark:text-slate-200">
           </div>
         </div>
       </div>
@@ -82,7 +99,7 @@
           </div>
 
           <form @submit.prevent="addWebhook" class="flex gap-4">
-            <input v-model="newWebhook" type="url" placeholder="https://your-api.com/webhook" required class="flex-grow h-14 px-6 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-semibold text-slate-700 dark:text-slate-200">
+            <input v-model="newWebhook" type="url" autocomplete="off" placeholder="https://your-api.com/webhook" required class="flex-grow h-14 px-6 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-semibold text-slate-700 dark:text-slate-200">
             <button type="submit" class="px-8 bg-slate-900 dark:bg-indigo-600 text-white font-black rounded-2xl hover:bg-slate-800 dark:hover:bg-indigo-700 transition-all active:scale-95 flex items-center gap-2">
               <Plus class="w-4 h-4" />
               Add Webhook
@@ -122,8 +139,10 @@ const saving = ref(false)
 const showSmsKey = ref(false)
 
 const sms = reactive({
-  provider: 'Twilio',
+  provider: 'SMS Bangladesh',
   apiKey: '',
+  username: '',
+  password: '',
   senderId: ''
 })
 

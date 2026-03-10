@@ -36,6 +36,8 @@ class Order extends Model
         'courier_name',
         'courier_order_id',
         'courier_status',
+        'otp_code',
+        'otp_expires_at',
     ];
 
     protected $casts = [
@@ -46,6 +48,7 @@ class Order extends Model
         'discount_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
         'applied_promotions' => 'array',
+        'otp_expires_at' => 'datetime',
     ];
 
     public function vendor()

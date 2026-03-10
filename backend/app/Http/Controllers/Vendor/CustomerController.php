@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Vendor;
 
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
+use App\Models\Notification;
 use App\Http\Requests\StoreCustomerRequest;
 use App\Http\Requests\UpdateCustomerRequest;
 use Illuminate\Http\Request;
@@ -63,6 +64,18 @@ class CustomerController extends Controller implements HasMiddleware
             'password' => $customer->password,
         ]);
         $user->assignRole('customer');
+
+        // Fire notification for vendor
+        Notification::create([
+            'user_id' => $request->user()->id,
+            'type'    => 'new_customer',
+            'title'   => 'New Customer Added',
+            'message' => trim($customer->first_name . ' ' . $customer->last_name) . ' has been added as a customer.',
+            'data'    => [
+                'customer_id' => $customer->id,
+                'link'        => '/vendor/customers',
+            ],
+        ]);
 
         return response()->json([
             'message' => 'Customer created successfully',
