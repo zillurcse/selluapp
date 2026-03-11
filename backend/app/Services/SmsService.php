@@ -18,6 +18,7 @@ class SmsService
     public function send($to, $type, $data = [], $directMessage = null)
     {
         $config = $this->getConfig();
+        
         if (!$config || empty($config['provider'])) {
             \Illuminate\Support\Facades\Log::error("SmsService: Missing config or provider for vendor {$this->vendorId}");
             return false;
@@ -80,7 +81,7 @@ class SmsService
         $response = Http::get('https://panel.smsbangladesh.com/api', [
             'user' => $username,
             'password' => $password,
-            'from' => $from,
+            // 'from' => $from,
             'to' => $to,
             'text' => $message
         ]);

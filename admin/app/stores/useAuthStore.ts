@@ -5,6 +5,10 @@ export const useAuthStore = defineStore("auth", () => {
     maxAge: 60 * 60 * 24 * 2,
     path: "/",
   });
+  const last_email = useCookie<string>("last_email", {
+    maxAge: 60 * 60 * 24 * 30, // 30 days
+    path: "/",
+  });
 
   const user = ref<any>(user_cookie.value || null);
   const isAuthenticated = ref(!!tokenStore.token);
@@ -102,6 +106,7 @@ export const useAuthStore = defineStore("auth", () => {
         tokenStore.setToken(token);
         isAuthenticated.value = true;
         user.value = res.user;
+        last_email.value = res.user.email;
         user_cookie.value = {
           id: res.user.id,
           name: res.user.name,
@@ -119,6 +124,38 @@ export const useAuthStore = defineStore("auth", () => {
         });
         form.setErrors(errors);
       }
+      throw error;
+    } finally {
+      utilityStore.isLoading = false;
+    }
+  }
+
+  async function loginViaPin(email: string, pin: string) {
+    const utilityStore = useUtilityStore();
+
+    try {
+      utilityStore.isLoading = true;
+      const res: any = await $fetch(`${config.public.apiBase}/login-pin`, {
+        method: "POST",
+        body: { email, pin },
+      });
+
+      const token = res.access_token || res.token;
+      if (res && token) {
+        tokenStore.setToken(token);
+        isAuthenticated.value = true;
+        user.value = res.user;
+        last_email.value = res.user.email;
+        user_cookie.value = {
+          id: res.user.id,
+          name: res.user.name,
+          email: res.user.email,
+          roles: res.user.roles?.map((r: any) => ({ name: r.name }))
+        };
+        return true;
+      }
+      return false;
+    } catch (error: any) {
       throw error;
     } finally {
       utilityStore.isLoading = false;
@@ -156,8 +193,10 @@ export const useAuthStore = defineStore("auth", () => {
     userPermissions,
     hasPermission,
     hasRole,
+    last_email,
     fetchUser,
     login,
+    loginViaPin,
     logout,
   };
 });

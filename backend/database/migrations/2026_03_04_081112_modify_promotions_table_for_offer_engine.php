@@ -13,7 +13,9 @@ return new class extends Migration
     {
         Schema::table('promotions', function (Blueprint $table) {
             // Update enum type or change to string
-            DB::statement("ALTER TABLE promotions MODIFY type ENUM('flash_sale', 'flat_discount', 'buy_x_get_y', 'bundle', 'category', 'variant') DEFAULT 'flash_sale'");
+            if (DB::getDriverName() === 'mysql') {
+                DB::statement("ALTER TABLE promotions MODIFY type ENUM('flash_sale', 'flat_discount', 'buy_x_get_y', 'bundle', 'category', 'variant') DEFAULT 'flash_sale'");
+            }
             
             // Add new Offer Engine fields
             $table->json('rules')->nullable()->after('type')->comment('JSON structured conditions and actions');
@@ -28,7 +30,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('promotions', function (Blueprint $table) {
-            DB::statement("ALTER TABLE promotions MODIFY type ENUM('flash_sale', 'flat_discount', 'buy_x_get_y', 'bundle') DEFAULT 'flash_sale'");
+            if (DB::getDriverName() === 'mysql') {
+                DB::statement("ALTER TABLE promotions MODIFY type ENUM('flash_sale', 'flat_discount', 'buy_x_get_y', 'bundle') DEFAULT 'flash_sale'");
+            }
             $table->dropColumn(['rules', 'is_stackable', 'priority']);
         });
     }

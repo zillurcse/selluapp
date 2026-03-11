@@ -11,6 +11,7 @@ use App\Http\Controllers\AuthController;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login-pin', [\App\Http\Controllers\API\PINController::class, 'verifyPin']);
 
 Route::post('/webhooks/steadfast', [App\Http\Controllers\Vendor\CourierController::class, 'steadfastWebhook']);
 
@@ -55,6 +56,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
+    Route::post('/pin/set', [\App\Http\Controllers\API\PINController::class, 'setPin']);
 
     // Cart Routes
     Route::get('/cart', [\App\Http\Controllers\CartController::class, 'index']);

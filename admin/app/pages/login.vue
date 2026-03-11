@@ -111,7 +111,20 @@
               <p class="text-slate-500 text-sm font-medium">Verify your identity to proceed</p>
             </div>
 
-            <div class="space-y-8">
+            <div class="space-y-6">
+              <div class="group animate-in fade-in slide-in-from-top-2">
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2 px-1 group-focus-within:text-indigo-600 transition-colors">Email Address</label>
+                <div class="relative">
+                  <Mail class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-indigo-500 transition-colors pointer-events-none" />
+                  <input 
+                    v-model="email"
+                    type="email"
+                    required
+                    placeholder="admin@example.com"
+                    class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-sm font-bold text-slate-900 focus:outline-none focus:border-indigo-600 focus:bg-white transition-all placeholder:text-slate-300"
+                  />
+                </div>
+              </div>
               <div class="flex justify-between gap-3">
                 <template v-for="(digit, index) in pinning" :key="index">
                   <div class="relative flex-1 group">
@@ -182,12 +195,13 @@ definePageMeta({
   middleware: 'guest',
 })
 
+const config = useRuntimeConfig()
 const auth = useAuthStore()
 const loginMode = ref('email')
 const loading = ref(false)
 const error = ref('')
 
-const email = ref('')
+const email = ref(auth.last_email || '')
 const password = ref('')
 
 const pinning = ref(['', '', '', '', ''])
@@ -213,14 +227,24 @@ const handlePinBackspace = (event, index) => {
 const verifyPin = async () => {
     const pin = pinning.value.join('')
     if (pin.length !== 5) return
+
+    if (!email.value) {
+        error.value = 'Please enter your email address first.'
+        loginMode.value = 'email'
+        return
+    }
     
     loading.value = true
     error.value = ''
     try {
-        await new Promise(r => setTimeout(r, 1200))
-        await navigateTo('/')
+        const success = await auth.loginViaPin(email.value, pin)
+
+        if (success) {
+            await navigateTo('/')
+        }
     } catch (e) {
-        error.value = 'Verification failed. Invalid PIN.'
+        console.error('PIN verification failed', e)
+        error.value = e?.data?.message || 'Verification failed. Invalid PIN.'
         pinning.value = ['', '', '', '', '']
         pinRefs.value[0]?.focus()
     } finally {

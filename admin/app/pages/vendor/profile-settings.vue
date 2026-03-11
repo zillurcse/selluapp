@@ -160,8 +160,10 @@
                 <h3 class="text-lg font-semibold text-gray-900">Security</h3>
                 <p class="text-sm text-gray-500 mt-1">Manage your password and security settings.</p>
              </div>
-             <div class="p-10 space-y-6">
+             <div class="p-10 space-y-10">
+                <!-- Password Section -->
                 <div class="max-w-md space-y-4">
+                   <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Change Password</h4>
                    <div class="space-y-1">
                       <label class="block text-sm font-medium text-gray-700">Current Password</label>
                       <input v-model="form.current_password" type="password" class="block w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all outline-none">
@@ -174,6 +176,40 @@
                       <label class="block text-sm font-medium text-gray-700">Confirm Password</label>
                       <input v-model="form.new_password_confirmation" type="password" class="block w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all outline-none">
                    </div>
+                </div>
+
+                <div class="border-t border-gray-100 pt-10"></div>
+
+                <!-- Security PIN Section -->
+                <div class="max-w-md space-y-6">
+                   <div>
+                      <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Security PIN</h4>
+                      <p class="text-xs text-gray-500 mb-4">Set a 5-digit PIN for quick authentication.</p>
+                   </div>
+                   <div class="flex gap-3">
+                      <input 
+                        v-for="i in 5" 
+                        :key="i"
+                        v-model="pinDigits[i-1]"
+                        type="password"
+                        maxlength="1"
+                        inputmode="numeric"
+                        @input="handlePinInput($event, i-1)"
+                        @keydown.delete="handlePinBackspace($event, i-1)"
+                        :ref="el => setPinRef(el, i-1)"
+                        class="w-12 h-14 bg-gray-50 border border-gray-200 rounded-xl text-center text-xl font-bold text-gray-900 focus:bg-white focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all outline-none"
+                      >
+                   </div>
+                   <button 
+                     type="button" 
+                     @click="saveSecurityPin" 
+                     :disabled="isSavingPin || pinDigits.some(d => !d)"
+                     class="px-5 py-2.5 text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg shadow-sm transition-all flex items-center gap-2 disabled:opacity-50"
+                   >
+                      <div v-if="isSavingPin" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <ShieldCheck v-else class="w-4 h-4" />
+                      {{ isSavingPin ? 'Saving PIN...' : 'Update Security PIN' }}
+                   </button>
                 </div>
              </div>
           </div>
@@ -227,7 +263,8 @@ import {
   Twitter,
   Youtube,
   Image as ImageIcon,
-  Save
+  Save,
+  ShieldCheck
 } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 
@@ -254,6 +291,44 @@ const showBannerMediaModal = ref(false)
 
 const isFetching = ref(false)
 const isSaving = ref(false)
+const isSavingPin = ref(false)
+
+const pinDigits = ref(['', '', '', '', ''])
+const pinRefs = ref([])
+
+const setPinRef = (el, index) => {
+  if (el) pinRefs.value[index] = el
+}
+
+const handlePinInput = (event, index) => {
+    const val = event.target.value
+    if (val && !isNaN(val) && index < 4) {
+        setTimeout(() => pinRefs.value[index + 1]?.focus(), 10)
+    }
+}
+
+const handlePinBackspace = (event, index) => {
+    if (!pinDigits.value[index] && index > 0) {
+        pinRefs.value[index - 1]?.focus()
+    }
+}
+
+const saveSecurityPin = async () => {
+    const pin = pinDigits.value.join('')
+    if (pin.length !== 5) return
+
+    isSavingPin.value = true
+    try {
+        await createItem('/pin/set', { pin })
+        toast.success('Security PIN updated successfully')
+        pinDigits.value = ['', '', '', '', '']
+    } catch (error) {
+        console.error('Failed to save PIN', error)
+        toast.error(error.data?.message || 'Failed to update Security PIN')
+    } finally {
+        isSavingPin.value = false
+    }
+}
 
 const userInitials = computed(() => {
    const name = auth.user?.name || 'U'
