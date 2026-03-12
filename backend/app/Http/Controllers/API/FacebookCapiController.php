@@ -36,9 +36,10 @@ class FacebookCapiController extends Controller
 
         $pixelId    = $settings->get('fbPixelId');
         $accessToken = $settings->get('fbPixelToken');
+        $isActive = $settings->get('isFbPixelActive') !== false; // Default to true if not set
 
-        if (!$pixelId || !$accessToken) {
-            return response()->json(['message' => 'Facebook Pixel not configured'], 200);
+        if (!$isActive || !$pixelId || !$accessToken) {
+            return response()->json(['message' => 'Facebook Pixel not configured or inactive'], 200);
         }
 
         // Hash PII with SHA-256 per Meta requirements

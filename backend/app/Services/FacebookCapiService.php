@@ -28,8 +28,9 @@ class FacebookCapiService
 
         $pixelId    = $settings->get('fbPixelId');
         $accessToken = $settings->get('fbPixelToken');
+        $isActive = $settings->get('isFbPixelActive') !== false; // Default to true if not set
 
-        if (!$pixelId || !$accessToken) {
+        if (!$isActive || !$pixelId || !$accessToken) {
             return false;
         }
 

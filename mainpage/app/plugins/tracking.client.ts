@@ -31,7 +31,9 @@ export default defineNuxtPlugin(async () => {
 
     // ─── 1. Google Tag Manager ────────────────────────────────────────────────
     const gtmId = m.gtmId
-    if (gtmId) {
+    const isGtmActive = m.isGtmActive !== false // Default to true if not set
+    
+    if (gtmId && isGtmActive) {
         // Initialize dataLayer before GTM loads
         ; (window as any).dataLayer = (window as any).dataLayer || []
             ; (window as any).dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' })
@@ -59,7 +61,9 @@ export default defineNuxtPlugin(async () => {
 
     // ─── 2. Google Analytics 4 (GA4) ─────────────────────────────────────────
     const gaMeasurementId = m.gaMeasurementId
-    if (gaMeasurementId) {
+    const isGa4Active = m.isGa4Active !== false // Default to true
+    
+    if (gaMeasurementId && isGa4Active) {
         const gaScript = document.createElement('script')
         gaScript.async = true
         gaScript.src = `https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`
@@ -80,7 +84,9 @@ export default defineNuxtPlugin(async () => {
 
     // ─── 3. Facebook Pixel ───────────────────────────────────────────────────
     const fbPixelId = m.fbPixelId
-    if (fbPixelId) {
+    const isFbPixelActive = m.isFbPixelActive !== false // Default to true
+    
+    if (fbPixelId && isFbPixelActive) {
         const fbInline = document.createElement('script')
         fbInline.textContent = `
       !function(f,b,e,v,n,t,s)
@@ -105,12 +111,19 @@ export default defineNuxtPlugin(async () => {
         img.style.display = 'none'
         img.src = `https://www.facebook.com/tr?id=${fbPixelId}&ev=PageView&noscript=1`
         ns.appendChild(img)
-        document.head.appendChild(ns)
+        if (document.body) {
+            document.body.appendChild(ns)
+        } else {
+            // Unlikely in Nuxt plugins, but fallback to prevent dropping tracking
+            document.head.appendChild(ns)
+        }
     }
 
     // ─── 4. TikTok Pixel ─────────────────────────────────────────────────────
     const tiktokPixelId = m.tiktokPixelId
-    if (tiktokPixelId) {
+    const isTiktokPixelActive = m.isTiktokPixelActive !== false // Default to true
+    
+    if (tiktokPixelId && isTiktokPixelActive) {
         const ttInline = document.createElement('script')
         ttInline.textContent = `
       !function (w, d, t) {

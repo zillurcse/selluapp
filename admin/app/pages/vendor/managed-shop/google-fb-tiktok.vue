@@ -22,11 +22,17 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <!-- GTM Setup -->
           <div class="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-100 dark:border-slate-800 p-8 shadow-sm transition-colors duration-300">
-            <div class="flex items-center gap-2 mb-6">
-              <div class="w-8 h-8 rounded-lg flex items-center justify-center">
-                <img src="https://www.gstatic.com/images/branding/product/2x/tag_manager_64dp.png" class="w-6 h-6 object-contain" alt="GTM" />
+            <div class="flex items-center justify-between mb-6">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center">
+                  <img src="https://www.gstatic.com/images/branding/product/2x/tag_manager_64dp.png" class="w-6 h-6 object-contain" alt="GTM" />
+                </div>
+                <h2 class="text-lg font-bold text-slate-800 dark:text-white">Setup Google Tag Manager</h2>
               </div>
-              <h2 class="text-lg font-bold text-slate-800 dark:text-white">Setup Google Tag Manager</h2>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" v-model="form.isGtmActive" class="sr-only peer">
+                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-indigo-600"></div>
+              </label>
             </div>
             <div class="space-y-4">
               <div class="space-y-2">
@@ -43,11 +49,17 @@
 
           <!-- GA4 Setup -->
           <div class="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-100 dark:border-slate-800 p-8 shadow-sm transition-colors duration-300">
-            <div class="flex items-center gap-2 mb-6">
-              <div class="w-8 h-8 rounded-lg flex items-center justify-center">
-                <img src="https://www.gstatic.com/images/branding/product/2x/analytics_64dp.png" class="w-6 h-6 object-contain" alt="GA4" />
+            <div class="flex items-center justify-between mb-6">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center">
+                  <img src="https://www.gstatic.com/images/branding/product/2x/analytics_64dp.png" class="w-6 h-6 object-contain" alt="GA4" />
+                </div>
+                <h2 class="text-lg font-bold text-slate-800 dark:text-white">Setup Google Analytics (GA4)</h2>
               </div>
-              <h2 class="text-lg font-bold text-slate-800 dark:text-white">Setup Google Analytics (GA4)</h2>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" v-model="form.isGa4Active" class="sr-only peer">
+                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-indigo-600"></div>
+              </label>
             </div>
             <div class="space-y-4">
               <div class="space-y-2">
@@ -80,9 +92,15 @@
 
         <!-- Facebook Conversion API & Pixel -->
         <div class="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-100 dark:border-slate-800 p-8 shadow-sm transition-colors duration-300">
-          <div class="flex items-center gap-2 mb-6">
-            <Facebook class="w-6 h-6 text-blue-600 fill-current" />
-            <h2 class="text-lg font-bold text-slate-800 dark:text-white">Facebook Conversion API & Pixel</h2>
+          <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-2">
+              <Facebook class="w-6 h-6 text-blue-600 fill-current" />
+              <h2 class="text-lg font-bold text-slate-800 dark:text-white">Facebook Conversion API & Pixel</h2>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" v-model="form.isFbPixelActive" class="sr-only peer">
+              <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-indigo-600"></div>
+            </label>
           </div>
           <div class="space-y-6">
             <div class="space-y-2">
@@ -136,9 +154,15 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <!-- TikTok Pixel Setup -->
           <div class="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-100 dark:border-slate-800 p-8 shadow-sm transition-colors duration-300">
-            <div class="flex items-center gap-2 mb-6">
-              <Music2 class="w-6 h-6 text-black dark:text-white" />
-              <h2 class="text-lg font-bold text-slate-800 dark:text-white">Tiktok Pixel Setup</h2>
+            <div class="flex items-center justify-between mb-6">
+              <div class="flex items-center gap-2">
+                <Music2 class="w-6 h-6 text-black dark:text-white" />
+                <h2 class="text-lg font-bold text-slate-800 dark:text-white">Tiktok Pixel Setup</h2>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" v-model="form.isTiktokPixelActive" class="sr-only peer">
+                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-indigo-600"></div>
+              </label>
             </div>
             <div class="space-y-6">
               <div class="space-y-2">
@@ -366,13 +390,17 @@ const setupGuides = [
 ]
 
 const form = reactive({
+  isGtmActive: true,
   gtmId: '',
+  isGa4Active: true,
   gaMeasurementId: '',
   gaPassword: '',
+  isFbPixelActive: true,
   fbPixelId: '',
   fbPixelToken: '',
   fbTestEventId: '',
   fbDomainVerification: '',
+  isTiktokPixelActive: true,
   tiktokPixelId: '',
   tiktokPixelToken: '',
   tiktokTestEventCode: '',
@@ -390,6 +418,12 @@ const loadSettings = async () => {
     const response = await getAll('/vendor/settings?group=marketing_social')
     if (response.data) {
       Object.assign(form, response.data)
+      
+      // Normalize toggle data (API may return 'true', 'false', '1', '0')
+      if ('isGtmActive' in response.data) form.isGtmActive = String(response.data.isGtmActive) === 'true' || String(response.data.isGtmActive) === '1'
+      if ('isGa4Active' in response.data) form.isGa4Active = String(response.data.isGa4Active) === 'true' || String(response.data.isGa4Active) === '1'
+      if ('isFbPixelActive' in response.data) form.isFbPixelActive = String(response.data.isFbPixelActive) === 'true' || String(response.data.isFbPixelActive) === '1'
+      if ('isTiktokPixelActive' in response.data) form.isTiktokPixelActive = String(response.data.isTiktokPixelActive) === 'true' || String(response.data.isTiktokPixelActive) === '1'
     }
   } catch (error) {
     if (error.response?.status !== 404) {
