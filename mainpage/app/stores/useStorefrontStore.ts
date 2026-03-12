@@ -24,7 +24,7 @@ export const useStorefrontStore = defineStore('storefront', {
         async fetchStorefront(only: 'essential' | 'full' = 'full') {
             const config = useRuntimeConfig()
             const apiBase = config.public.apiBase
-            const domain = useRequestURL().hostname
+            const domain = useRequestURL().hostname.replace(/^www\./, '')
 
             this.pending = true
             this.error = null

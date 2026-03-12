@@ -116,6 +116,9 @@ class FacebookCapiController extends Controller
     {
         if (!$domain) return null;
 
+        // Strip www. prefix to ensure clean database matches
+        $domain = preg_replace('/^www\./', '', $domain);
+
         $customSetting = ShopSetting::where('group', 'shop_domain')
             ->where('key', 'customDomain')
             ->where('value', $domain)
@@ -124,7 +127,7 @@ class FacebookCapiController extends Controller
         if ($customSetting) return $customSetting->user_id;
 
         $parts = explode('.', $domain);
-        if (count($parts) > 2) {
+        if (count($parts) >= 2) {
             $subdomain = $parts[0];
             $subSetting = ShopSetting::where('group', 'shop_domain')
                 ->where('key', 'subDomain')

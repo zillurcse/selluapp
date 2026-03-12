@@ -18,10 +18,12 @@ class StorefrontController extends Controller
     {
         $domain = $request->header('X-Tenant-Domain') ?? $request->query('domain');
 
-        // $domain = 'vendor3.test';
         if (!$domain) {
             return null; // No specific tenant
         }
+
+        // Strip www. prefix to ensure clean database matches
+        $domain = preg_replace('/^www\./', '', $domain);
 
         // Check customDomain
         $customSetting = ShopSetting::where('group', 'shop_domain')
