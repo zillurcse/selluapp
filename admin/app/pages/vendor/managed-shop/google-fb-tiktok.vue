@@ -121,6 +121,15 @@
                 class="w-full h-12 px-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-slate-900/5 focus:border-slate-900 outline-none transition-all font-semibold text-slate-700 dark:text-slate-200"
               >
             </div>
+            <div class="space-y-2">
+              <label class="text-sm font-bold text-slate-600 dark:text-slate-400">Facebook Domain Verification <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">(e.g., lu6...w1)</span></label>
+              <input 
+                v-model="form.fbDomainVerification"
+                type="text" 
+                placeholder="Enter domain verification content"
+                class="w-full h-12 px-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-slate-900/5 focus:border-slate-900 outline-none transition-all font-semibold text-slate-700 dark:text-slate-200"
+              >
+            </div>
           </div>
         </div>
 
@@ -363,6 +372,7 @@ const form = reactive({
   fbPixelId: '',
   fbPixelToken: '',
   fbTestEventId: '',
+  fbDomainVerification: '',
   tiktokPixelId: '',
   tiktokPixelToken: '',
   tiktokTestEventCode: '',

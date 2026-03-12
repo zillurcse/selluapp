@@ -15,6 +15,18 @@ import 'vue-sonner/style.css'
 import { onMounted } from 'vue'
 
 const { fetchCart } = useCart()
+const storefrontStore = useStorefrontStore()
+
+useHead(() => {
+  const meta: any[] = []
+  const fbDomainVerification = storefrontStore.marketing?.fbDomainVerification
+  
+  if (fbDomainVerification) {
+    meta.push({ name: 'facebook-domain-verification', content: fbDomainVerification })
+  }
+  
+  return { meta }
+})
 
 onMounted(() => {
   fetchCart()
