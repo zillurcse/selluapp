@@ -405,7 +405,7 @@ const { cart, cartTotal } = useCart()
 const authStore = useAuthStore()
 const router = useRouter()
 const config = useRuntimeConfig()
-const { trackInitiateCheckout, trackPurchase } = useTracking()
+const { trackInitiateCheckout, trackPurchase, trackAddShippingInfo, trackAddPaymentInfo, trackCheckoutReview } = useTracking()
 const storefrontStore = useStorefrontStore()
 
 const isLoyaltyActive = computed(() => {
@@ -575,6 +575,14 @@ const handleCityChange = async () => {
       if (response.status === 1) {
         shippingCost.value = response.cost
         availableCarriers.value = response.available_carriers || []
+        
+        // Fire AddShippingInfo event
+        trackAddShippingInfo({
+          total: cartTotal.value + shippingCost.value - discountTotal.value,
+          itemCount: cart.value.reduce((sum, item) => sum + item.quantity, 0),
+          items: cart.value
+        })
+
         // If current carrier is not in available carriers, select first or default
         if (availableCarriers.value.length > 0) {
            const exists = availableCarriers.value.find(c => c.id === form.value.carrier)
@@ -756,7 +764,8 @@ onMounted(async () => {
   if (cart.value.length > 0) {
     trackInitiateCheckout({
       total: cartTotal.value,
-      itemCount: cart.value.reduce((sum, item) => sum + item.quantity, 0)
+      itemCount: cart.value.reduce((sum, item) => sum + item.quantity, 0),
+      items: cart.value
     })
   }
 })
@@ -809,6 +818,21 @@ const placeOrder = async () => {
   }
 
   loading.value = true
+
+  // Fire AddPaymentInfo and CheckoutReview before submitting
+  trackAddPaymentInfo({
+    total: cartTotal.value + shippingCost.value - discountTotal.value,
+    itemCount: cart.value.reduce((sum, item) => sum + item.quantity, 0),
+    items: cart.value,
+    paymentMethod: paymentMethod.value
+  })
+
+  trackCheckoutReview({
+    total: cartTotal.value + shippingCost.value - discountTotal.value,
+    itemCount: cart.value.reduce((sum, item) => sum + item.quantity, 0),
+    items: cart.value
+  })
+
   try {
     const orderData = {
       ...form.value,

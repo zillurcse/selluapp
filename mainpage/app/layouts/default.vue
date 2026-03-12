@@ -6,6 +6,7 @@
       <slot />
     </main>
     <TheFooter />
+    <BackToTop />
   </div>
 </template>
 

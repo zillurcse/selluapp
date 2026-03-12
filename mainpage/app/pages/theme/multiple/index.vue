@@ -200,7 +200,7 @@ const { addToCart: cartAddToCart } = useCart()
 
 const handleAddToCart = (product) => {
   if (!product?.id) return
-  cartAddToCart({ product_id: product.id, quantity: 1 })
+  cartAddToCart(product, 1)
   toast.success(`${product.name} added to cart!`)
 }
 

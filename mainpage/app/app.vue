@@ -4,6 +4,8 @@
       <NuxtPage />
     </NuxtLayout>
     <Toaster position="top-right" rich-colors />
+    <CartDrawer />
+    <WishlistDrawer />
   </div>
 </template>
 

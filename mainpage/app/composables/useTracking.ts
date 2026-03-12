@@ -372,6 +372,167 @@ export function useTracking() {
         })
     }
 
+    // ─── 6. ViewCart / view_cart ─────────────────────────────────────────────────
+    function trackViewCart(cart: {
+        total: number
+        itemCount: number
+        items?: Array<{ id: string | number; name: string; price: number; quantity?: number; category?: string }>
+        currency?: string
+    }) {
+        const currency = cart.currency || 'BDT'
+        const eventId = generateUUID()
+        const items = (cart.items || []).map(i => buildGa4Item(i))
+        const contentIds = (cart.items || []).map(i => String(i.id))
+
+        pushDataLayer('view_cart', {
+            ecommerce: {
+                currency,
+                value: cart.total,
+                items,
+                ...(getUserId() ? { user_id: getUserId() } : {}),
+            },
+        })
+
+        fbTrack('ViewCart', {
+            value: cart.total,
+            currency,
+            num_items: cart.itemCount,
+            content_ids: contentIds,
+        }, eventId)
+
+        ttTrack('ViewCart', {
+            value: cart.total,
+            currency,
+        })
+    }
+
+    // ─── 7. AddToWishlist / add_to_wishlist ──────────────────────────────────────
+    function trackAddToWishlist(product: {
+        id: string | number
+        name: string
+        price: number
+        category?: string
+        currency?: string
+    }) {
+        const currency = product.currency || 'BDT'
+        const eventId = generateUUID()
+        const item = buildGa4Item(product)
+
+        pushDataLayer('add_to_wishlist', {
+            ecommerce: {
+                currency,
+                value: product.price,
+                items: [item],
+            },
+        })
+
+        fbTrack('AddToWishlist', {
+            content_ids: [String(product.id)],
+            content_name: product.name,
+            content_category: product.category || '',
+            content_type: 'product',
+            value: product.price,
+            currency,
+        }, eventId)
+
+        ttTrack('AddToWishlist', {
+            content_id: String(product.id),
+            content_name: product.name,
+            content_type: 'product',
+            value: product.price,
+            currency,
+        })
+    }
+
+    // ─── 8. AddShippingInfo / add_shipping_info ──────────────────────────────────
+    function trackAddShippingInfo(cart: {
+        total: number
+        itemCount: number
+        items?: Array<{ id: string | number; name: string; price: number; quantity?: number; category?: string }>
+        currency?: string
+    }) {
+        const currency = cart.currency || 'BDT'
+        const eventId = generateUUID()
+        const items = (cart.items || []).map(i => buildGa4Item(i))
+
+        pushDataLayer('add_shipping_info', {
+            ecommerce: {
+                currency,
+                value: cart.total,
+                items,
+            },
+        })
+
+        fbTrack('AddShippingInfo', {
+            value: cart.total,
+            currency,
+        }, eventId)
+    }
+
+    // ─── 9. AddPaymentInfo / add_payment_info ────────────────────────────────────
+    function trackAddPaymentInfo(cart: {
+        total: number
+        itemCount: number
+        items?: Array<{ id: string | number; name: string; price: number; quantity?: number; category?: string }>
+        currency?: string
+        paymentMethod?: string
+    }) {
+        const currency = cart.currency || 'BDT'
+        const eventId = generateUUID()
+        const items = (cart.items || []).map(i => buildGa4Item(i))
+        const contentIds = (cart.items || []).map(i => String(i.id))
+
+        pushDataLayer('add_payment_info', {
+            ecommerce: {
+                currency,
+                value: cart.total,
+                payment_type: cart.paymentMethod || '',
+                items,
+            },
+        })
+
+        fbTrack('AddPaymentInfo', {
+            value: cart.total,
+            currency,
+            content_ids: contentIds,
+            payment_method: cart.paymentMethod || '',
+        }, eventId)
+
+        // FB CAPI
+        sendToCapiServer({
+            event_name: 'AddPaymentInfo',
+            event_id: eventId,
+            custom_data: {
+                value: cart.total,
+                currency,
+                content_ids: contentIds,
+            },
+        })
+    }
+
+    // ─── 10. CheckoutReview / checkout_progress ──────────────────────────────────
+    function trackCheckoutReview(cart: {
+        total: number
+        itemCount: number
+        items?: Array<{ id: string | number; name: string; price: number; quantity?: number; category?: string }>
+        currency?: string
+    }) {
+        const currency = cart.currency || 'BDT'
+        const eventId = generateUUID()
+        
+        pushDataLayer('checkout_progress', {
+            ecommerce: {
+                currency,
+                value: cart.total,
+            },
+        })
+
+        fbTrack('CheckoutReview', {
+            value: cart.total,
+            currency,
+        }, eventId)
+    }
+
     // ─── Expose raw helpers for custom events ────────────────────────────────────
     return {
         trackViewContent,
@@ -379,6 +540,11 @@ export function useTracking() {
         trackRemoveFromCart,
         trackInitiateCheckout,
         trackPurchase,
+        trackViewCart,
+        trackAddToWishlist,
+        trackAddShippingInfo,
+        trackAddPaymentInfo,
+        trackCheckoutReview,
         // Raw helpers for custom events
         pushDataLayer,
         fbTrack,

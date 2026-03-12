@@ -26,7 +26,10 @@
           </p>
           
           <div class="flex items-center gap-8">
-            <button class="px-12 py-6 bg-black text-white rounded-full font-black uppercase tracking-widest text-xs hover:bg-indigo-600 hover:scale-105 transition-all duration-500 shadow-2xl shadow-indigo-200">
+            <button 
+              class="px-12 py-6 bg-black text-white rounded-full font-black uppercase tracking-widest text-xs hover:bg-indigo-600 hover:scale-105 transition-all duration-500 shadow-2xl shadow-indigo-200"
+              @click="handleAddToCart"
+            >
               {{ settings.cta_text ? `${settings.cta_text} — ৳${product.sale_price}` : `Reserve Now — ৳${product.sale_price}` }}
             </button>
             <button class="w-16 h-16 rounded-full border-2 border-slate-100 flex items-center justify-center group hover:border-black transition-colors">
@@ -90,7 +93,10 @@
               <div class="w-full h-full rounded-full" :style="{ background: color }"></div>
             </div>
           </div>
-          <button class="px-20 py-8 bg-white text-black rounded-[2rem] font-black uppercase tracking-[0.2em] text-sm hover:bg-indigo-400 hover:text-white transition-all duration-500 scale-100 hover:scale-105 active:scale-95 shadow-2xl shadow-indigo-500/20">
+          <button 
+            class="px-20 py-8 bg-white text-black rounded-[2rem] font-black uppercase tracking-[0.2em] text-sm hover:bg-indigo-400 hover:text-white transition-all duration-500 scale-100 hover:scale-105 active:scale-95 shadow-2xl shadow-indigo-500/20"
+            @click="handleAddToCart"
+          >
             {{ settings.cta_text || 'Confirm Acquisition' }}
           </button>
           <p class="text-white/40 text-[10px] font-bold uppercase tracking-[0.4em]">Guaranteed Express Global Shipping</p>
@@ -105,7 +111,10 @@
           <p class="text-white font-black tracking-tight">{{ product.name }}</p>
           <p class="text-indigo-400 text-[10px] font-bold uppercase tracking-widest">${{ product.price }}</p>
         </div>
-        <button class="px-8 py-4 bg-white text-black rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-indigo-500 hover:text-white transition-colors">
+        <button 
+          class="px-8 py-4 bg-white text-black rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-indigo-500 hover:text-white transition-colors"
+          @click="handleAddToCart"
+        >
           Buy
         </button>
       </div>
@@ -126,6 +135,15 @@ const props = defineProps({
 const product = computed(() => props.data.products?.[0] || {})
 const vendor = computed(() => props.data.vendor || {})
 const settings = computed(() => props.data.landingPage?.settings || {})
+
+const { addToCart: cartAddToCart } = useCart()
+import { toast } from 'vue-sonner'
+
+const handleAddToCart = () => {
+  if (!product.value?.id) return
+  cartAddToCart(product.value, 1)
+  toast.success(`${product.value.name} added to cart!`)
+}
 </script>
 
 <style scoped>

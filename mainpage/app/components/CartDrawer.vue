@@ -57,7 +57,20 @@
 </template>
 
 <script setup>
+import { watch } from 'vue'
+
 const { cart, isCartOpen, closeCart, removeFromCart, updateQuantity, cartTotal, cartCount } = useCart()
+const { trackViewCart } = useTracking()
+
+watch(isCartOpen, (newVal) => {
+  if (newVal && cart.value.length > 0) {
+    trackViewCart({
+      total: cartTotal.value,
+      itemCount: cartCount.value,
+      items: cart.value
+    })
+  }
+})
 </script>
 
 <style scoped>

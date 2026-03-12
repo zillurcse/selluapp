@@ -128,6 +128,13 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
         </button>
         
+        <!-- Wishlist -->
+        <button @click="toggleWishlistDrawer" class="relative p-2.5 rounded-full hover:bg-gray-100 transition-all active:scale-95 text-gray-900 group" title="Wishlist">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="transition-colors duration-300" :class="{ 'fill-rose-500 text-rose-500': wishlistCount > 0, 'group-hover:text-rose-500': wishlistCount === 0 }"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+          <span v-if="wishlistCount > 0" class="absolute top-1.5 right-1.5 bg-rose-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">{{ wishlistCount }}</span>
+        </button>
+
+        <!-- Cart -->
         <button class="relative p-2.5 rounded-full hover:bg-gray-100 transition-all active:scale-95 text-gray-900" @click="toggleCart">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
           <span v-if="cartCount > 0" class="absolute top-1.5 right-1.5 bg-gray-900 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center animate-bounce">{{ cartCount }}</span>
@@ -174,6 +181,7 @@
 import { toast } from 'vue-sonner'
 
 const { toggleCart, cartCount } = useCart()
+const { wishlistCount, toggleWishlistDrawer } = useWishlist()
 const authStore = useAuthStore()
 const storefrontStore = useStorefrontStore()
 const isScrolled = ref(false)

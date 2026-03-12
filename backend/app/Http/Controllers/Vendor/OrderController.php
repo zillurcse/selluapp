@@ -255,6 +255,52 @@ class OrderController extends Controller implements HasMiddleware
                         $item->product->decrement('stock_qty', $item->quantity);
                     }
                 }
+                
+                // --- Facebook CAPI Custom Events ---
+                try {
+                    $shippingInfo = json_decode($order->shipping_address, true);
+                    $userData = [
+                        'email' => $shippingInfo['email'] ?? null,
+                        'phone' => $shippingInfo['phone'] ?? null,
+                        'first_name' => $shippingInfo['first_name'] ?? null,
+                        'last_name' => $shippingInfo['last_name'] ?? null,
+                        'city' => $shippingInfo['city'] ?? null,
+                        'user_id' => $order->customer_id,
+                    ];
+                    $customData = [
+                        'currency' => 'BDT',
+                        'value' => $order->total_amount,
+                        'order_id' => $order->invoice_number,
+                    ];
+                    $fbCapi = new \App\Services\FacebookCapiService();
+                    $fbCapi->sendEvent('StockConfirmed', $userData, $customData, (string)\Illuminate\Support\Str::uuid(), $order->user_id);
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error("CAPI StockConfirmed Error: " . $e->getMessage());
+                }
+            }
+
+            // Refund logic
+            if ($oldStatus !== 'refunded' && $newStatus === 'refunded') {
+                try {
+                    $shippingInfo = json_decode($order->shipping_address, true);
+                    $userData = [
+                        'email' => $shippingInfo['email'] ?? null,
+                        'phone' => $shippingInfo['phone'] ?? null,
+                        'first_name' => $shippingInfo['first_name'] ?? null,
+                        'last_name' => $shippingInfo['last_name'] ?? null,
+                        'city' => $shippingInfo['city'] ?? null,
+                        'user_id' => $order->customer_id,
+                    ];
+                    $customData = [
+                        'currency' => 'BDT',
+                        'value' => $order->total_amount,
+                        'order_id' => $order->invoice_number,
+                    ];
+                    $fbCapi = new \App\Services\FacebookCapiService();
+                    $fbCapi->sendEvent('RefundIssued', $userData, $customData, (string)\Illuminate\Support\Str::uuid(), $order->user_id);
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error("CAPI RefundIssued Error: " . $e->getMessage());
+                }
             }
 
             DB::commit();

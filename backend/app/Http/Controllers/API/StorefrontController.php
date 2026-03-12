@@ -16,9 +16,9 @@ class StorefrontController extends Controller
 {
     private function resolveTenantId(Request $request)
     {
-        // $domain = $request->header('X-Tenant-Domain') ?? $request->query('domain');
+        $domain = $request->header('X-Tenant-Domain') ?? $request->query('domain');
 
-        $domain = 'vendor3.test';
+        // $domain = 'vendor3.test';
         if (!$domain) {
             return null; // No specific tenant
         }
@@ -522,13 +522,37 @@ class StorefrontController extends Controller
         return response()->json(\App\Models\Unit::where('is_active', true)->get());
     }
 
-    public function show($slug)
+    public function show(\Illuminate\Http\Request $request, $slug)
     {
         $product = Product::where('slug', $slug)
             ->where('is_active', true)
             ->where('status', 'published')
             ->firstOrFail();
         $product->load(['categories', 'brand', 'unit', 'vendor.vendorProfile', 'variants.attributes.attribute']);
+        
+        // --- Facebook CAPI: OutOfStockView Event ---
+        if ($product->stock_qty <= 0) {
+            try {
+                $userData = [
+                    'ip' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                ];
+                
+                $customData = [
+                    'content_ids' => [(string)$product->id],
+                    'content_name' => $product->name,
+                    'content_type' => 'product',
+                    'currency' => 'BDT',
+                    'value' => (float)($product->discount_price ?: $product->sale_price),
+                ];
+                
+                $fbCapi = new \App\Services\FacebookCapiService();
+                $fbCapi->sendEvent('OutOfStockView', $userData, $customData, (string)\Illuminate\Support\Str::uuid(), $product->vendor_id);
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error("CAPI OutOfStockView Error: " . $e->getMessage());
+            }
+        }
+
         return response()->json(new \App\Http\Resources\Storefront\ProductResource($product));
     }
 

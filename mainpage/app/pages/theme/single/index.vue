@@ -125,8 +125,8 @@
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="translate-x-0 group-hover:translate-x-2 transition-transform"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </button>
 
-            <button class="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center group hover:bg-rose-500/10 hover:border-rose-500/20 transition-all duration-500">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white/40 group-hover:text-rose-500 transition-colors"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+            <button @click="handleWishlist" class="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center group hover:bg-rose-500/10 hover:border-rose-500/20 transition-all duration-500">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transition-colors duration-300" :class="isInWishlist(product.id) ? 'text-rose-500 fill-rose-500' : 'text-white/40 group-hover:text-rose-500'"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
             </button>
           </div>
         </div>
@@ -284,6 +284,7 @@ const props = defineProps({
 const { toggleCart, cartCount, addToCart: cartAddToCart } = useCart()
 const authStore = useAuthStore()
 const storefrontStore = useStorefrontStore()
+const { isInWishlist, toggleWishlist } = useWishlist()
 
 const product = computed(() => props.data.products?.[0] || {})
 const vendor = computed(() => props.data.vendor || {})
@@ -299,8 +300,19 @@ const profileDropdown = ref(null)
 // Add to Cart
 const handleAddToCart = () => {
   if (!product.value?.id) return
-  cartAddToCart({ product_id: product.value.id, quantity: quantity.value })
+  cartAddToCart(product.value, quantity.value)
   toast.success(`${product.value.name} added to cart!`)
+}
+
+// Add to Wishlist
+const handleWishlist = () => {
+  if (!product.value?.id) return
+  const added = toggleWishlist(product.value)
+  if (added) {
+    toast.success(`${product.value.name} added to wishlist!`)
+  } else {
+    toast.info(`${product.value.name} removed from wishlist.`)
+  }
 }
 
 // Campaign countdown

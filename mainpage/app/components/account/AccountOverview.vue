@@ -37,19 +37,22 @@
       </div>
     </div>
     <!-- Wishlist Preview -->
-    <!-- <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" v-if="wishlist.length > 0">
       <div class="flex items-center justify-between mb-5">
         <h2 class="font-bold text-gray-900">Wishlist</h2>
         <button @click="$emit('nav', 'wishlist')" class="text-xs font-bold text-violet-600 hover:text-violet-700 transition border-none bg-transparent cursor-pointer">View all →</button>
       </div>
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        <div v-for="item in wishlistItems.slice(0,3)" :key="item.id" class="group relative bg-gray-50 rounded-xl p-3 border border-gray-100 hover:border-gray-200 transition cursor-pointer">
-          <div class="text-4xl text-center mb-2">{{ item.emoji }}</div>
+        <div v-for="item in wishlist.slice(0,3)" :key="item.id" class="group relative bg-gray-50 rounded-xl p-3 border border-gray-100 hover:border-gray-200 transition cursor-pointer" @click="$router.push(`/product/${item.slug || item.id}`)">
+          <div class="h-24 w-full bg-white rounded-lg mb-2 flex items-center justify-center overflow-hidden">
+             <img v-if="item.image_url" :src="item.image_url" class="h-full w-full object-contain" />
+             <div v-else class="text-4xl text-center">{{ item.emoji || '📦' }}</div>
+          </div>
           <div class="text-xs font-semibold text-gray-900 truncate">{{ item.name }}</div>
-          <div class="text-xs text-gray-500">${{ item.price }}</div>
+          <div class="text-xs text-gray-500">৳{{ item.sale_price || item.price }}</div>
         </div>
       </div>
-    </div> -->
+    </div>
   </div>
 </template>
 
@@ -57,8 +60,9 @@
 defineProps({
   stats: { type: Array, default: () => [] },
   recentOrders: { type: Array, default: () => [] },
-  wishlistItems: { type: Array, default: () => [] }
 })
+
+const { wishlist } = useWishlist()
 
 defineEmits(['nav', 'track-order', 'view-details'])
 </script>

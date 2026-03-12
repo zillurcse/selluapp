@@ -62,7 +62,7 @@
         </transition>
 
         <!-- Navigation Controls (Glassmorphic) -->
-        <div class="absolute bottom-8 right-8 z-30 flex gap-4">
+        <div class="absolute bottom-8 right-8 z-30 hidden md:flex gap-4">
           <button
             @click="prevSlide"
             class="w-12 h-12 md:w-14 md:h-14 rounded-2xl border border-white/20 bg-white/10 text-white flex items-center justify-center backdrop-blur-xl transition-all hover:bg-white hover:text-black hover:scale-110 active:scale-95 group/prev"

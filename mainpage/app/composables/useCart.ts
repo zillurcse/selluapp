@@ -41,6 +41,14 @@ export const useCart = () => {
             isCartOpen.value = true
         }
 
+        const tracking = useTracking()
+        tracking.trackAddToCart({
+            id: product.id,
+            name: product.name || 'Product',
+            price: Number(product.price) || 0,
+            quantity: quantity
+        })
+
         if (authStore.isAuthenticated) {
             try {
                 await $fetch(`${config.public.apiBase}/cart`, {
@@ -60,6 +68,16 @@ export const useCart = () => {
     }
 
     const removeFromCart = async (productId: string | number) => {
+        const itemToRemove = cart.value.find(item => item.id === productId)
+        if (itemToRemove) {
+            const tracking = useTracking()
+            tracking.trackRemoveFromCart({
+                id: itemToRemove.id,
+                name: itemToRemove.name || 'Product',
+                price: Number(itemToRemove.price) || 0,
+                quantity: itemToRemove.quantity
+            })
+        }
         cart.value = cart.value.filter(item => item.id !== productId)
 
         if (authStore.isAuthenticated) {

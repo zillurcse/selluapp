@@ -14,9 +14,9 @@
         <button class="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
         </button>
-        <button class="relative w-10 h-10 rounded-full bg-black text-white flex items-center justify-center hover:scale-105 transition-transform">
+        <button class="relative w-10 h-10 rounded-full bg-black text-white flex items-center justify-center hover:scale-105 transition-transform" @click="toggleCart">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-          <span class="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full text-[8px] font-black flex items-center justify-center border-2 border-white">2</span>
+          <span v-if="cartCount > 0" class="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full text-[8px] font-black flex items-center justify-center border-2 border-white">{{ cartCount }}</span>
         </button>
       </div>
     </header>
@@ -124,7 +124,10 @@
                 <span class="text-sm font-black w-4 text-center">{{ quantity }}</span>
                 <button @click="quantity++" class="text-xl font-bold text-slate-300 hover:text-black transition-colors">+</button>
               </div>
-              <button class="flex-1 bg-black text-white rounded-2xl py-4 font-black uppercase tracking-[0.2em] text-xs shadow-2xl shadow-slate-300 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3">
+              <button 
+                class="flex-1 bg-black text-white rounded-2xl py-4 font-black uppercase tracking-[0.2em] text-xs shadow-2xl shadow-slate-300 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3"
+                @click="handleAddToCart"
+              >
                 {{ settings.cta_text || 'Acquire Piece' }}
                 <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
               </button>
@@ -214,6 +217,15 @@ const activeMaterial = ref('Brushed Steel')
 const activeSize = ref('Standard')
 const quantity = ref(1)
 const openIdx = ref(0)
+
+const { toggleCart, cartCount, addToCart: cartAddToCart } = useCart()
+import { toast } from 'vue-sonner'
+
+const handleAddToCart = () => {
+  if (!product.value?.id) return
+  cartAddToCart(product.value, quantity.value)
+  toast.success(`${product.value.name} added to cart!`)
+}
 
 const details = computed(() => {
   if (product.value.specifications) {

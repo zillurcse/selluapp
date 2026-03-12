@@ -96,10 +96,9 @@
           @track="activeTab = 'tracking'; trackingOrder = selectedOrder"
         />
 
-        <!-- <AccountWishlist 
+        <AccountWishlist 
           v-else-if="activeTab === 'wishlist'" 
-          :wishlist-items="wishlistItems" 
-        /> -->
+        />
 
         <AccountProfile 
           v-else-if="activeTab === 'profile'" 
@@ -158,11 +157,13 @@ const selectedOrder = ref(null)
 const navItems = computed(() => [
   { id: 'overview',   icon: '🏠', label: 'Dashboard' },
   { id: 'orders',     icon: '📦', label: 'My Orders',   badge: allOrders.value.length > 0 ? allOrders.value.length.toString() : null },
-  // { id: 'wishlist',   icon: '❤️', label: 'Wishlist',    badge: wishlistItems.value.length > 0 ? wishlistItems.value.length.toString() : null },
+  { id: 'wishlist',   icon: '❤️', label: 'Wishlist',    badge: wishlistCount.value > 0 ? wishlistCount.value.toString() : null },
   { id: 'addresses',  icon: '📍', label: 'Addresses' },
   { id: 'profile',    icon: '👤', label: 'Profile' },
   { id: 'settings',   icon: '⚙️', label: 'Settings' },
 ])
+
+const { wishlistCount } = useWishlist()
 
 const logout = () => navigateTo('/login')
 

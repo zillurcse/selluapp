@@ -559,6 +559,36 @@ class CheckoutController extends Controller
                             'link'           => '/vendor/orders',
                         ],
                     ]);
+
+                    // --- Facebook CAPI Custom Events ---
+                    try {
+                        $userData = [
+                            'email' => $validated['email'] ?? null,
+                            'phone' => $validated['phone'] ?? null,
+                            'first_name' => $validated['first_name'] ?? null,
+                            'last_name' => $validated['last_name'] ?? null,
+                            'city' => $city->name ?? null,
+                            'ip' => $ip,
+                            'user_agent' => $request->userAgent(),
+                            'user_id' => $customer->id ?? null,
+                        ];
+                        
+                        $customData = [
+                            'currency' => 'BDT',
+                            'value' => max(0, $totalAmount),
+                            'order_id' => $order->invoice_number,
+                            'content_ids' => array_map(function($v) { return (string)$v['product']->id; }, $vendorItems),
+                        ];
+                        
+                        $fbCapi = new \App\Services\FacebookCapiService();
+                        $fbCapi->sendEvent('OrderCreated', $userData, $customData, (string)\Illuminate\Support\Str::uuid(), $vendorId);
+                        
+                        if ($discountAmount > 0) {
+                             $fbCapi->sendEvent('CouponApplied', $userData, array_merge($customData, ['custom_params' => ['coupon' => $validated['coupon_code'] ?? 'offer']]), (string)\Illuminate\Support\Str::uuid(), $vendorId);
+                        }
+                    } catch (\Exception $e) {
+                         \Illuminate\Support\Facades\Log::error("CAPI Error: " . $e->getMessage());
+                    }
                 }
                 // ------------------------------------
 
@@ -636,6 +666,37 @@ class CheckoutController extends Controller
                 'link'           => '/vendor/orders',
             ],
         ]);
+
+        // --- Facebook CAPI Custom Events ---
+        try {
+            $shippingInfo = json_decode($order->shipping_address, true);
+            $userData = [
+                'email' => $shippingInfo['email'] ?? null,
+                'phone' => $shippingInfo['phone'] ?? null,
+                'first_name' => $shippingInfo['first_name'] ?? null,
+                'last_name' => $shippingInfo['last_name'] ?? null,
+                'city' => $shippingInfo['city'] ?? null,
+                'ip' => $shippingInfo['ip'] ?? null,
+                'user_agent' => $request->userAgent(),
+                'user_id' => $order->customer_id,
+            ];
+            
+            $customData = [
+                'currency' => 'BDT',
+                'value' => $order->total_amount,
+                'order_id' => $order->invoice_number,
+            ];
+            
+            $fbCapi = new \App\Services\FacebookCapiService();
+            $fbCapi->sendEvent('OrderCreated', $userData, $customData, (string)\Illuminate\Support\Str::uuid(), $order->user_id);
+            
+            if ($order->discount_amount > 0) {
+                 $coupon = !empty($order->applied_promotions) ? 'offer' : 'loyalty';
+                 $fbCapi->sendEvent('CouponApplied', $userData, array_merge($customData, ['custom_params' => ['coupon' => $coupon]]), (string)\Illuminate\Support\Str::uuid(), $order->user_id);
+            }
+        } catch (\Exception $e) {
+             \Illuminate\Support\Facades\Log::error("CAPI Error: " . $e->getMessage());
+        }
 
         return response()->json([
             'success' => true,
