@@ -145,56 +145,56 @@
 
             <!-- Ultimate Action Section -->
             <div class="space-y-10 pt-8 border-t border-gray-50 animate-fade-in" style="animation-delay: 0.5s">
-               <!-- Advanced Counter - Now centered or full width on mobile -->
+                <!-- Advanced Counter - Now centered or full width on mobile -->
                <div class="flex justify-center sm:justify-start">
-                  <div class="flex items-center p-2 rounded-full bg-gray-50 border border-gray-100 shadow-sm">
+                  <div class="flex items-center p-1.5 rounded-full bg-gray-50 border border-gray-100 shadow-sm transition-all duration-500 hover:shadow-md">
                     <button 
                       @click="quantity = Math.max(1, quantity - 1)"
-                      class="w-14 h-14 rounded-full flex items-center justify-center bg-white shadow-sm hover:shadow-md hover:bg-black hover:text-white transition-all duration-500 text-gray-400 active:scale-90"
+                      class="w-10 h-10 md:w-14 md:h-14 rounded-full flex items-center justify-center bg-white shadow-sm hover:shadow-md hover:bg-black hover:text-white transition-all duration-500 text-gray-400 active:scale-90"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>
                     </button>
-                    <span class="font-black text-gray-900 text-xl w-14 md:w-20 text-center tabular-nums">{{ quantity }}</span>
+                    <span class="font-black text-gray-900 text-lg md:text-xl w-12 md:w-20 text-center tabular-nums">{{ quantity }}</span>
                     <button 
                       @click="quantity = Math.min(currentStock, quantity + 1)"
                       :disabled="quantity >= currentStock"
-                      class="w-14 h-14 rounded-full flex items-center justify-center bg-white shadow-sm hover:shadow-md hover:bg-black hover:text-white transition-all duration-500 text-gray-400 disabled:opacity-20 active:scale-90"
+                      class="w-10 h-10 md:w-14 md:h-14 rounded-full flex items-center justify-center bg-white shadow-sm hover:shadow-md hover:bg-black hover:text-white transition-all duration-500 text-gray-400 disabled:opacity-20 active:scale-90"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
                     </button>
                   </div>
                </div>
 
-               <div class="flex flex-col sm:flex-row gap-4 items-stretch">
+                <div class="flex flex-col sm:flex-row gap-5 items-stretch">
                   <!-- Add to Cart -->
                   <button 
-                    class="group relative flex-1 h-[72px] bg-[#0F172A] text-white rounded-2xl font-black text-[11px] uppercase tracking-[0.3em] overflow-hidden transition-all duration-700 disabled:opacity-40 shadow-xl hover:shadow-2xl hover:-translate-y-1 active:scale-95 active:translate-y-0"
+                    class="group relative flex-1 min-h-[72px] bg-[#0F172A] text-white rounded-2xl md:rounded-[1.5rem] font-black text-[12px] md:text-[14px] uppercase tracking-[0.2em] md:tracking-[0.3em] overflow-hidden transition-all duration-700 disabled:opacity-40 shadow-xl hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1 active:scale-95 active:translate-y-0 flex-shrink-0"
                     @click="handleAddToCart"
                     :disabled="(product.has_variants && !selectedVariant) || currentStock <= 0"
                   >
                     <div class="absolute inset-0 bg-indigo-600 translate-y-full group-hover:translate-y-0 transition-transform duration-700 cubic-bezier(0.19, 1, 0.22, 1)"></div>
                     <span class="relative z-10 flex items-center justify-center gap-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
                         <span>Add to Cart</span>
                     </span>
                   </button>
 
                   <!-- Order Now (Express) -->
                   <button 
-                    class="group relative flex-1 h-[72px] bg-white text-black border-2 border-black rounded-2xl font-black text-[11px] uppercase tracking-[0.3em] overflow-hidden transition-all duration-700 disabled:opacity-40 shadow-lg hover:shadow-xl hover:-translate-y-1 active:scale-95 active:translate-y-0"
+                    class="group relative flex-1 min-h-[72px] bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white rounded-2xl md:rounded-[1.5rem] font-black text-[12px] md:text-[14px] uppercase tracking-[0.2em] md:tracking-[0.3em] overflow-hidden transition-all duration-700 disabled:opacity-40 shadow-xl hover:shadow-2xl hover:shadow-purple-500/20 hover:-translate-y-1 active:scale-95 active:translate-y-0 flex-shrink-0"
                     @click="handleOrderNow"
                     :disabled="(product.has_variants && !selectedVariant) || currentStock <= 0"
                   >
                     <div class="absolute inset-0 bg-black translate-y-full group-hover:translate-y-0 transition-transform duration-700 cubic-bezier(0.19, 1, 0.22, 1)"></div>
-                    <span class="relative z-10 flex items-center justify-center gap-3 group-hover:text-white transition-colors duration-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="fill-current"><path d="m13 2-2 10h3L11 22l2-10h-3l2-10Z"/></svg>
+                    <span class="relative z-10 flex items-center justify-center gap-3 transition-colors duration-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="fill-current text-white"><path d="m13 2-2 10h3L11 22l2-10h-3l2-10Z"/></svg>
                         <span>Order Now</span>
                     </span>
                   </button>
 
                   <!-- Watch Video -->
                   <a v-if="product.video_url" :href="product.video_url" target="_blank"
-                    class="group relative flex items-center justify-center w-[72px] h-[72px] sm:w-[72px] bg-rose-50 text-rose-600 rounded-2xl overflow-hidden transition-all duration-700 shadow-sm hover:shadow-md hover:-translate-y-1 active:scale-95 active:translate-y-0"
+                    class="group relative flex items-center justify-center w-full sm:w-[72px] min-h-[72px] bg-rose-50 text-rose-600 rounded-2xl md:rounded-[1.5rem] overflow-hidden transition-all duration-700 shadow-sm hover:shadow-md hover:-translate-y-1 active:scale-95 active:translate-y-0 flex-shrink-0"
                   >
                      <div class="absolute inset-0 bg-rose-600 translate-y-full group-hover:translate-y-0 transition-transform duration-700 cubic-bezier(0.19, 1, 0.22, 1)"></div>
                      <span class="relative z-10 group-hover:text-white transition-colors duration-500">
