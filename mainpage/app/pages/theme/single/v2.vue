@@ -61,7 +61,7 @@
             
             <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
               <h1 class="text-4xl md:text-5xl font-black tracking-tight text-slate-900 leading-none">{{ product.name }}</h1>
-              <div class="text-3xl font-bold tracking-tighter">${{ product.price }}</div>
+              <div class="text-3xl font-bold tracking-tighter">৳{{ product.price }}</div>
             </div>
 
             <div class="flex items-center gap-6 py-4 border-y border-slate-100">

@@ -29,26 +29,30 @@
             </div>
 
             <!-- Content Overlay -->
-            <div class="absolute inset-0 z-10 flex flex-col justify-end p-10 sm:p-16 md:p-24">
-              <div class="max-w-2xl space-y-4 md:space-y-6">
+            <div class="absolute inset-0 z-10 flex flex-col justify-end p-6 sm:p-16 md:p-24 pb-8 sm:pb-16 md:pb-24">
+              <div class="max-w-2xl">
                 <transition name="content-reveal" appear>
-                  <div class="space-y-4">
-                    <span class="inline-block px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[10px] md:text-xs font-bold tracking-[0.2em] uppercase text-white/90" v-if="slides[currentSlide].badge">
-                      {{ slides[currentSlide].badge }}
-                    </span>
-                    <h2 class="text-4xl sm:text-5xl md:text-7xl font-black text-white leading-tight drop-shadow-lg" v-if="slides[currentSlide].title">
-                      {{ slides[currentSlide].title }}
-                    </h2>
-                    <p class="text-base md:text-lg text-white/80 max-w-lg font-medium leading-relaxed drop-shadow-md" v-if="slides[currentSlide].description">
+                  <div class="flex flex-col gap-2 sm:gap-4 md:gap-6">
+                    <div class="flex flex-col gap-1 sm:gap-2">
+                      <div v-if="slides[currentSlide].badge" class="flex items-center gap-2">
+                        <span class="inline-block px-2.5 py-0.5 sm:px-4 sm:py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[8px] sm:text-[10px] md:text-xs font-bold tracking-[0.2em] uppercase text-white/90">
+                          {{ slides[currentSlide].badge }}
+                        </span>
+                      </div>
+                      <h2 class="text-2xl sm:text-5xl md:text-7xl font-black text-white leading-[1.1] drop-shadow-lg" v-if="slides[currentSlide].title">
+                        {{ slides[currentSlide].title }}
+                      </h2>
+                    </div>
+                    <p class="text-xs sm:text-base md:text-lg text-white/80 max-w-lg font-medium leading-relaxed drop-shadow-md line-clamp-2 sm:line-clamp-none" v-if="slides[currentSlide].description">
                       {{ slides[currentSlide].description }}
                     </p>
-                    <div class="pt-4 md:pt-6" v-if="slides[currentSlide].buttonText">
+                    <div class="pt-1 sm:pt-4 md:pt-6" v-if="slides[currentSlide].buttonText">
                       <NuxtLink 
                         :to="slides[currentSlide].link"
-                        class="group/btn relative inline-flex items-center gap-3 px-8 py-4 bg-white text-black font-bold rounded-2xl overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-2xl"
+                        class="group/btn relative inline-flex items-center gap-2 sm:gap-3 px-5 py-2.5 sm:px-8 sm:py-4 bg-white text-black font-bold rounded-xl sm:rounded-2xl overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-2xl"
                       >
-                        <span class="relative z-10">{{ slides[currentSlide].buttonText }}</span>
-                        <svg class="relative z-10 w-5 h-5 transition-transform group-hover/btn:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <span class="relative z-10 text-xs sm:text-base">{{ slides[currentSlide].buttonText }}</span>
+                        <svg class="relative z-10 w-3.5 h-3.5 sm:w-5 sm:h-5 transition-transform group-hover/btn:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                         </svg>
                         <div class="absolute inset-0 bg-gradient-to-r from-gray-50 via-white to-gray-50 opacity-0 group-hover/btn:opacity-100 transition-opacity"></div>
@@ -82,13 +86,13 @@
         </div>
 
         <!-- Progress Indicator (Top Right) -->
-        <div class="absolute top-8 right-8 z-30 flex items-center gap-4">
-          <div class="flex gap-2">
+        <div class="absolute top-6 right-6 sm:top-8 sm:right-8 z-30 flex items-center gap-3 sm:gap-4">
+          <div class="flex gap-1.5 sm:gap-2">
             <button
               v-for="(_, i) in slides"
               :key="'dot-'+i"
               @click="goToSlide(i)"
-              class="w-8 md:w-12 h-1 rounded-full overflow-hidden bg-white/20 transition-all hover:bg-white/40"
+              class="w-6 sm:w-8 md:w-12 h-1 rounded-full overflow-hidden bg-white/20 transition-all hover:bg-white/40"
             >
               <div 
                 class="h-full bg-white transition-all ease-linear"
@@ -99,7 +103,7 @@
               ></div>
             </button>
           </div>
-          <span class="text-white/60 text-xs font-mono font-bold">{{ currentSlide + 1 }} / {{ slides.length }}</span>
+          <span class="text-white/60 text-[10px] sm:text-xs font-mono font-bold">{{ currentSlide + 1 }} / {{ slides.length }}</span>
         </div>
 
       </div>

@@ -2,14 +2,14 @@
   <div class="single-product-premium text-white min-h-screen font-sans selection:bg-indigo-500 selection:text-white">
     <!-- Smooth Navigation -->
     <nav class="fixed top-0 left-0 w-full z-50 px-6 py-8 flex justify-between items-center">
-      <NuxtLink to="/" class="group flex items-center gap-3">
-        <div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center group-hover:rotate-[15deg] transition-all duration-500 shadow-xl shadow-white/10">
-          <img v-if="vendor?.logo_url" :src="vendor.logo_url" class="w-8 h-8 object-contain" />
-          <span v-else class="text-black font-black text-2xl">{{ vendor?.store_name?.[0] || 'S' }}</span>
+      <NuxtLink to="/" class="group flex items-center gap-2 sm:gap-3">
+        <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-xl sm:rounded-2xl flex items-center justify-center group-hover:rotate-[15deg] transition-all duration-500 shadow-xl shadow-white/10">
+          <img v-if="vendor?.logo_url" :src="vendor.logo_url" class="w-6 h-6 sm:w-8 sm:h-8 object-contain" />
+          <span v-else class="text-black font-black text-xl sm:text-2xl">{{ vendor?.store_name?.[0] || 'S' }}</span>
         </div>
         <div class="flex flex-col">
-          <span class="text-white font-black tracking-tighter text-2xl leading-none capitalize">{{ vendor?.store_name || 'SELLUEE' }}</span>
-          <span class="text-indigo-500 text-[10px] font-black uppercase tracking-[0.3em]">Official Store</span>
+          <span class="text-white font-black tracking-tighter text-xl sm:text-2xl leading-none capitalize">{{ vendor?.store_name || 'SELLUEE' }}</span>
+          <span class="text-indigo-400 text-[8px] sm:text-[10px] font-black uppercase tracking-[0.3em]">Official Store</span>
         </div>
       </NuxtLink>
       
@@ -68,29 +68,29 @@
             </div>
           </div>
           
-          <h1 class="text-5xl sm:text-7xl font-extrabold tracking-tighter leading-[1] text-white font-heading">
+          <h1 class="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tighter leading-[1.1] text-white font-heading">
             {{ product.name }}<br/>
             <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-rose-400 to-amber-400">{{ data.landingPage?.title || 'Pro Edition' }}</span>
           </h1>
           
-          <div class="text-white/50 text-base md:text-lg max-w-xl leading-relaxed font-light line-clamp-4" v-html="product.description"></div>
+          <div class="text-white/50 text-sm sm:text-base md:text-lg max-w-xl leading-relaxed font-light line-clamp-3 sm:line-clamp-none" v-html="product.description"></div>
         </div>
 
         <!-- Variant & Action -->
         <div class="space-y-10 animate-slide-up" style="animation-delay: 0.3s">
-          <div class="flex flex-wrap gap-12 items-end">
+          <div class="flex flex-wrap gap-8 sm:gap-12 items-end">
             <div>
-              <h3 class="text-[10px] font-bold uppercase tracking-[0.3em] text-white/30 mb-5">Colorway</h3>
-              <div class="flex gap-4">
+              <h3 class="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.3em] text-white/30 mb-3 sm:mb-5">Colorway</h3>
+              <div class="flex gap-3 sm:gap-4">
                 <button 
                   v-for="color in colors" 
                   :key="color.hex"
                   @click="activeColor = color.hex"
-                  class="relative w-12 h-12 rounded-2xl group transition-all duration-500 flex items-center justify-center shadow-lg shadow-black/20"
+                  class="relative w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl group transition-all duration-500 flex items-center justify-center shadow-lg shadow-black/20"
                   :style="{ background: color.hex }"
                 >
                   <div 
-                    class="absolute -inset-2 rounded-[1.25rem] border-2 transition-all duration-700"
+                    class="absolute -inset-1.5 sm:-inset-2 rounded-[1rem] sm:rounded-[1.25rem] border-2 transition-all duration-700"
                     :class="activeColor === color.hex ? 'border-white/20 scale-100 opacity-100' : 'border-transparent scale-50 opacity-0 group-hover:scale-75 group-hover:opacity-40 group-hover:border-white/10'"
                   ></div>
                   <div v-if="activeColor === color.hex" class="w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_10px_2px_rgba(255,255,255,0.8)]"></div>
@@ -98,11 +98,11 @@
               </div>
             </div>
 
-            <div class="flex-1 min-w-[200px]">
-              <h3 class="text-[10px] font-bold uppercase tracking-[0.3em] text-white/30 mb-5">Investment</h3>
-              <div class="flex items-baseline gap-4">
-                <span class="text-4xl font-extrabold tracking-tighter">৳{{ product.sale_price }}</span>
-                <span v-if="product.regular_price > product.sale_price" class="text-white/20 line-through text-lg font-bold">৳{{ product.regular_price }}</span>
+            <div class="flex-1 min-w-[150px]">
+              <h3 class="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.3em] text-white/30 mb-3 sm:mb-5">Investment</h3>
+              <div class="flex items-baseline gap-3 sm:gap-4">
+                <span class="text-3xl sm:text-4xl font-extrabold tracking-tighter">৳{{ product.sale_price }}</span>
+                <span v-if="product.regular_price > product.sale_price" class="text-white/20 line-through text-base sm:text-lg font-bold">৳{{ product.regular_price }}</span>
               </div>
             </div>
           </div>

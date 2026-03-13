@@ -6,17 +6,17 @@
     ]"
   >
     <div class="container mx-auto flex justify-between items-center h-full px-4 sm:px-6 -mt-1 md:-mt-0">
-      <NuxtLink to="/" class="flex items-center group">
+      <NuxtLink to="/" class="flex items-center group shrink-0">
         <template v-if="storefrontStore.vendorProfile">
           <!-- Vendor Logo -->
-          <img v-if="storefrontStore.vendorProfile.logo_url" :src="storefrontStore.vendorProfile.logo_url" :alt="storefrontStore.vendorProfile.store_name" class="h-8 max-w-[150px] object-contain" />
-          <span v-else class="text-xl md:text-2xl font-extrabold tracking-tighter text-gray-900 font-heading">
+          <img v-if="storefrontStore.vendorProfile.logo_url" :src="storefrontStore.vendorProfile.logo_url" :alt="storefrontStore.vendorProfile.store_name" class="h-6 md:h-8 max-w-[120px] md:max-w-[150px] object-contain" />
+          <span v-else class="text-lg md:text-2xl font-extrabold tracking-tighter text-gray-900 font-heading">
             {{ storefrontStore.vendorProfile.store_name }}<span class="text-indigo-600">.</span>
           </span>
         </template>
         <template v-else>
-          <span class="text-2xl font-extrabold tracking-tighter text-gray-900 font-heading">EMU</span>
-          <span class="text-2xl font-extrabold text-indigo-600 font-heading">.</span>
+          <span class="text-xl md:text-2xl font-extrabold tracking-tighter text-gray-900 font-heading">EMU</span>
+          <span class="text-xl md:text-2xl font-extrabold text-indigo-600 font-heading">.</span>
         </template>
       </NuxtLink>
       
@@ -123,21 +123,21 @@
       </div>
 
       <!-- Actions -->
-      <div class="flex items-center gap-2 md:gap-4">
-        <button class="lg:hidden p-2.5 rounded-full hover:bg-gray-100 transition-all active:scale-95 text-gray-900">
+      <div class="flex items-center gap-1 sm:gap-2 md:gap-4">
+        <button class="lg:hidden p-2 sm:p-2.5 rounded-full hover:bg-gray-100 transition-all active:scale-95 text-gray-900">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
         </button>
         
         <!-- Wishlist -->
-        <button @click="toggleWishlistDrawer" class="relative p-2.5 rounded-full hover:bg-gray-100 transition-all active:scale-95 text-gray-900 group" title="Wishlist">
+        <button @click="toggleWishlistDrawer" class="relative p-2 sm:p-2.5 rounded-full hover:bg-gray-100 transition-all active:scale-95 text-gray-900 group" title="Wishlist">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="transition-colors duration-300" :class="{ 'fill-rose-500 text-rose-500': wishlistCount > 0, 'group-hover:text-rose-500': wishlistCount === 0 }"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
-          <span v-if="wishlistCount > 0" class="absolute top-1.5 right-1.5 bg-rose-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">{{ wishlistCount }}</span>
+          <span v-if="wishlistCount > 0" class="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 bg-rose-500 text-white text-[9px] sm:text-[10px] font-bold w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full flex items-center justify-center">{{ wishlistCount }}</span>
         </button>
 
         <!-- Cart -->
-        <button class="relative p-2.5 rounded-full hover:bg-gray-100 transition-all active:scale-95 text-gray-900" @click="toggleCart">
+        <button class="relative p-2 sm:p-2.5 rounded-full hover:bg-gray-100 transition-all active:scale-95 text-gray-900" @click="toggleCart">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-          <span v-if="cartCount > 0" class="absolute top-1.5 right-1.5 bg-gray-900 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center animate-bounce">{{ cartCount }}</span>
+          <span v-if="cartCount > 0" class="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 bg-gray-900 text-white text-[9px] sm:text-[10px] font-bold w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full flex items-center justify-center animate-bounce">{{ cartCount }}</span>
         </button>
 
         <!-- User Account / Login Toggle -->
@@ -167,7 +167,7 @@
             </div>
           </template>
           <template v-else>
-            <NuxtLink to="/login" class="px-4 py-2 rounded-xl bg-gray-900 text-white font-bold text-sm hover:bg-indigo-600 transition-colors shadow-lg shadow-gray-900/20">Login</NuxtLink>
+            <NuxtLink to="/login" class="px-3 sm:px-4 py-2 rounded-xl bg-gray-900 text-white font-bold text-xs sm:text-sm hover:bg-indigo-600 transition-colors shadow-lg shadow-gray-900/20">Login</NuxtLink>
           </template>
         </div>
       </div>

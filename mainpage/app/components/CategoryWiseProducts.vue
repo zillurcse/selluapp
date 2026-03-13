@@ -13,7 +13,7 @@
           </NuxtLink>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-10">
+        <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8 md:gap-10">
           <ProductCard
             v-for="(product, idx) in category.products.slice(0, 4)"
             :key="product.id"

@@ -226,7 +226,7 @@
               <div class="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform duration-300">🚚</div>
               <div>
                 <p class="font-bold text-gray-900 text-xs md:text-sm">Free Global Shipping</p>
-                <p class="text-[10px] md:text-xs text-gray-400">On all orders above $200</p>
+                <p class="text-[10px] md:text-xs text-gray-400">On all orders above ৳2000</p>
               </div>
             </div>
             <div class="flex items-center gap-4 group">

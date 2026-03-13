@@ -5,19 +5,30 @@
     <div class="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-50/30 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
 
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 relative z-10">
-      <header class="mb-12 md:mb-20 text-center animate-fade-in">
-        <span class="inline-block px-4 py-1.5 rounded-full bg-gray-100 text-gray-900 text-[10px] font-bold uppercase tracking-widest mb-6">Explore the Collection</span>
-        <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight text-gray-900 mb-6 font-heading">
-          Our Collection
-        </h1>
-        <p class="text-gray-500 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
-          Meticulously designed pieces that blend minimalist aesthetics with exceptional craftsmanship for any modern home.
-        </p>
-      </header>
+      <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4">
+        <header class="text-left animate-fade-in flex-1">
+          <span class="inline-block px-3 py-1 rounded-full bg-gray-100 text-gray-900 text-[10px] font-bold uppercase tracking-widest mb-3">Explore the Collection</span>
+          <h1 class="text-3xl md:text-6xl font-extrabold tracking-tight text-gray-900 mb-2 font-heading">
+            Our Collection
+          </h1>
+          <p class="text-gray-500 text-sm md:text-xl max-w-2xl leading-relaxed">
+            Meticulously designed pieces for any modern home.
+          </p>
+        </header>
+
+        <!-- Mobile Filter Toggle -->
+        <button 
+          @click="isFilterDrawerOpen = true"
+          class="lg:hidden flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-xl font-bold text-sm shadow-xl active:scale-95 transition-all w-full sm:w-auto justify-center"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="21" y2="21"/><line x1="4" x2="20" y1="3" y2="3"/><line x1="12" x2="20" y1="12" y2="12"/><line x1="4" x2="8" y1="12" y2="12"/><circle cx="10" cy="12" r="2"/></svg>
+          Filters & Sort
+        </button>
+      </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
-        <!-- Sidebar Filters -->
-        <aside class="lg:col-span-3 space-y-10 lg:sticky lg:top-24 h-fit animate-fade-in" style="animation-delay: 0.1s">
+        <!-- Sidebar Filters (Desktop) -->
+        <aside class="hidden lg:block lg:col-span-3 space-y-10 lg:sticky lg:top-24 h-fit animate-fade-in" style="animation-delay: 0.1s">
           <div class="space-y-8 p-8 rounded-[2rem] bg-gray-50/50 border border-gray-100 backdrop-blur-sm shadow-sm">
             <div class="flex items-center justify-between">
               <h3 class="text-lg font-bold text-gray-900 font-heading">Filters</h3>
@@ -28,7 +39,7 @@
                 Clear All
               </button>
             </div>
-
+            <!-- All filter content reused here -->
             <div class="space-y-6">
               <h4 class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Search</h4>
               <div class="relative">
@@ -62,18 +73,10 @@
                     </div>
                     <span class="text-sm font-bold text-gray-700 group-hover:text-gray-900 transition-colors">{{ cat.name }}</span>
                   </label>
-                  
-                  <!-- Subcategories -->
                   <div v-if="cat.children?.length" class="pl-8 space-y-2">
                     <label v-for="child in cat.children" :key="child.id" class="flex items-center gap-3 cursor-pointer group">
                       <div class="relative w-4 h-4 flex items-center justify-center">
-                        <input 
-                          type="checkbox" 
-                          :value="child.slug" 
-                          :checked="filters.categories.includes(child.slug)"
-                          @change="toggleCategory(child.slug)"
-                          class="peer hidden" 
-                        />
+                        <input type="checkbox" :value="child.slug" :checked="filters.categories.includes(child.slug)" @change="toggleCategory(child.slug)" class="peer hidden" />
                         <div class="w-full h-full border-2 border-gray-200 rounded transition-all peer-checked:bg-indigo-500 peer-checked:border-indigo-500 group-hover:border-gray-300"></div>
                         <svg class="absolute w-2.5 h-2.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                       </div>
@@ -85,82 +88,27 @@
             </div>
 
             <div class="space-y-6">
-              <h4 class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Brands</h4>
-              <div class="space-y-4 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-                <label v-for="brand in availableBrands" :key="brand.id" class="flex items-center gap-3 cursor-pointer group">
-                  <div class="relative w-5 h-5 flex items-center justify-center">
-                    <input 
-                      type="checkbox" 
-                      :value="brand.slug" 
-                      :checked="filters.brands.includes(brand.slug)"
-                      @change="toggleBrand(brand.slug)"
-                      class="peer hidden" 
-                    />
-                    <div class="w-full h-full border-2 border-gray-200 rounded-md transition-all peer-checked:bg-gray-900 peer-checked:border-gray-900 group-hover:border-gray-300"></div>
-                    <svg class="absolute w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-                  </div>
-                  <span class="text-sm font-semibold text-gray-500 group-hover:text-gray-900 transition-colors">{{ brand.name }}</span>
-                </label>
-              </div>
-            </div>
-
-            <div class="space-y-6">
-              <h4 class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Units</h4>
-              <div class="space-y-4 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-                <label v-for="unit in availableUnits" :key="unit.id" class="flex items-center gap-3 cursor-pointer group">
-                  <div class="relative w-5 h-5 flex items-center justify-center">
-                    <input 
-                      type="checkbox" 
-                      :value="unit.slug" 
-                      :checked="filters.units.includes(unit.slug)"
-                      @change="toggleUnit(unit.slug)"
-                      class="peer hidden" 
-                    />
-                    <div class="w-full h-full border-2 border-gray-200 rounded-md transition-all peer-checked:bg-gray-900 peer-checked:border-gray-900 group-hover:border-gray-300"></div>
-                    <svg class="absolute w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-                  </div>
-                  <span class="text-sm font-semibold text-gray-500 group-hover:text-gray-900 transition-colors">{{ unit.name }}</span>
-                </label>
-              </div>
-            </div>
-
-            <div class="space-y-6">
               <h4 class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Price Range</h4>
               <div class="flex items-center gap-3">
                 <div class="relative flex-1">
-                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
-                  <input 
-                    type="number" 
-                    v-model.number="filters.min_price"
-                    placeholder="Min" 
-                    class="w-full pl-7 pr-4 py-2 bg-white border border-gray-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-gray-100 outline-none transition-all" 
-                  />
+                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">৳</span>
+                  <input type="number" v-model.number="filters.min_price" placeholder="Min" class="w-full pl-7 pr-4 py-2 bg-white border border-gray-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-gray-100 outline-none transition-all" />
                 </div>
                 <div class="w-2 h-[2px] bg-gray-200"></div>
                 <div class="relative flex-1">
-                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
-                  <input 
-                    type="number" 
-                    v-model.number="filters.max_price"
-                    placeholder="Max" 
-                    class="w-full pl-7 pr-4 py-2 bg-white border border-gray-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-gray-100 outline-none transition-all" 
-                  />
+                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">৳</span>
+                  <input type="number" v-model.number="filters.max_price" placeholder="Max" class="w-full pl-7 pr-4 py-2 bg-white border border-gray-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-gray-100 outline-none transition-all" />
                 </div>
               </div>
             </div>
 
             <div class="pt-4">
-              <button 
-                @click="applyPriceFilter"
-                class="w-full py-3 bg-gray-900 text-white rounded-full font-bold text-xs uppercase tracking-widest shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all"
-              >
-                Apply Filters
-              </button>
+              <button @click="applyPriceFilter" class="w-full py-3 bg-gray-900 text-white rounded-full font-bold text-xs uppercase tracking-widest shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all">Apply Filters</button>
             </div>
           </div>
 
           <!-- Featured Offer -->
-          <div class="relative p-8 rounded-[2rem] bg-indigo-600 overflow-hidden group shadow-2xl shadow-indigo-100">
+          <div class="relative p-8 rounded-[2rem] bg-indigo-600 overflow-hidden group shadow-2xl shadow-indigo-100 lg:mt-10">
             <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl transition-transform group-hover:scale-150 duration-700"></div>
             <div class="relative z-10 space-y-4">
               <span class="text-[10px] font-bold text-white/60 uppercase tracking-widest">Limited Offer</span>
@@ -171,10 +119,62 @@
           </div>
         </aside>
 
+        <!-- Mobile Filter Drawer -->
+        <Teleport to="body">
+          <Transition name="fade">
+            <div v-if="isFilterDrawerOpen" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[1000]" @click="isFilterDrawerOpen = false"></div>
+          </Transition>
+          <Transition name="slide">
+            <div v-if="isFilterDrawerOpen" class="fixed top-0 left-0 bottom-0 w-[85%] max-w-sm bg-white z-[1001] shadow-2xl flex flex-col">
+              <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+                <h3 class="text-xl font-bold text-gray-900 font-heading">Filters</h3>
+                <button @click="isFilterDrawerOpen = false" class="p-2 rounded-full hover:bg-gray-100">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+              </div>
+              <div class="flex-1 overflow-y-auto p-6 space-y-8">
+                <!-- Search -->
+                <div class="space-y-4">
+                  <h4 class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Search</h4>
+                  <div class="relative">
+                    <input type="text" v-model="filters.search" placeholder="Search products..." class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-transparent rounded-xl text-sm font-bold focus:bg-white focus:border-indigo-100 outline-none transition-all" />
+                    <div class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></div>
+                  </div>
+                </div>
+                <!-- Categories -->
+                <div class="space-y-4">
+                  <h4 class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Categories</h4>
+                  <div class="space-y-3">
+                    <div v-for="cat in availableCategories" :key="cat.id" class="space-y-2">
+                      <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" :value="cat.slug" :checked="filters.categories.includes(cat.slug)" @change="toggleCategory(cat.slug)" class="w-5 h-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+                        <span class="text-sm font-bold text-gray-700">{{ cat.name }}</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                <!-- Price Range -->
+                <div class="space-y-4">
+                  <h4 class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Price Range</h4>
+                  <div class="flex items-center gap-3">
+                    <input type="number" v-model.number="filters.min_price" placeholder="Min" class="w-full px-4 py-3 bg-gray-50 rounded-xl text-sm font-extrabold outline-none" />
+                    <span class="text-gray-300">—</span>
+                    <input type="number" v-model.number="filters.max_price" placeholder="Max" class="w-full px-4 py-3 bg-gray-50 rounded-xl text-sm font-extrabold outline-none" />
+                  </div>
+                </div>
+              </div>
+              <div class="p-6 border-t border-gray-100 grid grid-cols-2 gap-4">
+                <button @click="clearFilters" class="py-4 rounded-xl border-2 border-gray-100 font-bold text-xs uppercase tracking-widest">Clear</button>
+                <button @click="isFilterDrawerOpen = false" class="py-4 rounded-xl bg-gray-900 text-white font-bold text-xs uppercase tracking-widest">Show Results</button>
+              </div>
+            </div>
+          </Transition>
+        </Teleport>
+
         <!-- Product Grid -->
         <main class="lg:col-span-9 animate-fade-in" style="animation-delay: 0.2s">
-          <div class="flex flex-col sm:flex-row justify-between items-center mb-10 gap-6 border-b border-gray-50 pb-8">
-            <div class="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-3">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-6 border-b border-gray-50 pb-8">
+            <div class="text-[10px] sm:text-sm font-bold text-gray-400 uppercase tracking-widest flex flex-wrap items-center gap-2 sm:gap-3">
               <span>Showing <span class="text-gray-900">{{ totalFound }}</span> items found</span>
               <span v-if="filters.promotion" class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-[10px] font-bold flex items-center gap-2">
                 Active Offer Filter
@@ -219,7 +219,7 @@
           </div>
 
           <!-- Products Grid -->
-          <div v-else-if="allProducts?.length > 0" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8 md:gap-10">
+          <div v-else-if="allProducts?.length > 0" class="grid grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-8 md:gap-10">
             <ProductCard 
               v-for="(product, idx) in allProducts" 
               :key="product.id" 
@@ -279,6 +279,8 @@ import lampImg from '~/assets/img/lamp.png'
 
 const route = useRoute()
 const router = useRouter()
+
+const isFilterDrawerOpen = ref(false)
 
 const config = useRuntimeConfig()
 const apiBase = config.public.apiBase
@@ -571,6 +573,21 @@ watch(filters, (newFilters) => {
 </script>
 
 <style scoped>
+/* Transitions */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
+
+.slide-enter-active, .slide-leave-active {
+  transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+.slide-enter-from, .slide-leave-to {
+  transform: translateX(-100%);
+}
+
 .font-heading {
   font-family: var(--font-heading);
 }

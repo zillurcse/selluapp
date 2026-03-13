@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://localhost:3000', 'https://app.thezillur.com', 'https://thezillur.com', 'https://www.thezillur.com'],
+    'allowed_origins' => ['http://localhost:3000', 'http://localhost:3001', 'https://app.thezillur.com', 'https://thezillur.com', 'https://www.thezillur.com'],
 
     'allowed_origins_patterns' => [],
 

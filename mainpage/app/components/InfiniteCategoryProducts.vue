@@ -3,11 +3,11 @@
     <section 
       v-for="(category, index) in loadedCategories" 
       :key="category.id" 
-      class="pt-2 md:pt-8" 
+      class="pt-10 md:pt-16 pb-4" 
       :class="(index + startOffset) % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'"
     >
       <div class="container mx-auto px-4 sm:px-6">
-        <div class="flex items-center justify-between mb-10">
+        <div class="flex items-center justify-between mb-8 sm:mb-10">
           <div>
             <h2 class="text-3xl md:text-5xl font-extrabold tracking-tight text-gray-900 font-heading">
               {{ category.name }}
@@ -23,7 +23,7 @@
           </NuxtLink>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-10">
+        <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8 md:gap-10">
           <ProductCard
             v-for="(product, idx) in category.products"
             :key="product.id"
@@ -34,12 +34,12 @@
           />
         </div>
         
-        <div class="mt-8 text-center sm:hidden">
+        <div class="mt-10 text-center sm:hidden">
           <NuxtLink 
             :to="`/shop?category=${category.slug}`" 
-            class="inline-flex items-center justify-center px-8 py-4 bg-gray-900 text-white font-bold text-xs uppercase tracking-widest rounded-full transition-all hover:-translate-y-1 hover:shadow-xl w-full"
+            class="inline-flex items-center justify-center px-8 py-4 bg-gray-900 text-white font-bold text-[10px] uppercase tracking-[0.2em] rounded-2xl transition-all active:scale-95 shadow-lg shadow-gray-900/10 w-full"
           >
-            View All {{ category.name }}
+            Explore {{ category.name }}
           </NuxtLink>
         </div>
       </div>

@@ -32,33 +32,33 @@
     </div>
 
     <!-- Info Section -->
-    <div class="mt-5 space-y-1 px-2">
+    <div class="mt-3 sm:mt-5 space-y-0.5 sm:space-y-1 px-1 sm:px-2">
       <div class="flex justify-between items-center">
-        <span class="text-[10px] font-bold uppercase tracking-widest text-gray-400">{{ product.category }}</span>
+        <span class="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest text-gray-400">{{ product.category }}</span>
         <div class="flex items-center gap-1">
-          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="currentColor" class="text-amber-400"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-          <span class="text-[10px] font-bold text-gray-400">4.9</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="currentColor" class="text-amber-400 sm:w-2.5 sm:h-2.5"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+          <span class="text-[8px] sm:text-[10px] font-bold text-gray-400">4.9</span>
         </div>
       </div>
       
       <!-- Vendor Name -->
-      <div v-if="product.vendor" class="flex items-center gap-1 mb-1">
-        <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">By</span>
+      <div v-if="product.vendor" class="flex items-center gap-1 mb-0.5 sm:mb-1">
+        <span class="text-[7px] sm:text-[9px] font-bold text-gray-400 uppercase tracking-widest">By</span>
         <NuxtLink 
           :to="`/shop/vendor/${product.vendor.slug}`" 
-          class="text-[9px] font-bold text-indigo-600 hover:text-indigo-700 uppercase tracking-widest transition-colors"
+          class="text-[7px] sm:text-[9px] font-bold text-indigo-600 hover:text-indigo-700 uppercase tracking-widest transition-colors"
           @click.stop
         >
           {{ product.vendor.name }}
         </NuxtLink>
       </div>
 
-      <h3 class="text-base font-bold text-gray-900 group-hover:text-indigo-600 transition-colors duration-300 truncate font-heading">
+      <h3 class="text-xs sm:text-base font-bold text-gray-900 group-hover:text-indigo-600 transition-colors duration-300 truncate font-heading">
         {{ product.name }}
       </h3>
-      <div class="flex items-center gap-2">
-        <span class="text-lg font-extrabold text-gray-900">${{ product.price }}</span>
-        <span v-if="product.id % 4 === 0" class="text-xs text-gray-400 line-through">${{ (parseFloat(product.price) * 1.25).toFixed(2) }}</span>
+      <div class="flex items-center gap-1.5 sm:gap-2">
+        <span class="text-sm sm:text-lg font-extrabold text-gray-900">৳{{ product.price }}</span>
+        <span v-if="product.id % 4 === 0" class="text-[10px] sm:text-xs text-gray-400 line-through">৳{{ (parseFloat(product.price) * 1.25).toFixed(2) }}</span>
       </div>
     </div>
   </div>

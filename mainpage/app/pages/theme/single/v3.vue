@@ -109,7 +109,7 @@
       <div class="bg-black/80 backdrop-blur-xl border border-white/10 p-4 rounded-[2rem] flex items-center justify-between shadow-2xl">
         <div class="pl-4">
           <p class="text-white font-black tracking-tight">{{ product.name }}</p>
-          <p class="text-indigo-400 text-[10px] font-bold uppercase tracking-widest">${{ product.price }}</p>
+          <p class="text-indigo-400 text-[10px] font-bold uppercase tracking-widest">৳{{ product.price }}</p>
         </div>
         <button 
           class="px-8 py-4 bg-white text-black rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-indigo-500 hover:text-white transition-colors"

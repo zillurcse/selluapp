@@ -140,7 +140,7 @@ const getPromoLink = (promo) => {
 
 const formatDiscount = (value, unit) => {
   if (unit === 'percentage') return `${parseFloat(value)}%`
-  return `$${parseFloat(value)}`
+  return `৳${parseFloat(value)}`
 }
 
 const formatType = (type) => {
