@@ -19,7 +19,7 @@
         
         <!-- Premium Gallery System -->
         <div class="space-y-8 lg:sticky lg:top-24 animate-fade-in" style="animation-delay: 0.2s">
-          <div class="relative group rounded-[3rem] overflow-hidden bg-[#F9F9F9] border border-gray-100/50 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] transition-all duration-1000">
+          <div class="relative group rounded-[16px] overflow-hidden bg-[#F9F9F9] border border-gray-100/50 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] transition-all duration-1000">
             <div class="absolute top-8 right-8 z-30 flex flex-col gap-4">
               <button class="w-14 h-14 rounded-full bg-white/70 backdrop-blur-2xl flex items-center justify-center text-gray-900 shadow-2xl hover:bg-black hover:text-white transition-all duration-700 hover:scale-110 active:scale-95 group/btn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-500 group-hover/btn:rotate-90"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
@@ -37,12 +37,12 @@
             <div 
               v-for="(img, idx) in product.gallery" 
               :key="idx" 
-              class="relative min-w-[110px] h-[140px] rounded-[2rem] overflow-hidden cursor-pointer group transition-all duration-700 snap-center shadow-lg"
+              class="relative min-w-[110px] h-[140px] rounded-[14px] overflow-hidden cursor-pointer group transition-all duration-700 snap-center shadow-lg"
               @click="handleThumbnailClick(idx)"
             >
               <img :src="img" alt="Thumbnail" class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
               <div 
-                class="absolute inset-0 border-[3px] rounded-[2rem] transition-all duration-500"
+                class="absolute inset-0 border-[3px] rounded-[14px] transition-all duration-500"
                 :class="activeImg === idx ? 'border-black opacity-100' : 'border-transparent opacity-0 group-hover:opacity-40 group-hover:border-black'"
               ></div>
               <div v-if="activeImg === idx" class="absolute inset-0 bg-black/5 backdrop-blur-[1px]"></div>
@@ -54,17 +54,17 @@
         <div class="space-y-12 animate-fade-in" style="animation-delay: 0.3s">
           <div class="space-y-6">
             <div class="flex flex-wrap items-center gap-4">
-              <span v-if="product.is_special || product.is_featured || product.is_trending" class="px-5 py-2 rounded-full bg-black text-white text-[9px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-black/10">
+              <span v-if="product.is_special || product.is_featured || product.is_trending" class="px-5 py-2 rounded-[10px] bg-black text-white text-[9px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-black/10">
                  {{ product.is_special ? 'Special' : (product.is_featured ? 'Featured' : 'Trending') }}
               </span>
-              <div v-if="currentStock > 0" class="flex items-center gap-2 px-4 py-2 rounded-full glass-panel border border-emerald-100/50">
+              <div v-if="currentStock > 0" class="flex items-center gap-2 px-4 py-2 rounded-[10px] glass-panel border border-emerald-100/50">
                 <span class="relative flex h-2 w-2">
                   <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                 </span>
                 <span class="text-[10px] font-black uppercase tracking-widest text-emerald-700">Available: {{ currentStock }} Units</span>
               </div>
-              <span v-else class="px-5 py-2 rounded-full bg-rose-50 text-rose-600 text-[9px] font-black uppercase tracking-[0.3em]">Sold Out</span>
+              <span v-else class="px-5 py-2 rounded-[10px] bg-rose-50 text-rose-600 text-[9px] font-black uppercase tracking-[0.3em]">Sold Out</span>
             </div>
 
             <h1 class="text-3xl md:text-5xl lg:text-6xl font-black tracking-tight text-gray-900 leading-[1.1] md:leading-[1.05]">
@@ -168,7 +168,7 @@
                 <div class="flex flex-col sm:flex-row gap-5 items-stretch">
                   <!-- Add to Cart -->
                   <button 
-                    class="group relative flex-1 min-h-[72px] bg-[#0F172A] text-white rounded-2xl md:rounded-[1.5rem] font-black text-[12px] md:text-[14px] uppercase tracking-[0.2em] md:tracking-[0.3em] overflow-hidden transition-all duration-700 disabled:opacity-40 shadow-xl hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1 active:scale-95 active:translate-y-0 flex-shrink-0"
+                    class="group relative flex-1 min-h-[72px] bg-[#0F172A] text-white rounded-[16px] font-black text-[12px] md:text-[14px] uppercase tracking-[0.2em] md:tracking-[0.3em] overflow-hidden transition-all duration-700 disabled:opacity-40 shadow-xl hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1 active:scale-95 active:translate-y-0 flex-shrink-0"
                     @click="handleAddToCart"
                     :disabled="(product.has_variants && !selectedVariant) || currentStock <= 0"
                   >
@@ -181,7 +181,7 @@
 
                   <!-- Order Now (Express) -->
                   <button 
-                    class="group relative flex-1 min-h-[72px] bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white rounded-2xl md:rounded-[1.5rem] font-black text-[12px] md:text-[14px] uppercase tracking-[0.2em] md:tracking-[0.3em] overflow-hidden transition-all duration-700 disabled:opacity-40 shadow-xl hover:shadow-2xl hover:shadow-purple-500/20 hover:-translate-y-1 active:scale-95 active:translate-y-0 flex-shrink-0"
+                    class="group relative flex-1 min-h-[72px] bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white rounded-[16px] font-black text-[12px] md:text-[14px] uppercase tracking-[0.2em] md:tracking-[0.3em] overflow-hidden transition-all duration-700 disabled:opacity-40 shadow-xl hover:shadow-2xl hover:shadow-purple-500/20 hover:-translate-y-1 active:scale-95 active:translate-y-0 flex-shrink-0"
                     @click="handleOrderNow"
                     :disabled="(product.has_variants && !selectedVariant) || currentStock <= 0"
                   >
@@ -194,7 +194,7 @@
 
                   <!-- Watch Video -->
                   <a v-if="product.video_url" :href="product.video_url" target="_blank"
-                    class="group relative flex items-center justify-center w-full sm:w-[72px] min-h-[72px] bg-rose-50 text-rose-600 rounded-2xl md:rounded-[1.5rem] overflow-hidden transition-all duration-700 shadow-sm hover:shadow-md hover:-translate-y-1 active:scale-95 active:translate-y-0 flex-shrink-0"
+                    class="group relative flex items-center justify-center w-full sm:w-[72px] min-h-[72px] bg-rose-50 text-rose-600 rounded-[16px] overflow-hidden transition-all duration-700 shadow-sm hover:shadow-md hover:-translate-y-1 active:scale-95 active:translate-y-0 flex-shrink-0"
                   >
                      <div class="absolute inset-0 bg-rose-600 translate-y-full group-hover:translate-y-0 transition-transform duration-700 cubic-bezier(0.19, 1, 0.22, 1)"></div>
                      <span class="relative z-10 group-hover:text-white transition-colors duration-500">
@@ -204,7 +204,7 @@
                </div>
 
                <!-- Subtle Trust Bar -->
-               <div class="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8 py-5 px-6 md:py-6 md:px-8 rounded-[2rem] bg-gray-50/50 border border-gray-100/50">
+               <div class="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8 py-5 px-6 md:py-6 md:px-8 rounded-[16px] bg-gray-50/50 border border-gray-100/50">
                     <div class="flex items-center gap-3">
                          <div class="w-1.5 h-1.5 rounded-full bg-indigo-600"></div>
                          <span class="text-[9px] font-black uppercase tracking-widest text-gray-500">Museum Quality Collection</span>

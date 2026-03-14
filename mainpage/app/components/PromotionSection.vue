@@ -2,12 +2,12 @@
   <section v-if="promotions && promotions.length > 0" class="bg-white">
     <div class="container mx-auto px-4 sm:px-6">
       <!-- Section Header -->
-      <div class="flex items-center justify-between mb-10">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 sm:mb-10">
         <div>
-          <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight font-heading">Exclusive Deals</h2>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight font-heading">Exclusive Deals</h2>
           <div class="h-1 w-12 bg-indigo-600 mt-2 rounded-full"></div>
         </div>
-        <NuxtLink to="/shop" class="text-sm font-bold uppercase tracking-widest text-gray-400 hover:text-indigo-600 transition-colors">
+        <NuxtLink to="/shop" class="text-xs sm:text-sm font-bold uppercase tracking-widest text-gray-400 hover:text-indigo-600 transition-colors">
           View All Offers
         </NuxtLink>
       </div>
@@ -36,7 +36,7 @@
           </div>
 
           <!-- Content Overlay -->
-          <div class="relative p-8 h-full min-h-[220px] flex flex-col justify-between z-10">
+          <div class="relative p-6 sm:p-8 h-full min-h-[200px] sm:min-h-[220px] flex flex-col justify-between z-10">
             <div>
               <div class="flex items-center gap-2 mb-4">
                 <span 
@@ -49,17 +49,17 @@
                   Stackable
                 </span>
               </div>
-              <h3 class="text-2xl font-bold text-gray-900 leading-tight mb-2 group-hover:text-indigo-600 transition-colors">
+              <h3 class="text-xl sm:text-2xl font-bold text-gray-900 leading-tight mb-2 group-hover:text-indigo-600 transition-colors">
                 {{ promo.title }}
               </h3>
               
               <!-- Countdown Timer -->
-              <div v-if="promo.end_date" class="flex gap-2 mb-4">
+              <div v-if="promo.end_date" class="flex gap-2 sm:gap-3 mb-4">
                 <div v-for="(val, label) in getCountdown(promo.end_date)" :key="label" class="flex flex-col items-center">
-                  <div class="w-10 h-10 bg-white/80 backdrop-blur-md rounded-xl border border-white/50 shadow-sm flex items-center justify-center font-bold text-gray-900 text-sm">
+                  <div class="w-8 h-8 sm:w-10 sm:h-10 bg-white/80 backdrop-blur-md rounded-lg sm:rounded-xl border border-white/50 shadow-sm flex items-center justify-center font-bold text-gray-900 text-xs sm:text-sm">
                     {{ val }}
                   </div>
-                  <span class="text-[8px] font-bold uppercase tracking-tighter text-gray-400 mt-1">{{ label }}</span>
+                  <span class="text-[7px] sm:text-[8px] font-bold uppercase tracking-tighter text-gray-400 mt-1">{{ label }}</span>
                 </div>
               </div>
 
@@ -75,13 +75,13 @@
               </p>
             </div>
 
-            <div class="mt-6">
+            <div class="mt-5 sm:mt-6">
               <NuxtLink 
                 :to="getPromoLink(promo)" 
-                class="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-gray-900 group/link"
+                class="inline-flex items-center gap-2 text-xs sm:text-sm font-bold uppercase tracking-widest text-gray-900 group/link"
               >
                 Claim Offer
-                <svg class="w-4 h-4 transition-transform duration-300 group-hover/link:translate-x-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform duration-300 group-hover/link:translate-x-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
               </NuxtLink>
             </div>
           </div>

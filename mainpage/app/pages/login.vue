@@ -12,8 +12,16 @@
       <!-- Logo -->
       <div class="relative z-10">
         <NuxtLink to="/" class="flex items-center gap-2">
-          <span class="text-2xl font-extrabold text-white tracking-tight">EMU</span>
-          <span class="text-2xl font-extrabold text-violet-400">.</span>
+          <template v-if="storefrontStore.vendorProfile">
+            <img v-if="storefrontStore.vendorProfile.logo_url" :src="storefrontStore.vendorProfile.logo_url" :alt="storefrontStore.vendorProfile.store_name" class="h-8 max-w-[150px] object-contain" />
+            <span v-else class="text-2xl font-extrabold tracking-tight text-white font-heading">
+              {{ storefrontStore.vendorProfile.store_name }}<span class="text-violet-400">.</span>
+            </span>
+          </template>
+          <template v-else>
+            <span class="text-2xl font-extrabold text-white tracking-tight">EMU</span>
+            <span class="text-2xl font-extrabold text-violet-400">.</span>
+          </template>
         </NuxtLink>
       </div>
 
@@ -29,7 +37,7 @@
             Your premium<br/>shopping <span class="text-violet-400">experience</span><br/>starts here.
           </h2>
           <p class="text-white/50 text-base leading-relaxed max-w-sm">
-            Join thousands of customers who trust EMU for curated home decor, lighting, and accessories.
+            Join thousands of customers who trust {{ storefrontStore.vendorProfile?.store_name || 'EMU' }} for curated home decor, lighting, and accessories.
           </p>
         </div>
         <!-- Stats -->
@@ -50,7 +58,7 @@
       </div>
 
       <!-- Bottom tagline -->
-      <div class="relative z-10 text-white/30 text-xs">© 2026 EMU. All rights reserved.</div>
+      <div class="relative z-10 text-white/30 text-xs">© {{ new Date().getFullYear() }} {{ storefrontStore.vendorProfile?.store_name || 'EMU' }}. All rights reserved.</div>
     </div>
 
     <!-- Right Panel — Login Form -->
@@ -58,10 +66,18 @@
       <div class="w-full max-w-sm">
 
         <!-- Mobile Logo -->
-        <div class="lg:hidden mb-8 text-center">
+        <div class="lg:hidden mb-8 flex justify-center text-center">
           <NuxtLink to="/" class="inline-flex items-center gap-1">
-            <span class="text-2xl font-extrabold text-gray-900">EMU</span>
-            <span class="text-2xl font-extrabold text-violet-600">.</span>
+            <template v-if="storefrontStore.vendorProfile">
+              <img v-if="storefrontStore.vendorProfile.logo_url" :src="storefrontStore.vendorProfile.logo_url" :alt="storefrontStore.vendorProfile.store_name" class="h-8 max-w-[150px] object-contain" />
+              <span v-else class="text-2xl font-extrabold tracking-tight text-gray-900 font-heading">
+                {{ storefrontStore.vendorProfile.store_name }}<span class="text-violet-600">.</span>
+              </span>
+            </template>
+            <template v-else>
+              <span class="text-2xl font-extrabold text-gray-900 tracking-tight">EMU</span>
+              <span class="text-2xl font-extrabold text-violet-600">.</span>
+            </template>
           </NuxtLink>
         </div>
 
@@ -75,11 +91,6 @@
         <div class="flex flex-col gap-3 mb-6">
           <!-- Google GSI Button (rendered by Google SDK) -->
           <div id="google-signin-btn" class="w-full overflow-hidden rounded-xl"></div>
-          <!-- Facebook (placeholder) -->
-          <button class="flex-1 flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all duration-200">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-            Facebook
-          </button>
         </div>
 
         <!-- Divider -->
@@ -167,9 +178,13 @@ const loading = ref(false)
 const error = ref('')
 
 const authStore = useAuthStore()
+const storefrontStore = useStorefrontStore()
 const { renderGoogleButton, error: googleError } = useGoogleAuth()
 
 onMounted(async () => {
+  if (storefrontStore.topCategories.length === 0) {
+    await storefrontStore.fetchStorefront()
+  }
   // Render Google button into the target div
   await renderGoogleButton('#google-signin-btn')
 })

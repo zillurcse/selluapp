@@ -85,9 +85,9 @@ export function useGoogleAuth() {
             try { await storefrontStore.fetchStorefront() } catch (_) { }
         }
 
-        const clientId = storefrontStore.marketing?.googleClientId
+        const clientId = storefrontStore.marketing?.googleClientId || config.public.googleClientId
         if (!clientId) {
-            console.warn('[useGoogleAuth] No googleClientId configured in vendor marketing settings')
+            console.warn('[useGoogleAuth] No googleClientId configured in vendor marketing settings or app config')
             return
         }
 

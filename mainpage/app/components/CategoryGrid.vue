@@ -24,7 +24,7 @@
         </NuxtLink>
       </div>
 
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6 md:gap-8">
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-6 md:gap-8">
         <NuxtLink
           v-for="cat in categories"
           :key="cat.name"
@@ -68,28 +68,29 @@ defineProps({
 
 <style scoped>
 .category-card {
-  @apply relative flex flex-col items-center justify-center p-4 sm:p-8 rounded-[1.5rem] sm:rounded-[2.5rem] transition-all duration-500 hover:-translate-y-2 no-underline overflow-hidden min-h-[160px] sm:min-h-[220px];
+  @apply relative flex flex-col items-center justify-center p-5 sm:p-8 rounded-[1.5rem] sm:rounded-[2.5rem] transition-all duration-500 hover:-translate-y-2 active:scale-95 no-underline overflow-hidden min-h-[140px] sm:min-h-[220px];
 }
 
 .card-glass-bg {
-  @apply absolute inset-0 bg-white border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.02)] transition-all duration-500 -z-10 rounded-[1.5rem] sm:rounded-[2.5rem];
+  @apply absolute inset-0 bg-white border border-gray-100 outline-none shadow-[0_8px_20px_rgba(0,0,0,0.05)] sm:shadow-[0_8px_30px_rgb(0,0,0,0.02)] transition-all duration-500 -z-10 rounded-[1.5rem] sm:rounded-[2.5rem];
 }
 
-.category-card:hover .card-glass-bg {
+.category-card:hover .card-glass-bg,
+.category-card:active .card-glass-bg {
   @apply border-indigo-100 shadow-[0_20px_50px_rgba(79,70,229,0.1)];
   background: linear-gradient(135deg, #ffffff 0%, #f5f7ff 100%);
 }
 
 .icon-container {
-  @apply relative mb-4 sm:mb-6 flex items-center justify-center w-14 h-14 sm:w-20 sm:h-20;
+  @apply relative mb-3 sm:mb-6 flex items-center justify-center w-12 h-12 sm:w-20 sm:h-20;
 }
 
 .icon-blob {
-  @apply absolute inset-0 bg-gray-50 rounded-2xl sm:rounded-[2rem] rotate-12 transition-all duration-700 group-hover:rotate-[25deg] group-hover:scale-110 group-hover:bg-indigo-50;
+  @apply absolute inset-0 bg-gray-50 rounded-2xl sm:rounded-[2rem] rotate-12 transition-all duration-700 group-hover:rotate-[25deg] group-active:rotate-[25deg] group-hover:scale-110 group-active:scale-110 group-hover:bg-indigo-50 group-active:bg-indigo-50;
 }
 
 .icon-text {
-  @apply relative text-2xl sm:text-4xl transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6;
+  @apply relative text-2xl sm:text-4xl transition-transform duration-500 group-hover:scale-110 group-active:scale-110 group-hover:-rotate-6 group-active:-rotate-6;
 }
 
 .category-info {
@@ -97,11 +98,11 @@ defineProps({
 }
 
 .category-name {
-  @apply text-sm md:text-base font-black text-gray-900 tracking-tight transition-colors duration-300 group-hover:text-indigo-600;
+  @apply text-sm md:text-base font-black text-gray-900 tracking-tight transition-colors duration-300 group-hover:text-indigo-600 group-active:text-indigo-600;
 }
 
 .hover-arrow {
-  @apply absolute bottom-6 opacity-0 translate-y-4 text-indigo-500 transition-all duration-500 group-hover:opacity-100 group-hover:translate-y-0;
+  @apply absolute bottom-3 sm:bottom-6 opacity-0 translate-y-4 text-indigo-500 transition-all duration-500 group-hover:opacity-100 group-active:opacity-100 group-hover:translate-y-0 group-active:translate-y-0 text-xs sm:text-base;
 }
 
 /* Subtle pattern for first card to add variety if needed */
