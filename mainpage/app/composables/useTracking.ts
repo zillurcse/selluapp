@@ -234,8 +234,10 @@ export function useTracking() {
             event_id: eventId,
             custom_data: {
                 content_ids: [String(product.id)],
+                content_name: product.name,
                 value,
                 currency,
+                content_type: 'product',
                 contents: [{ id: String(product.id), quantity: qty }],
             },
         })
@@ -403,6 +405,18 @@ export function useTracking() {
         ttTrack('ViewCart', {
             value: cart.total,
             currency,
+        })
+
+        // FB CAPI
+        sendToCapiServer({
+            event_name: 'ViewCart',
+            event_id: eventId,
+            custom_data: {
+                value: cart.total,
+                currency,
+                num_items: cart.itemCount,
+                content_ids: contentIds,
+            },
         })
     }
 

@@ -54,12 +54,29 @@ class FacebookCapiController extends Controller
             $phone = preg_replace('/\D/', '', $userData['phone']);
             $hashedUserData['ph'] = hash('sha256', $phone);
         }
-        if (!empty($userData['ip'])) {
-            $hashedUserData['client_ip_address'] = $userData['ip'];
+        if (!empty($userData['first_name'])) {
+            $hashedUserData['fn'] = hash('sha256', strtolower(trim($userData['first_name'])));
         }
-        if (!empty($userData['user_agent'])) {
-            $hashedUserData['client_user_agent'] = $userData['user_agent'];
+        if (!empty($userData['last_name'])) {
+            $hashedUserData['ln'] = hash('sha256', strtolower(trim($userData['last_name'])));
         }
+        if (!empty($userData['city'])) {
+            $hashedUserData['ct'] = hash('sha256', strtolower(trim($userData['city'])));
+        }
+        if (!empty($userData['state'])) {
+            $hashedUserData['st'] = hash('sha256', strtolower(trim($userData['state'])));
+        }
+        if (!empty($userData['zip'])) {
+            $hashedUserData['zp'] = hash('sha256', strtolower(trim($userData['zip'])));
+        }
+        if (!empty($userData['country'])) {
+            $hashedUserData['country'] = hash('sha256', strtolower(trim($userData['country'])));
+        }
+
+        // EMQ Improvement: Use server-side info if browser fails to send it
+        $hashedUserData['client_ip_address'] = $userData['ip'] ?? $request->ip();
+        $hashedUserData['client_user_agent'] = $userData['user_agent'] ?? $request->userAgent();
+
         if (!empty($userData['fbp'])) {
             $hashedUserData['fbp'] = $userData['fbp'];
         }
