@@ -17,8 +17,11 @@ Route::post('/webhooks/steadfast', [App\Http\Controllers\Vendor\CourierControlle
 
 
 
+use App\Http\Controllers\API\CustomerMessageController;
+
 // Public Storefront Routes
 Route::get('/storefront', [StorefrontController::class, 'index']);
+Route::post('/storefront/contact-message', [CustomerMessageController::class, 'store']);
 Route::get('/storefront/products', [StorefrontController::class, 'products']);
 Route::get('/storefront/products/{product}', [StorefrontController::class, 'show']);
 Route::get('/storefront/landing-page/{slug}', [StorefrontController::class, 'landingPage']);

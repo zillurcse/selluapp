@@ -21,7 +21,7 @@ class ProductResource extends JsonResource
         $data['thumbnail'] = $this->formatImageUrl($this->thumbnail);
 
         if ($this->gallery) {
-            $data['gallery_urls'] = array_map(function ($path) {
+            $data['gallery'] = array_map(function ($path) {
                 return $this->formatImageUrl($path);
             }, $this->gallery);
         }

@@ -13,7 +13,7 @@
           <h4 class="footer-title">Shop</h4>
           <ul class="footer-links">
             <li><NuxtLink to="/shop/new">New Arrivals</NuxtLink></li>
-            <li><NuxtLink to="/shop/best">Best Sellers</NuxtLink></li>
+            <!-- <li><NuxtLink to="/shop/best">Best Sellers</NuxtLink></li> -->
             <li><NuxtLink to="/shop/collections">Collections</NuxtLink></li>
           </ul>
         </div>
@@ -22,7 +22,7 @@
           <h4 class="footer-title">Company</h4>
           <ul class="footer-links">
             <li><NuxtLink to="/about">About Us</NuxtLink></li>
-            <li><NuxtLink to="/careers">Careers</NuxtLink></li>
+            <!-- <li><NuxtLink to="/careers">Careers</NuxtLink></li> -->
             <li><NuxtLink to="/contact">Contact</NuxtLink></li>
           </ul>
         </div>
@@ -30,8 +30,8 @@
         <div class="footer-section">
           <h4 class="footer-title">Support</h4>
           <ul class="footer-links">
-            <li><NuxtLink to="/shipping">Shipping</NuxtLink></li>
-            <li><NuxtLink to="/returns">Returns</NuxtLink></li>
+            <li><NuxtLink to="/shipping-policy">Shipping Policy</NuxtLink></li>
+            <li><NuxtLink to="/returns-policy">Returns Policy</NuxtLink></li>
             <li><NuxtLink to="/faq">FAQ</NuxtLink></li>
           </ul>
         </div>

@@ -440,7 +440,7 @@ const product = computed(() => {
     ...p,
     name: p.name,
     price: p.sale_price,
-    image: p.image || p.image_url || lampImg,
+    image: p.image,
     category: p.categories?.[0]?.name || 'Uncategorized',
     description: p.description,
     short_description: p.short_description,
@@ -455,7 +455,7 @@ const product = computed(() => {
       store_slug: p.vendor.vendor_profile.store_slug,
       logo_url: p.vendor.vendor_profile.logo_url
     } : null,
-    gallery: p.gallery_urls && p.gallery_urls.length > 0 ? p.gallery_urls : [p.image || p.image_url || lampImg]
+    gallery: p.gallery && p.gallery.length > 0 ? p.gallery : [p.image]
   }
 })
 

@@ -9,7 +9,7 @@
       <NuxtLink to="/" class="flex items-center group shrink-0">
         <template v-if="storefrontStore.vendorProfile">
           <!-- Vendor Logo -->
-          <img v-if="storefrontStore.vendorProfile.logo_url" :src="storefrontStore.vendorProfile.logo_url" :alt="storefrontStore.vendorProfile.store_name" class="h-6 md:h-8 max-w-[120px] md:max-w-[150px] object-contain" />
+          <img v-if="storefrontStore.vendorProfile.logo_url" :src="storefrontStore.vendorProfile.logo_url" :alt="storefrontStore.vendorProfile.store_name" class="h-12 md:h-12 max-w-[120px] md:max-w-[150px] object-contain" />
           <span v-else class="text-lg md:text-2xl font-extrabold tracking-tighter text-gray-900 font-heading">
             {{ storefrontStore.vendorProfile.store_name }}<span class="text-indigo-600">.</span>
           </span>

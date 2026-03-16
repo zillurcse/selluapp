@@ -141,7 +141,7 @@ class StorefrontController extends Controller
             $vendorProfile = null;
             if ($tenantId) {
                 $profile = \App\Models\VendorProfile::where('user_id', $tenantId)
-                    ->select('id', 'user_id', 'store_name', 'store_slug', 'logo', 'banner')
+                    ->select('id', 'user_id', 'store_name', 'store_slug', 'logo', 'banner', 'phone', 'email', 'address', 'facebook', 'twitter', 'instagram')
                     ->first();
                 if ($profile) {
                     $profile->logo_url = $profile->logo;

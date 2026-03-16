@@ -262,7 +262,7 @@ class ProductController extends Controller implements HasMiddleware
             $validated['specifications'] = json_decode($validated['specifications'], true);
         }
 
-        if (isset($validated['name'])) {
+        if (isset($validated['name']) && $validated['name'] !== $product->name) {
             $validated['slug'] = Str::slug($validated['name']) . '-' . Str::random(6);
         }
 

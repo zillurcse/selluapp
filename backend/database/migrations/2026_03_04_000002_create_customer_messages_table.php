@@ -9,7 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function upstate()
+    public function up()
     {
         Schema::create('customer_messages', function (Blueprint $blueprint) {
             $blueprint->id();
