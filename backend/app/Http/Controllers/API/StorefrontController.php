@@ -100,7 +100,7 @@ class StorefrontController extends Controller
                 $featuredProductsQuery->where('vendor_id', $tenantId);
             }
 
-            $featuredProducts = $featuredProductsQuery->get();
+            $featuredProducts = \App\Http\Resources\Storefront\ProductResource::collection($featuredProductsQuery->get());
 
             $trendingProductsQuery = Product::with(['categories:id,name,slug', 'brand:id,name,slug'])
                 ->select('id', 'name', 'sale_price', 'slug', 'image', 'thumbnail', 'vendor_id', 'brand_id', 'is_active', 'status', 'is_trending')

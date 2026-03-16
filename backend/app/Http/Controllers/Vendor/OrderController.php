@@ -304,7 +304,7 @@ class OrderController extends Controller implements HasMiddleware
             }
 
             DB::commit();
-            return response()->json(['message' => 'Order status updated successfully', 'data' => $order]);
+            return response()->json(['message' => 'Successfully updated order status to ' . $newStatus, 'data' => $order]);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['message' => 'Failed to update order: ' . $e->getMessage()], 500);

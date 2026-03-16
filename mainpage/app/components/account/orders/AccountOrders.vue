@@ -17,10 +17,10 @@
         <div class="flex-1">
           <div class="font-semibold text-gray-900">{{ order.name }}</div>
           <div class="text-sm text-gray-400 mt-0.5">{{ order.date }}</div>
-          <div class="text-sm text-gray-400">{{ order.items }} item{{ order.items > 1 ? 's' : '' }}</div>
+          <div class="text-sm text-gray-400">{{ order.items_count || order.items }} item{{ (order.items_count || order.items) > 1 ? 's' : '' }}</div>
         </div>
         <div class="flex flex-col sm:items-end gap-2">
-          <div class="font-extrabold text-gray-900">${{ order.total }}</div>
+          <div class="font-extrabold text-gray-900">৳{{ order.total }}</div>
           <div class="flex items-center gap-3">
               <span v-if="order.order?.discount_amount > 0" class="inline-block px-2 py-0.5 text-[10px] font-black bg-rose-50 text-rose-600 rounded border border-rose-100 uppercase tracking-tighter">
                 Promotion

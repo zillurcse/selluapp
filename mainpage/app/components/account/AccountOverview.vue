@@ -44,9 +44,9 @@
       </div>
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <div v-for="item in wishlist.slice(0,3)" :key="item.id" class="group relative bg-gray-50 rounded-xl p-3 border border-gray-100 hover:border-gray-200 transition cursor-pointer" @click="$router.push(`/product/${item.slug || item.id}`)">
-          <div class="h-24 w-full bg-white rounded-lg mb-2 flex items-center justify-center overflow-hidden">
-             <img v-if="item.image_url" :src="item.image_url" class="h-full w-full object-contain" />
-             <div v-else class="text-4xl text-center">{{ item.emoji || '📦' }}</div>
+          <div class="h-32 w-full bg-gray-50 rounded-xl mb-3 flex items-center justify-center overflow-hidden cursor-pointer" @click="$router.push(`/product/${item.slug || item.id}`)">
+             <img v-if="item.image || item.image_url" :src="item.image || item.image_url" class="h-full w-full object-contain" />
+             <div v-else class="text-6xl">{{ item.emoji || '📦' }}</div>
           </div>
           <div class="text-xs font-semibold text-gray-900 truncate">{{ item.name }}</div>
           <div class="text-xs text-gray-500">৳{{ item.sale_price || item.price }}</div>

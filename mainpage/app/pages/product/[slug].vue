@@ -440,7 +440,7 @@ const product = computed(() => {
     ...p,
     name: p.name,
     price: p.sale_price,
-    image: p.image_url || lampImg,
+    image: p.image || p.image_url || lampImg,
     category: p.categories?.[0]?.name || 'Uncategorized',
     description: p.description,
     short_description: p.short_description,
@@ -455,7 +455,7 @@ const product = computed(() => {
       store_slug: p.vendor.vendor_profile.store_slug,
       logo_url: p.vendor.vendor_profile.logo_url
     } : null,
-    gallery: p.gallery_urls && p.gallery_urls.length > 0 ? p.gallery_urls : [p.image_url || lampImg]
+    gallery: p.gallery_urls && p.gallery_urls.length > 0 ? p.gallery_urls : [p.image || p.image_url || lampImg]
   }
 })
 
@@ -545,8 +545,8 @@ const currentImage = computed(() => {
     if (isManualImageSelection.value) {
         return product.value?.gallery[activeImg.value]
     }
-    if (selectedVariant.value && selectedVariant.value.image_url) {
-        return selectedVariant.value.image_url
+    if (selectedVariant.value && (selectedVariant.value.image || selectedVariant.value.image_url)) {
+        return selectedVariant.value.image || selectedVariant.value.image_url
     }
     return product.value?.gallery[activeImg.value]
 })
@@ -722,7 +722,7 @@ onMounted(() => {
       name: product.value.name,
       short_description: product.value.short_description,
       description: product.value.description,
-      image_url: product.value.image_url,
+      image_url: product.value.image || product.value.image_url,
       slug: product.value.slug || String(product.value.id),
     })
 

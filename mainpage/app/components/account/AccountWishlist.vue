@@ -8,7 +8,7 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
           </button>
           <div class="h-32 w-full bg-gray-50 rounded-xl mb-3 flex items-center justify-center overflow-hidden cursor-pointer" @click="$router.push(`/product/${item.slug || item.id}`)">
-             <img v-if="item.image_url" :src="item.image_url" class="h-full w-full object-contain" />
+             <img v-if="item.image || item.image_url" :src="item.image || item.image_url" class="h-full w-full object-contain" />
              <div v-else class="text-6xl">{{ item.emoji || '📦' }}</div>
           </div>
           <div class="font-semibold text-gray-900 text-sm mb-1 text-center line-clamp-2 min-h-[40px]">{{ item.name }}</div>

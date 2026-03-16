@@ -381,7 +381,7 @@ watch(productsData, (newData) => {
     name: p.name,
     slug: p.slug,
     price: p.sale_price,
-    image: p.image_url || lampImg,
+    image: p.image || p.image_url || lampImg,
     category: p.categories?.[0]?.name || 'Uncategorized',
     brand: p.brand?.name || null,
     vendor: p.vendor?.vendorProfile ? {

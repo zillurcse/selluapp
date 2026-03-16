@@ -8,7 +8,7 @@
         </button>
         <div>
           <h2 class="font-bold text-gray-900">Track Order #{{ order.invoice_number }}</h2>
-          <p class="text-xs text-gray-500">Placed on {{ order.date }}</p>
+          <p class="text-xs text-gray-500">Placed on {{ formatDate(order.created_at) }}</p>
         </div>
       </div>
       <div class="text-right">
@@ -53,12 +53,12 @@
         <div class="flex items-center gap-4">
           <div class="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center text-2xl">🚚</div>
           <div>
-            <div class="text-xs font-bold text-violet-900 uppercase tracking-tight">Tracking Number</div>
-            <div class="text-sm font-extrabold text-violet-700">{{ order.tracking_number }}</div>
+            <div class="text-xs font-bold text-violet-900 uppercase tracking-tight">{{ courierName || 'Courier' }} Tracking</div>
+            <div class="text-sm font-extrabold text-violet-700">{{ trackingCode }}</div>
           </div>
         </div>
-        <button class="px-5 py-2.5 bg-violet-600 text-white text-xs font-bold rounded-xl hover:bg-violet-700 hover:shadow-md transition border-none cursor-pointer">
-          Track on Courier Site →
+        <button @click="openCourierTracking" v-if="courierName" class="px-5 py-2.5 bg-violet-600 text-white text-xs font-bold rounded-xl hover:bg-violet-700 hover:shadow-md transition border-none cursor-pointer">
+          Track on {{ courierName }} Site →
         </button>
       </div>
     </div>
@@ -72,6 +72,15 @@ const props = defineProps({
 
 defineEmits(['back'])
 
+const formatDate = (dateStr) => {
+  if (!dateStr) return ''
+  return new Date(dateStr).toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric'
+  })
+}
+
 const statusClasses = {
   pending: 'bg-yellow-50 text-yellow-700',
   processing: 'bg-blue-50 text-blue-700',
@@ -81,10 +90,43 @@ const statusClasses = {
   cancelled: 'bg-red-50 text-red-700'
 }
 
+const trackingParts = computed(() => {
+  const tn = props.order?.tracking_number || ''
+  if (tn.includes(':')) {
+    const parts = tn.split(':')
+    return { name: parts[0], code: parts[1] }
+  }
+  return { name: '', code: tn }
+})
+
+const courierName = computed(() => trackingParts.value.name)
+const trackingCode = computed(() => trackingParts.value.code)
+
+const openCourierTracking = () => {
+  const name = courierName.value.toLowerCase()
+  const code = trackingCode.value
+  let url = ''
+
+  if (name === 'steadfast') {
+    url = `https://steadfast.com.bd/t/${code}`
+  } else if (name === 'pathao') {
+    url = `https://pathao.com/courier/tracking/?consignment_id=${code}`
+  } else if (name === 'redx') {
+    url = `https://redx.com.bd/track-order/?trackingId=${code}`
+  }
+
+  if (url) {
+    window.open(url, '_blank')
+  } else {
+    alert('Direct tracking link not available for this courier.')
+  }
+}
+
 const trackingSteps = computed(() => {
+  if (!props.order?.status) return []
   const status = props.order.status.toLowerCase()
   const steps = [
-    { title: 'Order Placed', desc: 'We have received your order.', completed: true, date: props.order.date },
+    { title: 'Order Placed', desc: 'We have received your order.', completed: true, date: formatDate(props.order.created_at) },
     { title: 'Processing', desc: 'Your order is being prepared and packed.', completed: ['processing', 'shipped', 'delivered', 'courier'].includes(status) },
     { title: 'Shipped', desc: 'Your order has been handed over to the courier.', completed: ['shipped', 'delivered', 'courier'].includes(status) },
     { title: 'Out for Delivery', desc: 'The courier is on the way to your address.', completed: ['delivered'].includes(status) },

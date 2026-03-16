@@ -106,7 +106,7 @@ export const useStorefrontStore = defineStore('storefront', {
                 name: p.name,
                 price: p.sale_price,
                 slug: p.slug,
-                image: p.image_url || lampImg,
+                image: p.image,
                 category: p.categories?.[0]?.name || 'Uncategorized'
             })) || []
 
@@ -134,7 +134,7 @@ export const useStorefrontStore = defineStore('storefront', {
                     name: p.name,
                     price: p.sale_price,
                     slug: p.slug,
-                    image: p.image_url || lampImg,
+                    image: p.image,
                     category: cat.name
                 })) || []
             })) || []
@@ -165,7 +165,7 @@ export const useStorefrontStore = defineStore('storefront', {
                         description: p.short_description || `Experience the perfect balance of form and function with our ${p.name}.`,
                         buttonText: 'Shop Now',
                         link: `/product/${p.slug}`,
-                        image: p.image_url || headphonesImg,
+                        image: p.image || p.image_url || headphonesImg,
                         glowColor: idx % 3 === 0 ? 'radial-gradient(circle, rgba(99,102,241,0.6) 0%, transparent 70%)' :
                             idx % 3 === 1 ? 'radial-gradient(circle, rgba(251,191,36,0.5) 0%, transparent 70%)' :
                                 'radial-gradient(circle, rgba(16,185,129,0.5) 0%, transparent 70%)',

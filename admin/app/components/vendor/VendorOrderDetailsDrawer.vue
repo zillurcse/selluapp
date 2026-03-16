@@ -379,7 +379,7 @@ const updateStatus = async () => {
            status: orderStatus.value
         })
         emit('updated')
-        toast.success(`Successfully updated order status to ${orderStatus.value}`)
+        // toast.success(`Successfully updated order status to ${orderStatus.value}`)
     } catch (e) {
         toast.error('Failed to update status.')
     } finally {
