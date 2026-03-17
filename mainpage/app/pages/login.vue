@@ -113,6 +113,7 @@
             />
           </div>
           <div>
+          <div v-if="loginMode === 'password'">
             <div class="flex justify-between items-center mb-1.5">
               <label class="block text-sm font-semibold text-gray-700">Password</label>
               <NuxtLink to="/forgot-password" class="text-xs text-violet-600 font-semibold hover:text-violet-700 transition">Forgot password?</NuxtLink>
@@ -122,7 +123,7 @@
                 v-model="form.password"
                 :type="showPassword ? 'text' : 'password'"
                 placeholder="Enter your password"
-                required
+                :required="loginMode === 'password'"
                 class="w-full px-4 py-3 pr-11 rounded-xl border border-gray-200 text-sm outline-none transition-all duration-200 focus:border-gray-900 focus:ring-2 focus:ring-gray-900/5 bg-white placeholder-gray-400"
               />
               <button type="button" @click="showPassword = !showPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition border-none bg-transparent cursor-pointer p-1">
@@ -131,9 +132,10 @@
               </button>
             </div>
           </div>
+          </div>
 
           <!-- Remember me -->
-          <label class="flex items-center gap-2 cursor-pointer select-none">
+          <label v-if="loginMode === 'password'" class="flex items-center gap-2 cursor-pointer select-none">
             <input v-model="form.remember" type="checkbox" class="w-4 h-4 rounded border-gray-300 text-gray-900 cursor-pointer" />
             <span class="text-sm text-gray-600">Remember me for 30 days</span>
           </label>
@@ -150,15 +152,24 @@
             class="w-full py-3.5 bg-gray-900 text-white font-bold text-sm rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 border-none cursor-pointer mt-1 flex items-center justify-center gap-2"
           >
             <svg v-if="loading" class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-            {{ loading ? 'Signing in...' : 'Sign in' }}
+            <template v-if="loginMode === 'password'">
+              {{ loading ? 'Signing in...' : 'Sign in' }}
+            </template>
+            <template v-else>
+              {{ loading ? 'Sending link...' : 'Send Magic Link' }}
+            </template>
           </button>
         </form>
 
-        <!-- Register link -->
-        <p class="text-center text-sm text-gray-500 mt-6">
-          Don't have an account?
-          <NuxtLink to="/register" class="font-bold text-gray-900 hover:text-violet-600 transition ml-1">Create one →</NuxtLink>
-        </p>
+        <!-- Toggle Login Mode -->
+        <button
+          type="button"
+          @click="loginMode = loginMode === 'password' ? 'magic' : 'password'"
+          class="w-full mt-4 py-3 rounded-xl border border-gray-200 text-sm font-bold text-gray-700 hover:bg-gray-50 transition border-none bg-transparent cursor-pointer"
+        >
+          {{ loginMode === 'password' ? 'Login without password (Magic Link)' : 'Back to Password Login' }}
+        </button>
+
 
       </div>
     </div>
@@ -176,10 +187,12 @@ const form = ref({ email: '', password: '', remember: false })
 const showPassword = ref(false)
 const loading = ref(false)
 const error = ref('')
+const loginMode = ref<'password' | 'magic'>('password')
 
 const authStore = useAuthStore()
 const storefrontStore = useStorefrontStore()
 const { renderGoogleButton, error: googleError } = useGoogleAuth()
+
 
 onMounted(async () => {
   if (storefrontStore.topCategories.length === 0) {
@@ -202,6 +215,12 @@ const handleLogin = async () => {
   loading.value = true
 
   try {
+    if (loginMode.value === 'magic') {
+      await authStore.sendMagicLink(form.value.email)
+      toast.success('Check your email for the magic link!')
+      return
+    }
+
     const success = await authStore.login({
       email: form.value.email,
       password: form.value.password,
@@ -216,7 +235,7 @@ const handleLogin = async () => {
     }
   } catch (err: any) {
     console.error('Login error:', err)
-    error.value = err.data?.message || err.data?.errors?.email?.[0] || 'Invalid email or password. Please try again.'
+    error.value = err.data?.message || err.data?.errors?.email?.[0] || 'An error occurred. Please try again.'
     toast.error(error.value)
   } finally {
     loading.value = false

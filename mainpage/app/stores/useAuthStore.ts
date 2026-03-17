@@ -109,19 +109,9 @@ export const useAuthStore = defineStore("auth", () => {
 
       const token = res.access_token || res.token;
       if (res && token) {
-        tokenStore.setToken(token);
-        isAuthenticated.value = true;
-        user.value = res.user;
-        user_cookie.value = {
-          id: res.user.id,
-          name: res.user.name,
-          email: res.user.email,
-          roles: res.user.roles?.map((r: any) => ({ name: r.name }))
-        };
-
+        setAuthSelection(res, token);
         const cartStore = useCart()
         await cartStore.fetchCart()
-
         return true;
       }
       return false;
@@ -137,6 +127,52 @@ export const useAuthStore = defineStore("auth", () => {
     } finally {
       utilityStore.isLoading = false;
     }
+  }
+
+  function setAuthSelection(res: any, token: string) {
+    tokenStore.setToken(token);
+    isAuthenticated.value = true;
+    user.value = res.user;
+    user_cookie.value = {
+      id: res.user.id,
+      name: res.user.name,
+      email: res.user.email,
+      roles: res.user.roles?.map((r: any) => ({ name: r.name }))
+    };
+  }
+
+  async function sendMagicLink(email: string) {
+    const storefrontStore = useStorefrontStore();
+    const vendorId = storefrontStore.vendorProfile?.user_id || 5;
+
+    return await $fetch(`${config.public.apiBase}/auth/magic-link`, {
+      method: "POST",
+      body: { email },
+      headers: {
+        "X-Vendor-Id": vendorId.toString(),
+      }
+    });
+  }
+
+  async function verifyMagicLink(query: any) {
+    const storefrontStore = useStorefrontStore();
+    const vendorId = storefrontStore.vendorProfile?.user_id || 5;
+
+    const res: any = await $fetch(`${config.public.apiBase}/auth/magic-link/verify`, {
+      params: query,
+      headers: {
+        "X-Vendor-Id": vendorId.toString(),
+      }
+    });
+
+    const token = res.access_token || res.token;
+    if (res && token) {
+      setAuthSelection(res, token);
+      const cartStore = useCart()
+      await cartStore.fetchCart()
+      return true;
+    }
+    return false;
   }
 
   async function register(form: any) {
@@ -228,6 +264,8 @@ export const useAuthStore = defineStore("auth", () => {
     hasRole,
     fetchUser,
     login,
+    sendMagicLink,
+    verifyMagicLink,
     register,
     logout,
   };

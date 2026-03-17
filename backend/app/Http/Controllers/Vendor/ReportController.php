@@ -45,7 +45,7 @@ class ReportController extends Controller implements HasMiddleware
 
         // Net Profit
         $netProfit = $totalSales - $expenses;
-        
+
         return response()->json([
             'total_sales' => $totalSales,
             'expenses' => $expenses,
@@ -64,7 +64,9 @@ class ReportController extends Controller implements HasMiddleware
                 ['label' => 'Inventory', 'val' => 30, 'color' => 'bg-emerald-500'],
                 ['label' => 'Marketing', 'val' => 20, 'color' => 'bg-amber-500'],
                 ['label' => 'Staff', 'val' => 10, 'color' => 'bg-rose-500'],
-            ]
+            ],
+            // Setup Checklist
+            'setup_checklist' => $this->getSetupChecklist($vendorId)
         ]);
     }
 
@@ -506,10 +508,10 @@ class ReportController extends Controller implements HasMiddleware
 
         $couponStats = $coupons->map(function ($coupon) use ($orders) {
             $filteredOrders = $orders->filter(function ($order) use ($coupon) {
-                $appliedPromotions = is_array($order->applied_promotions) 
-                    ? $order->applied_promotions 
+                $appliedPromotions = is_array($order->applied_promotions)
+                    ? $order->applied_promotions
                     : json_decode($order->applied_promotions, true);
-                
+
                 if (!$appliedPromotions) return false;
 
                 foreach ($appliedPromotions as $promo) {
@@ -521,10 +523,10 @@ class ReportController extends Controller implements HasMiddleware
             });
 
             $totalDiscount = $filteredOrders->sum(function ($order) use ($coupon) {
-                $appliedPromotions = is_array($order->applied_promotions) 
-                    ? $order->applied_promotions 
+                $appliedPromotions = is_array($order->applied_promotions)
+                    ? $order->applied_promotions
                     : json_decode($order->applied_promotions, true);
-                
+
                 foreach ($appliedPromotions as $promo) {
                     if (isset($promo['is_coupon']) && $promo['is_coupon'] && $promo['offer_id'] == $coupon->id) {
                         return (float) $promo['discount_applied'];
@@ -610,7 +612,7 @@ class ReportController extends Controller implements HasMiddleware
 
         // Calculate KPIs for the (potentially filtered) set
         $allProducts = $query->get(['id', 'stock_qty', 'sale_price']);
-        
+
         $inventoryValue = $allProducts->sum(function($product) {
             return (float)$product->stock_qty * (float)$product->sale_price;
         });
@@ -669,13 +671,13 @@ class ReportController extends Controller implements HasMiddleware
 
         $oldStock = $product->stock_qty;
         $adjustment = (int) $request->quantity;
-        
+
         if ($request->type === 'subtract') {
             $adjustment = -$adjustment;
         }
 
         $newStock = $oldStock + $adjustment;
-        
+
         // Ensure stock doesn't go below 0
         if ($newStock < 0) {
             $newStock = 0;
@@ -699,7 +701,7 @@ class ReportController extends Controller implements HasMiddleware
     {
         $vendorId = $request->user()->vendor_id ?? $request->user()->id;
         $totalCustomers = \App\Models\Customer::where('vendor_id', $vendorId)->count();
-        
+
         $topCustomers = \App\Models\Customer::where('vendor_id', $vendorId)
             ->withCount('orders')
             ->orderByDesc('orders_count')
@@ -715,7 +717,7 @@ class ReportController extends Controller implements HasMiddleware
     public function earnings(Request $request)
     {
         $vendorId = $request->user()->vendor_id ?? $request->user()->id;
-        
+
         $onlineSales = \App\Models\Order::where('user_id', $vendorId)
             ->whereNotIn('status', ['cancelled', 'returned'])
             ->sum('total_amount');
@@ -725,10 +727,10 @@ class ReportController extends Controller implements HasMiddleware
             ->sum('total');
 
         $totalSales = $onlineSales + $posSales;
-            
+
         $vendorProfile = \App\Models\VendorProfile::where('user_id', $vendorId)->first();
         // Commission rate (could be fetched from global settings or vendor profile in reality)
-        $commissionRatePercentage = 10; 
+        $commissionRatePercentage = 10;
         $platformFee = $totalSales * ($commissionRatePercentage / 100);
         $netEarnings = $totalSales - $platformFee;
 
@@ -760,14 +762,14 @@ class ReportController extends Controller implements HasMiddleware
             ->latest()
             ->take(10)
             ->get();
-            
+
         $orders = \App\Models\Order::where('user_id', $vendorId)
             ->whereNotIn('status', ['cancelled', 'returned'])
             ->select('id', \DB::raw("'order' as type"), 'total_amount as amount', 'created_at', \DB::raw("'order' as source"))
             ->latest()
             ->take(10)
             ->get();
-            
+
         $ledger = $transactions->concat($orders)->sortByDesc('created_at')->take(10)->values();
 
         return response()->json([
@@ -784,7 +786,7 @@ class ReportController extends Controller implements HasMiddleware
     public function tax(Request $request)
     {
         $vendorId = $request->user()->vendor_id ?? $request->user()->id;
-        
+
         $onlineSubtotal = \App\Models\Order::where('user_id', $vendorId)
             ->whereNotIn('status', ['cancelled', 'returned'])
             ->sum('subtotal');
@@ -792,11 +794,11 @@ class ReportController extends Controller implements HasMiddleware
         $posSubtotal = \App\Models\PosSale::where('vendor_id', $vendorId)
             ->where('status', 'paid')
             ->sum('subtotal');
-            
+
         $totalSubtotal = $onlineSubtotal + $posSubtotal;
-            
+
         $estimatedTax = $totalSubtotal * 0.15;
-        
+
         return response()->json([
             'total_tax_collected' => $estimatedTax,
             'tax_rate' => '15%'
@@ -806,7 +808,7 @@ class ReportController extends Controller implements HasMiddleware
     public function salesAnalytics(Request $request)
     {
         $vendorId = $request->user()->vendor_id ?? $request->user()->id;
-        
+
         // Online Analytics
         $onlineAnalytics = \App\Models\Order::where('user_id', $vendorId)
             ->where('created_at', '>=', now()->subDays(7))
@@ -824,7 +826,7 @@ class ReportController extends Controller implements HasMiddleware
             ->get()
             ->pluck('revenue', 'date')
             ->toArray();
-            
+
         // Merge and sort
         $merged = [];
         $today = now();
@@ -835,7 +837,108 @@ class ReportController extends Controller implements HasMiddleware
                 'revenue' => ($onlineAnalytics[$date] ?? 0) + ($posAnalytics[$date] ?? 0)
             ];
         }
-            
+
         return response()->json($merged);
+    }
+
+    private function getSetupChecklist($vendorId)
+    {
+        $checklist = [];
+
+        // 1. Shop Settings (Basic Info)
+        $shopName = \App\Models\ShopSetting::where('user_id', $vendorId)->where('group', 'shop_settings')->exists();
+        $shopLogo = \App\Models\VendorProfile::where('user_id', $vendorId)->first()?->logo;
+        $checklist[] = [
+            'id' => 'shop_settings',
+            'label' => 'Shop Basic Info',
+            'status' => (!empty($shopName) && !empty($shopLogo)),
+            'to' => '/vendor/managed-shop/shop-settings'
+        ];
+
+        // 2. Shop Domain
+        $subDomain = \App\Models\ShopSetting::where('user_id', $vendorId)->where('key', 'subDomain')->first()?->value;
+        $customDomain = \App\Models\ShopSetting::where('user_id', $vendorId)->where('key', 'customDomain')->first()?->value;
+        $checklist[] = [
+            'id' => 'shop_domain',
+            'label' => 'Shop Domain',
+            'status' => (!empty($subDomain) || !empty($customDomain)),
+            'to' => '/vendor/managed-shop/shop-domain'
+        ];
+
+        // 3. SMS Gateway
+        $smsConfig = \App\Models\ShopSetting::where('user_id', $vendorId)->where('group', 'third_party_apis')->where('key', 'sms')->first();
+        $smsActiveTemplates = \App\Models\SmsTemplate::where('user_id', $vendorId)->where('is_active', true)->exists();
+        $checklist[] = [
+            'id' => 'sms_config',
+            'label' => 'SMS Gateway & Templates',
+            'status' => (!empty($smsConfig) && $smsActiveTemplates),
+            'to' => '/vendor/managed-shop/third-party-apis'
+        ];
+
+        // 4. Email / SMTP
+        $smtpConfig = \App\Models\ShopSetting::where('user_id', $vendorId)->where('group', 'smtp_settings')->exists();
+        $emailActiveTemplates = \App\Models\EmailTemplate::where('user_id', $vendorId)->where('is_active', true)->exists();
+        $checklist[] = [
+            'id' => 'email_config',
+            'label' => 'Email SMTP & Templates',
+            'status' => ($smtpConfig && $emailActiveTemplates),
+            'to' => '/vendor/managed-shop/smtp-settings'
+        ];
+
+        // 5. Facebook Pixel
+        $pixelConfig = \App\Models\ShopSetting::where('user_id', $vendorId)->where('group', 'marketing_social')->where('key', 'fbPixelId')->first()?->value;
+        $checklist[] = [
+            'id' => 'fb_pixel',
+            'label' => 'Facebook Pixel',
+            'status' => !empty($pixelConfig),
+            'to' => '/vendor/managed-shop/google-fb-tiktok'
+        ];
+
+        // 6. Custom Pages (Policies)
+        $privacyPolicy = \App\Models\ShopSetting::where('user_id', $vendorId)->where('group', 'custom_pages')->where('key', 'privacyPolicy')->first()?->value;
+        $returnPolicy = \App\Models\ShopSetting::where('user_id', $vendorId)->where('group', 'custom_pages')->where('key', 'returnPolicy')->first()?->value;
+        $checklist[] = [
+            'id' => 'custom_pages',
+            'label' => 'Shop Policies (Return/Privacy)',
+            'status' => (!empty($privacyPolicy) && !empty($returnPolicy)),
+            'to' => '/vendor/managed-shop/custom-pages'
+        ];
+
+        // 7. Shipping Method
+        $shippingMethods = \App\Models\BusinessSetting::where('vendor_id', $vendorId)->where('group', 'shipping')->exists();
+        $checklist[] = [
+            'id' => 'shipping',
+            'label' => 'Shipping Method',
+            'status' => $shippingMethods,
+            'to' => '/vendor/managed-shop/shipping'
+        ];
+
+        // 8. Delivery Support
+        $deliveryOptions = \App\Models\ShopSetting::where('user_id', $vendorId)->where('group', 'delivery')->exists();
+        $checklist[] = [
+            'id' => 'delivery_support',
+            'label' => 'Delivery Support',
+            'status' => $deliveryOptions,
+            'to' => '/vendor/managed-shop/delivery-support'
+        ];
+
+        // 8. Payment Gateway
+        $paymentGateways = \App\Models\ShopSetting::where('user_id', $vendorId)->where('group', 'payment_gateways')->get();
+        $hasActivePayment = false;
+        foreach ($paymentGateways as $pg) {
+            $data = json_decode($pg->value, true);
+            if (isset($data['active']) && $data['active']) {
+                $hasActivePayment = true;
+                break;
+            }
+        }
+        $checklist[] = [
+            'id' => 'payment_gateway',
+            'label' => 'Payment Gateway',
+            'status' => $hasActivePayment,
+            'to' => '/vendor/managed-shop/payment-gateway'
+        ];
+
+        return $checklist;
     }
 }

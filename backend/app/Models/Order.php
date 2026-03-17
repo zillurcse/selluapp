@@ -9,6 +9,11 @@ use App\Traits\BelongsToVendor;
 class Order extends Model
 {
     use \Illuminate\Database\Eloquent\SoftDeletes, BelongsToVendor;
+    
+    protected static function booted()
+    {
+        static::observe(\App\Observers\OrderObserver::class);
+    }
 
     protected $vendorIdColumn = 'user_id';
 

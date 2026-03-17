@@ -405,7 +405,8 @@ const saveTemplate = async (key) => {
   try {
     saving[key] = true
     await createItem('/vendor/sms-templates', templates[key])
-    $toast.success(`${templates[key].type.toUpperCase().replace('_', ' ')} updated successfully`)
+    // $toast.success(`${templates[key].type.toUpperCase().replace('_', ' ')} updated successfully`)
+    navigateTo('/vendor/managed-shop/sms-templates')
   } catch (error) {
     console.error(error)
     $toast.error('Something went wrong')

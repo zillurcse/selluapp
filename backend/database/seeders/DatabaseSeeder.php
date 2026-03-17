@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             GlobalSettingSeeder::class,
             ShopSeeder::class,
+            EmailTemplateSeeder::class,
         ]);
     }
 }

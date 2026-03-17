@@ -118,7 +118,7 @@ class CheckoutController extends Controller
         foreach ($validated['items'] as $item) {
             $product = Product::find($item['id']);
             if (!$vendorId) $vendorId = $product->vendor_id;
-            
+
             $price = (float)($product->discount_price ?: $product->sale_price);
             $subtotal += ($price * $item['quantity']);
 
@@ -137,7 +137,7 @@ class CheckoutController extends Controller
         $loyaltyDiscount = 0;
         $redeemablePoints = 0;
         $loyaltyMessage = '';
-        
+
         if (($validated['use_loyalty_points'] ?? false) && $validated['email']) {
             if ($result['discount_total'] > 0) {
                 $loyaltyMessage = 'Loyalty points cannot be used with other coupons or offers.';
@@ -145,15 +145,15 @@ class CheckoutController extends Controller
                 $customer = Customer::where('vendor_id', $vendorId)
                     ->where('email', $validated['email'])
                     ->first();
-                
+
                 if ($customer && $customer->loyalty_points > 0) {
                     $loyaltySettings = ShopSetting::where('group', 'loyalty_program')
                         ->where('user_id', $vendorId)
                         ->get()
                         ->pluck('value', 'key');
-                    
+
                     $isLoyaltyActive = isset($loyaltySettings['is_enabled']) && in_array($loyaltySettings['is_enabled'], [true, 'true', '1'], true);
-                    
+
                     if ($isLoyaltyActive) {
                         // Calculate redeemable subtotal: Only products WITHOUT discount_price
                         $redeemableSubtotal = 0;
@@ -169,9 +169,9 @@ class CheckoutController extends Controller
                         } else {
                             $pointValue = isset($loyaltySettings['point_value']) ? (float)$loyaltySettings['point_value'] : 0.1;
                             $maxPossibleDiscount = $redeemableSubtotal;
-                            
+
                             $potentialLoyaltyDiscount = $customer->loyalty_points * $pointValue;
-                            
+
                             if ($potentialLoyaltyDiscount > $maxPossibleDiscount) {
                                 $loyaltyDiscount = $maxPossibleDiscount;
                                 $redeemablePoints = ceil($maxPossibleDiscount / $pointValue);
@@ -236,10 +236,12 @@ class CheckoutController extends Controller
 
             $orders = [];
             $shippingApplied = false;
+            $requiresPhoneVerification = false;
+            $verificationOrderId = null;
             foreach ($itemsByVendor as $vendorId => $vendorItems) {
                 // Handle guest account creation or lookup
                 $user = User::where('email', $validated['email'])->first();
-                
+
                 if (!$user) {
                     // Create new User and Customer if not exists
                     $password = Str::random(12);
@@ -295,7 +297,7 @@ class CheckoutController extends Controller
                 $calculationService = new OfferCalculationService();
                 $discountResult = $calculationService->calculateDiscounts($offerCartItems, $vendorId, $validated['coupon_code'] ?? null);
                 $discountAmount = $discountResult['discount_total'];
-                
+
                 // Loyalty Point Redemption
                 $loyaltyDiscount = 0;
                 $pointsToRedeem = 0;
@@ -304,9 +306,9 @@ class CheckoutController extends Controller
                         ->where('group', 'loyalty_program')
                         ->get()
                         ->pluck('value', 'key');
-                    
+
                     $isLoyaltyActive = isset($loyaltySettings['is_enabled']) && in_array($loyaltySettings['is_enabled'], [true, 'true', '1'], true);
-                    
+
                     if ($isLoyaltyActive) {
                         // Calculate redeemable subtotal: Only products WITHOUT discount_price
                         $redeemableSubtotal = 0;
@@ -319,9 +321,9 @@ class CheckoutController extends Controller
                         if ($redeemableSubtotal > 0) {
                             $pointValue = isset($loyaltySettings['point_value']) ? (float)$loyaltySettings['point_value'] : 0.1;
                             $maxDis = $redeemableSubtotal;
-                            
+
                             $potentialDis = $customer->loyalty_points * $pointValue;
-                            
+
                             if ($potentialDis > $maxDis) {
                                 $loyaltyDiscount = $maxDis;
                                 $pointsToRedeem = ceil($maxDis / $pointValue);
@@ -338,7 +340,7 @@ class CheckoutController extends Controller
                                     'points' => -$pointsToRedeem,
                                     'description' => "Points redeemed for order discount",
                                 ]);
-                                
+
                                 $discountAmount += $loyaltyDiscount;
                                 // Add to applied promotions for tracking
                                 $appliedPromos = $discountResult['applied_offers'] ?? [];
@@ -352,7 +354,7 @@ class CheckoutController extends Controller
                         }
                     }
                 }
-                
+
                 // Prepare carts collection for getShippingCost helper
                 $carts = collect();
                 foreach ($validated['items'] as $item) {
@@ -380,7 +382,7 @@ class CheckoutController extends Controller
 
                 $shippingCost = !$shippingApplied ? (float)$total_shipping : 0.00; // Charge shipping only once per order group if needed, but here it's per vendor order. Actually, usually it's per vendor.
                 $shippingApplied = true;
-                
+
                 $totalAmount = ($subtotal - $discountAmount) + (float)$shippingCost;
 
                 // --- Fraud Detection Logic ---
@@ -390,7 +392,7 @@ class CheckoutController extends Controller
                     ->pluck('value', 'key');
 
                 $blacklist = isset($fraudSettings['blacklist']) ? (is_array($fraudSettings['blacklist']) ? $fraudSettings['blacklist'] : json_decode($fraudSettings['blacklist'], true)) : [];
-                
+
                 // 1. Manual Blacklist Check
                 if (in_array($ip, $blacklist) || in_array($validated['phone'], $blacklist)) {
                     return response()->json([
@@ -411,7 +413,7 @@ class CheckoutController extends Controller
                         })
                         ->where('created_at', '>=', now()->subHour())
                         ->count();
-                    
+
                     if ($recentOrdersCount >= 3) {
                         $riskScore += 40;
                         $fraudFlags[] = 'Multiple orders from same IP in a short period.';
@@ -429,7 +431,7 @@ class CheckoutController extends Controller
                         })
                         ->where('created_at', '>=', now()->subMinutes(10))
                         ->count();
-                    
+
                     if ($attempts >= 2) {
                         $riskScore += 30;
                         $fraudFlags[] = 'Repeated checkout attempts detected.';
@@ -438,18 +440,37 @@ class CheckoutController extends Controller
 
                 // Determine if manual review or verification is needed
                 $requiresManualReview = $riskScore >= 40;
-                $requiresPhoneVerification = false;
-                
+                $vendorRequiresVerification = false;
+
                 $phoneRule = isset($fraudSettings['phone_verification']) ? (is_array($fraudSettings['phone_verification']) ? $fraudSettings['phone_verification'] : json_decode($fraudSettings['phone_verification'], true)) : null;
+
                 if ($phoneRule && ($phoneRule['enabled'] ?? false) && $riskScore >= 30) {
-                    $requiresPhoneVerification = true;
+                    $vendorRequiresVerification = true;
+                }
+
+                // Check if SMS gateway is configured and OTP template is active
+                $smsSetting = ShopSetting::where('user_id', $vendorId)
+                    ->where('group', 'third_party_apis')
+                    ->where('key', 'sms')
+                    ->first();
+                $smsConfig = $smsSetting ? json_decode($smsSetting->value, true) : null;
+                $hasActiveSms = $smsConfig && !empty($smsConfig['provider']);
+
+                $otpTemplate = \App\Models\SmsTemplate::where('user_id', $vendorId)
+                    ->where('type', 'otp')
+                    ->where('is_active', true)
+                    ->first();
+
+
+                if ($hasActiveSms && $otpTemplate) {
+                    $vendorRequiresVerification = true;
                 }
 
                 $order = Order::create([
                     'user_id' => $vendorId, // Vendor ID
                     'customer_id' => $customer->id,
                     'invoice_number' => 'ORD-' . strtoupper(Str::random(10)),
-                    'status' => $requiresPhoneVerification ? 'pending_verification' : 'pending',
+                    'status' => $vendorRequiresVerification ? 'pending_verification' : 'pending',
                     'type' => 'normal',
                     'subtotal' => $subtotal,
                     'discount_amount' => $discountAmount,
@@ -474,7 +495,7 @@ class CheckoutController extends Controller
                     'notes' => $validated['note'] ?? null,
                 ]);
 
-                if ($requiresPhoneVerification) {
+                if ($vendorRequiresVerification) {
                     $otp = (string)rand(100000, 999999);
                     $order->update([
                         'otp_code' => $otp,
@@ -483,11 +504,23 @@ class CheckoutController extends Controller
 
                     // Send SMS
                     try {
+                        \Illuminate\Support\Facades\Log::info("Attempting to send OTP SMS to {$validated['phone']} for Vendor: {$vendorId}");
                         $smsService = new SmsService($vendorId);
-                        $smsService->send($validated['phone'], 'otp', ['otp' => $otp]);
+
+                        $shopName = ShopSetting::where('user_id', $vendorId)->where('key', 'shop_name')->first()?->value ?? 'Our Shop';
+
+                        $sent = $smsService->send($validated['phone'], 'otp', [
+                            'otp' => $otp,
+                            'shop_name' => $shopName
+                        ]);
+                        \Illuminate\Support\Facades\Log::info("OTP SMS send status: " . ($sent ? 'Success' : 'Failed'));
                     } catch (\Exception $e) {
                         \Illuminate\Support\Facades\Log::error("Failed to send OTP SMS: " . $e->getMessage());
                     }
+
+                    // For response logic outside loop
+                    $requiresPhoneVerification = true;
+                    $verificationOrderId = $order->id;
                 }
 
                 if ($requiresManualReview) {
@@ -516,9 +549,9 @@ class CheckoutController extends Controller
                     ->where('group', 'loyalty_program')
                     ->get()
                     ->pluck('value', 'key');
-                
+
                 $isLoyaltyActive = isset($loyaltySettings['is_enabled']) && in_array($loyaltySettings['is_enabled'], [true, 'true', '1'], true);
-                
+
                 if ($isLoyaltyActive) {
                     $earningRate = isset($loyaltySettings['point_earning_rate']) ? (float)$loyaltySettings['point_earning_rate'] : 1; // points per 100 currency
                     $minOrderTotal = isset($loyaltySettings['min_order_total']) ? (float)$loyaltySettings['min_order_total'] : 0;
@@ -572,17 +605,17 @@ class CheckoutController extends Controller
                             'user_agent' => $request->userAgent(),
                             'user_id' => $customer->id ?? null,
                         ];
-                        
+
                         $customData = [
                             'currency' => 'BDT',
                             'value' => max(0, $totalAmount),
                             'order_id' => $order->invoice_number,
                             'content_ids' => array_map(function($v) { return (string)$v['product']->id; }, $vendorItems),
                         ];
-                        
+
                         $fbCapi = new \App\Services\FacebookCapiService();
                         $fbCapi->sendEvent('OrderCreated', $userData, $customData, (string)\Illuminate\Support\Str::uuid(), $vendorId);
-                        
+
                         if ($discountAmount > 0) {
                              $fbCapi->sendEvent('CouponApplied', $userData, array_merge($customData, ['custom_params' => ['coupon' => $validated['coupon_code'] ?? 'offer']]), (string)\Illuminate\Support\Str::uuid(), $vendorId);
                         }
@@ -602,7 +635,7 @@ class CheckoutController extends Controller
                     'success' => true,
                     'message' => 'Verification required. Please enter the OTP sent to your phone.',
                     'requires_verification' => true,
-                    'order_id' => $orders[0]->id,
+                    'order_id' => $verificationOrderId ?? $orders[0]->id,
                 ], 202);
             }
 
@@ -633,14 +666,20 @@ class CheckoutController extends Controller
 
         $order = Order::findOrFail($request->order_id);
 
-        if ($order->otp_code !== $request->otp) {
+        \Illuminate\Support\Facades\Log::info("Order found for OTP verification. Order ID: {$order->id}, Current OTP: {$order->otp_code}, Provided OTP: {$request->otp}");
+
+        if ($order->otp_code != $request->otp) {
+            \Illuminate\Support\Facades\Log::warning("Invalid OTP provided for order ID: {$order->id}. Provided: {$request->otp}, Expected: {$order->otp_code}");
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid OTP code.',
             ], 422);
         }
 
+        \Illuminate\Support\Facades\Log::info("OTP matched for order ID: {$order->id}. Checking expiration.");
+
         if ($order->otp_expires_at && now()->gt($order->otp_expires_at)) {
+            \Illuminate\Support\Facades\Log::warning("OTP expired for order ID: {$order->id}. Expiration: {$order->otp_expires_at}");
             return response()->json([
                 'success' => false,
                 'message' => 'OTP has expired. Please request a new one.',
@@ -680,16 +719,16 @@ class CheckoutController extends Controller
                 'user_agent' => $request->userAgent(),
                 'user_id' => $order->customer_id,
             ];
-            
+
             $customData = [
                 'currency' => 'BDT',
                 'value' => $order->total_amount,
                 'order_id' => $order->invoice_number,
             ];
-            
+
             $fbCapi = new \App\Services\FacebookCapiService();
             $fbCapi->sendEvent('OrderCreated', $userData, $customData, (string)\Illuminate\Support\Str::uuid(), $order->user_id);
-            
+
             if ($order->discount_amount > 0) {
                  $coupon = !empty($order->applied_promotions) ? 'offer' : 'loyalty';
                  $fbCapi->sendEvent('CouponApplied', $userData, array_merge($customData, ['custom_params' => ['coupon' => $coupon]]), (string)\Illuminate\Support\Str::uuid(), $order->user_id);
@@ -701,6 +740,66 @@ class CheckoutController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Order verified successfully!',
+            'invoice_number' => $order->invoice_number,
         ]);
+    }
+
+    /**
+     * Resend OTP for an order
+     */
+    public function resendOtp(Request $request)
+    {
+        $request->validate([
+            'order_id' => 'required|exists:orders,id',
+        ]);
+
+        $order = Order::findOrFail($request->order_id);
+
+        if ($order->status !== 'pending_verification') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Order is not in verification state.',
+            ], 422);
+        }
+
+        $otp = (string)rand(100000, 999999);
+        $order->update([
+            'otp_code' => $otp,
+            'otp_expires_at' => now()->addMinutes(10)
+        ]);
+
+        $shippingInfo = json_decode($order->shipping_address, true);
+        $phone = $shippingInfo['phone'] ?? null;
+
+        if (!$phone) {
+             return response()->json([
+                'success' => false,
+                'message' => 'Customer phone number not found.',
+            ], 422);
+        }
+
+        try {
+            \Illuminate\Support\Facades\Log::info("Resending OTP SMS to {$phone} for Vendor: {$order->user_id}");
+            $smsService = new SmsService($order->user_id);
+            $sent = $smsService->send($phone, 'otp', ['otp' => $otp]);
+
+            if ($sent) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'OTP has been resent.',
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to send SMS. Please check provider settings.',
+                ], 500);
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to resend OTP SMS: " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send SMS: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }

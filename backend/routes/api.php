@@ -12,6 +12,8 @@ use App\Http\Controllers\AuthController;
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/login-pin', [\App\Http\Controllers\API\PINController::class, 'verifyPin']);
+Route::post('/auth/magic-link', [AuthController::class, 'sendMagicLink']);
+Route::get('/auth/magic-link/verify', [AuthController::class, 'verifyMagicLink'])->name('magic-link.verify');
 
 Route::post('/webhooks/steadfast', [App\Http\Controllers\Vendor\CourierController::class, 'steadfastWebhook']);
 
@@ -53,6 +55,7 @@ Route::post('/storefront/checkout', [\App\Http\Controllers\API\CheckoutControlle
 Route::post('/storefront/checkout/calculate-discount', [\App\Http\Controllers\API\CheckoutController::class, 'getDiscount']);
 Route::post('/storefront/checkout/payment-methods', [\App\Http\Controllers\API\CheckoutController::class, 'getPaymentMethods']);
 Route::post('/storefront/checkout/verify-otp', [\App\Http\Controllers\API\CheckoutController::class, 'verifyOtp']);
+Route::post('/storefront/checkout/resend-otp', [\App\Http\Controllers\API\CheckoutController::class, 'resendOtp']);
 
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -324,6 +327,10 @@ Route::middleware('auth:sanctum')->group(function () {
         // SMS Templates
         Route::post('sms-templates/test', [App\Http\Controllers\Vendor\SmsTemplateController::class, 'test']);
         Route::apiResource('sms-templates', App\Http\Controllers\Vendor\SmsTemplateController::class);
+
+        // Email Templates
+        Route::post('email-templates/test', [App\Http\Controllers\Vendor\EmailTemplateController::class, 'test']);
+        Route::apiResource('email-templates', App\Http\Controllers\Vendor\EmailTemplateController::class);
 
         // Staff Management
         Route::apiResource('staff', App\Http\Controllers\Vendor\VendorStaffController::class);

@@ -23,6 +23,60 @@
     </div>
 
     <div v-else class="space-y-8 mt-8">
+      <!-- Setup Checklist Warning -->
+      <div v-if="stats?.setup_checklist?.some(i => !i.status)" class="bg-white dark:bg-slate-900 rounded-3xl shadow-xl shadow-amber-500/10 border-2 border-amber-100 dark:border-amber-900/30 overflow-hidden group">
+        <div class="p-8 lg:p-10 flex flex-col lg:flex-row items-center gap-8">
+          <!-- Icon & Progress Ring -->
+          <div class="relative flex-shrink-0">
+             <div class="w-24 h-24 rounded-full border-8 border-amber-50 dark:border-amber-900/10 flex items-center justify-center">
+                <ShieldAlert class="w-10 h-10 text-amber-500 animate-pulse" />
+             </div>
+             <div class="absolute inset-0 flex items-center justify-center">
+                <svg class="w-24 h-24 -rotate-90">
+                  <circle
+                    class="text-amber-500 transition-all duration-1000 ease-out"
+                    stroke-width="8"
+                    :stroke-dasharray="2 * Math.PI * 40"
+                    :stroke-dashoffset="2 * Math.PI * 40 * (1 - (stats?.setup_checklist?.filter(i => i.status).length / stats?.setup_checklist?.length))"
+                    stroke-linecap="round"
+                    stroke="currentColor"
+                    fill="transparent"
+                    r="40"
+                    cx="48"
+                    cy="48"
+                  />
+                </svg>
+             </div>
+          </div>
+
+          <!-- Content -->
+          <div class="flex-grow space-y-2 text-center lg:text-left">
+            <h2 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Complete Your Shop Setup</h2>
+            <p class="text-slate-500 dark:text-slate-400 font-bold max-w-xl">
+              Your shop is almost ready! Complete the following configurations to ensure a smooth shopping experience for your customers.
+            </p>
+            <div class="flex flex-wrap justify-center lg:justify-start gap-4 mt-4">
+              <NuxtLink 
+                v-for="item in stats?.setup_checklist?.filter(i => !i.status)" 
+                :key="item.id"
+                :to="item.to"
+                class="flex items-center gap-2 bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/20 dark:hover:bg-amber-900/40 text-amber-700 dark:text-amber-400 px-4 py-2 rounded-xl text-xs font-black transition-all active:scale-95 border border-amber-200/50 dark:border-amber-700/30"
+              >
+                <div class="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
+                {{ item.label }}
+              </NuxtLink>
+            </div>
+          </div>
+
+          <!-- Action -->
+          <div class="flex-shrink-0">
+             <NuxtLink to="/vendor/managed-shop" class="px-8 py-4 bg-slate-900 hover:bg-black dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white font-black rounded-2xl shadow-lg transition-all active:scale-95 flex items-center gap-2 group/btn">
+               <span>Go to Settings</span>
+               <ArrowRight class="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
+             </NuxtLink>
+          </div>
+        </div>
+      </div>
       <!-- Stats Cards -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 tracking-tight">
         <!-- Total Sales -->
@@ -193,6 +247,8 @@ import {
   LayoutDashboard,
   ArrowUpRight,
   ShoppingBag,
+  ShieldAlert,
+  ArrowRight
 } from 'lucide-vue-next'
 
 definePageMeta({

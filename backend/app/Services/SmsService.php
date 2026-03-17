@@ -73,9 +73,14 @@ class SmsService
         $password = $config['password'] ?? '';
         $from = $config['senderId'] ?? 'maskingname';
 
-        // Normalize phone number to include country code if missing
-        if (!str_starts_with($to, '88')) {
-            $to = '88' . ltrim($to, '0');
+        // Normalize phone number: Remove all non-numeric characters first
+        $to = preg_replace('/[^0-9]/', '', $to);
+
+        // Ensure it has 88 prefix if it's a Bangladesh number
+        if (strlen($to) === 11 && str_starts_with($to, '0')) {
+            $to = '88' . $to;
+        } elseif (strlen($to) === 10) {
+            $to = '880' . $to;
         }
 
         $response = Http::get('https://panel.smsbangladesh.com/api', [

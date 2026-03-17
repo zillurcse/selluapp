@@ -72,7 +72,9 @@ import {
   ShieldAlert, 
   Bug,
   Gift,
-  ArrowRight
+  ArrowRight,
+  Mail,
+  LayoutTemplate
 } from 'lucide-vue-next'
 
 const managementCards = [
@@ -159,6 +161,20 @@ const managementCards = [
     icon: MessageSquare,
     iconBg: 'bg-indigo-600',
     to: '/vendor/managed-shop/sms-templates'
+  },
+  {
+    title: 'Email Settings',
+    description: 'Configure your SMTP settings to send automated emails.',
+    icon: Mail,
+    iconBg: 'bg-rose-600',
+    to: '/vendor/managed-shop/smtp-settings'
+  },
+  {
+    title: 'Email Templates',
+    description: 'Manage automated email templates for welcome, orders, and more.',
+    icon: LayoutTemplate,
+    iconBg: 'bg-indigo-700',
+    to: '/vendor/managed-shop/email-templates'
   },
   {
     title: 'Block Fake Order',

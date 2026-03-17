@@ -395,8 +395,75 @@
         </aside>
       </div>
     </main>
-  </div>
-</template>
+ 
+     <!-- OTP Verification Modal -->
+     <div v-if="showOtpModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-fade-in">
+       <div class="bg-white w-full max-w-md rounded-[32px] shadow-2xl overflow-hidden p-8 sm:p-10 space-y-8 animate-scale-up">
+         <div class="text-center space-y-4">
+           <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto text-3xl shadow-inner animate-bounce">
+             📱
+           </div>
+           <div class="space-y-2">
+             <h3 class="text-2xl font-black text-gray-900 tracking-tight">Verify Your Phone</h3>
+             <p class="text-sm font-medium text-gray-500 leading-relaxed">
+               We've sent a 6-digit code to <span class="text-black font-bold">{{ form.phone }}</span>. Please enter it below to complete your order.
+             </p>
+           </div>
+         </div>
+ 
+         <div class="space-y-6">
+           <div class="relative group">
+             <div class="absolute left-6 top-1/2 -translate-y-1/2 flex items-center gap-2 text-gray-400 group-focus-within:text-black transition-colors">
+               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+             </div>
+             <input 
+               v-model="otpCode" 
+               type="text" 
+               maxlength="6"
+               placeholder="Enter 6-digit code" 
+               class="w-full h-16 pl-16 pr-6 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-black focus:ring-4 focus:ring-gray-100 outline-none transition-all font-black text-xl tracking-[0.3em] text-center placeholder:text-gray-300 placeholder:tracking-normal placeholder:font-medium placeholder:text-base"
+               @keyup.enter="verifyOtp"
+             />
+           </div>
+ 
+           <p v-if="otpError" class="text-center text-xs font-bold text-rose-500 animate-shake bg-rose-50 py-2 rounded-lg border border-rose-100 italic">
+             ⚠️ {{ otpError }}
+           </p>
+ 
+           <div class="flex flex-col gap-4">
+              <button 
+               @click="verifyOtp" 
+               :disabled="verifyingOtp || otpCode.length !== 6"
+               class="w-full h-14 bg-black text-white text-sm font-black rounded-2xl hover:bg-gray-800 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-xl shadow-gray-200"
+             >
+               <div v-if="verifyingOtp" class="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
+               <span v-else>Verify & Place Order</span>
+             </button>
+ 
+             <div class="text-center">
+               <button 
+                 @click="resendOtp" 
+                 :disabled="resendingOtp || resendCountdown > 0"
+                 class="text-xs font-bold text-gray-500 hover:text-black transition-colors disabled:opacity-50"
+               >
+                 <span v-if="resendCountdown > 0">Resend code in {{ resendCountdown }}s</span>
+                 <span v-else-if="resendingOtp">Resending...</span>
+                 <span v-else>Didn't receive code? <span class="text-black underline">Resend</span></span>
+               </button>
+             </div>
+             
+             <button 
+               @click="showOtpModal = false; otpCode = ''; otpError = ''" 
+               class="w-full text-xs font-bold text-gray-400 hover:text-gray-900 transition-colors uppercase tracking-widest py-2"
+             >
+               Cancel Order
+             </button>
+           </div>
+         </div>
+       </div>
+     </div>
+   </div>
+ </template>
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
@@ -460,8 +527,47 @@ const userLoyaltyBalance = ref(0)
 const loyaltyRedemptionDiscount = ref(0)
 const redeemablePoints = ref(0)
 const loyaltyMessage = ref('')
-
-const form = ref({
+ 
+ const showOtpModal = ref(false)
+ const otpCode = ref('')
+ const verifyingOtp = ref(false)
+ const otpOrderId = ref(null)
+ const otpError = ref('')
+ const resendingOtp = ref(false)
+ const resendCountdown = ref(0)
+ 
+ const startResendCountdown = () => {
+   resendCountdown.value = 60
+   const timer = setInterval(() => {
+     resendCountdown.value--
+     if (resendCountdown.value <= 0) clearInterval(timer)
+   }, 1000)
+ }
+ 
+ const resendOtp = async () => {
+   if (resendingOtp.value || resendCountdown.value > 0) return
+   
+   resendingOtp.value = true
+   otpError.value = ''
+   
+   try {
+     const response = await $fetch(`${config.public.apiBase}/storefront/checkout/resend-otp`, {
+       method: 'POST',
+       body: { order_id: otpOrderId.value }
+     })
+     
+     if (response.success) {
+       startResendCountdown()
+       // Optional: toast success
+     }
+   } catch (error) {
+     otpError.value = error.data?.message || 'Failed to resend OTP'
+   } finally {
+     resendingOtp.value = false
+   }
+ }
+ 
+ const form = ref({
   email: '',
   phone: '',
   first_name: '',
@@ -849,42 +955,84 @@ const placeOrder = async () => {
       body: {
         ...orderData,
         use_loyalty_points: useLoyaltyPoints.value
+      },
+      onResponse({ response }) {
+        if (response.status === 202) {
+          otpOrderId.value = response._data.order_id
+          showOtpModal.value = true
+          loading.value = false
+        }
       }
     })
 
-    if (response.success) {
-      // Clear cart
-      const invoice_number = response.orders && response.orders.length > 0 ? response.orders[0].invoice_number : ''
-      
-      // Fire Purchase tracking event before clearing cart
-      trackPurchase({
-        id: invoice_number || Date.now(),
-        total: cartTotal.value + shippingCost.value - discountTotal.value,
-        items: cart.value.map((item) => ({
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity
-        }))
-      })
-
-      cart.value = []
-      // Redirect to a success page
-      router.push({
-        path: '/thank-you',
-        query: { 
-          invoice_number: invoice_number,
-          earned_points: potentialPoints.value
-        }
-      })
+    if (response.success && !showOtpModal.value) {
+      finalizeOrder(response)
     }
   } catch (error) {
     console.error('Checkout error:', error)
     alert('Failed to place order. Please try again.')
   } finally {
-    loading.value = false
+    if (!showOtpModal.value) {
+       loading.value = false
+    }
   }
 }
+ 
+ const finalizeOrder = (response) => {
+   // Clear cart
+   const invoice_number = response.orders && response.orders.length > 0 ? response.orders[0].invoice_number : ''
+   
+   // Fire Purchase tracking event before clearing cart
+   trackPurchase({
+     id: invoice_number || Date.now(),
+     total: cartTotal.value + shippingCost.value - discountTotal.value,
+     items: cart.value.map((item) => ({
+       id: item.id,
+       name: item.name,
+       price: item.price,
+       quantity: item.quantity
+     }))
+   })
+ 
+   cart.value = []
+   // Redirect to a success page
+   router.push({
+     path: '/thank-you',
+     query: { 
+       invoice_number: invoice_number,
+       earned_points: potentialPoints.value
+     }
+   })
+ }
+ 
+ const verifyOtp = async () => {
+   if (otpCode.value.length !== 6) {
+     otpError.value = 'Please enter a valid 6-digit code'
+     return
+   }
+ 
+   verifyingOtp.value = true
+   otpError.value = ''
+   
+   try {
+     const response = await $fetch(`${config.public.apiBase}/storefront/checkout/verify-otp`, {
+       method: 'POST',
+       body: {
+         order_id: otpOrderId.value,
+         otp: otpCode.value
+       }
+     })
+ 
+     if (response.success) {
+       showOtpModal.value = false
+       finalizeOrder({ success: true, orders: [{ invoice_number: response.invoice_number }] })
+     }
+   } catch (error) {
+     otpError.value = error.data?.message || 'Invalid OTP code'
+   } finally {
+     verifyingOtp.value = false
+   }
+ }
 </script>
 
 <style scoped>
@@ -922,8 +1070,17 @@ const placeOrder = async () => {
 .animate-shake {
   animation: shake 0.2s ease-in-out 0s 2;
 }
-
-/* Tel Input Styling */
+ 
+ @keyframes scaleUp {
+   from { opacity: 0; transform: scale(0.95) translateY(10px); }
+   to { opacity: 1; transform: scale(1) translateY(0); }
+ }
+ 
+ .animate-scale-up {
+   animation: scaleUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+ }
+ 
+ /* Tel Input Styling */
 :deep(.tel-input-custom) {
   border: none !important;
   box-shadow: none !important;
