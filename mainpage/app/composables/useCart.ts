@@ -14,6 +14,55 @@ export const useCart = () => {
     const tokenStore = useTokenStore()
     const config = useRuntimeConfig()
 
+    const STORAGE_KEY = 'guest_cart'
+    const EXPIRATION_TIME = 24 * 60 * 60 * 1000 // 1 day in ms
+
+    const saveCartToStorage = () => {
+        if (process.server || authStore.isAuthenticated) return
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+            items: cart.value,
+            timestamp: Date.now()
+        }))
+    }
+
+    const loadCartFromStorage = () => {
+        if (process.server || authStore.isAuthenticated) return
+        const stored = localStorage.getItem(STORAGE_KEY)
+        if (stored) {
+            try {
+                const { items, timestamp } = JSON.parse(stored)
+                if (Date.now() - timestamp < EXPIRATION_TIME) {
+                    cart.value = items
+                } else {
+                    localStorage.removeItem(STORAGE_KEY)
+                }
+            } catch (e) {
+                console.error('Failed to parse stored cart', e)
+            }
+        }
+    }
+
+    // Initialize on client side
+    if (process.client) {
+        loadCartFromStorage()
+    }
+
+    // Watch for changes and save to storage
+    watch(cart, () => {
+        if (authStore.isAuthenticated) {
+            if (process.client) localStorage.removeItem(STORAGE_KEY)
+            return
+        }
+        saveCartToStorage()
+    }, { deep: true })
+
+    // Also watch for auth changes to clear guest cart
+    watch(() => authStore.isAuthenticated, (isAuth) => {
+        if (isAuth && process.client) {
+            localStorage.removeItem(STORAGE_KEY)
+        }
+    })
+
     const fetchCart = async () => {
         if (!authStore.isAuthenticated) return;
         try {

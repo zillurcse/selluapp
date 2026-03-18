@@ -204,7 +204,11 @@ class CheckoutController extends Controller
             'last_name' => 'required|string',
             'phone' => 'required|string',
             'full_address' => 'required|string',
-            'city_id' => 'required|exists:cities,id',
+            'city_id' => 'required_without:is_manual_location|nullable|exists:cities,id',
+            'is_manual_location' => 'nullable|boolean',
+            'state_name' => 'required_if:is_manual_location,true|nullable|string',
+            'city_name' => 'required_if:is_manual_location,true|nullable|string',
+            'is_inside_dhaka' => 'nullable|boolean',
             'payment_method' => 'required|string',
             'items' => 'required|array|min:1',
             'items.*.id' => 'required|exists:products,id',
@@ -215,7 +219,7 @@ class CheckoutController extends Controller
             'use_loyalty_points' => 'nullable|boolean',
         ]);
 
-        $city = \App\Models\City::findOrFail($validated['city_id']);
+        $city = empty($validated['is_manual_location']) ? \App\Models\City::findOrFail($validated['city_id']) : null;
         $ip = $request->ip();
 
         DB::beginTransaction();
@@ -365,7 +369,9 @@ class CheckoutController extends Controller
                 }
 
                 $shipping_info = [
-                    'city_id' => $validated['city_id'],
+                    'city_id' => $validated['city_id'] ?? null,
+                    'is_manual_location' => !empty($validated['is_manual_location']),
+                    'is_inside_dhaka' => $validated['is_inside_dhaka'] ?? false,
                     'carrier' => $validated['carrier'] ?? 'personal'
                 ];
 
@@ -488,8 +494,9 @@ class CheckoutController extends Controller
                         'email' => $validated['email'],
                         'phone' => $validated['phone'],
                         'address' => $validated['full_address'],
-                        'city' => $city->name,
-                        'city_id' => $city->id,
+                        'city' => !empty($validated['is_manual_location']) ? $validated['city_name'] : $city->name,
+                        'city_id' => !empty($validated['is_manual_location']) ? null : $city->id,
+                        'state' => !empty($validated['is_manual_location']) ? $validated['state_name'] : null,
                         'ip' => $ip
                     ]),
                     'notes' => $validated['note'] ?? null,

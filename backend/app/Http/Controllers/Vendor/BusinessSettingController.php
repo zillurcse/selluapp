@@ -67,10 +67,12 @@ class BusinessSettingController extends Controller implements HasMiddleware
             BusinessSetting::updateOrCreate(
                 [
                     'vendor_id' => $vendorId,
-                    'group' => $group,
                     'type' => $type
                 ],
-                ['value' => $saveValue]
+                [
+                    'group' => $group,
+                    'value' => $saveValue
+                ]
             );
         }
 

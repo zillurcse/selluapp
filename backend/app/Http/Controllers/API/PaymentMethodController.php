@@ -41,6 +41,7 @@ class PaymentMethodController extends Controller
         ]);
 
         $paymentMethod = PaymentMethod::create($validated);
+        \Illuminate\Support\Facades\Cache::forget('storefront_index_global');
 
         return response()->json([
             'message' => 'Payment method created',
@@ -63,6 +64,7 @@ class PaymentMethodController extends Controller
         ]);
 
         $paymentMethod->update($validated);
+        \Illuminate\Support\Facades\Cache::forget('storefront_index_global');
 
         return response()->json([
             'message' => 'Payment method updated',
@@ -76,6 +78,7 @@ class PaymentMethodController extends Controller
     public function destroy(PaymentMethod $paymentMethod)
     {
         $paymentMethod->delete();
+        \Illuminate\Support\Facades\Cache::forget('storefront_index_global');
         return response()->json(['message' => 'Payment method deleted']);
     }
 }

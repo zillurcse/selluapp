@@ -401,8 +401,8 @@ const saveSettings = async () => {
       group: 'payment_gateways',
       settings: settingsPayload
     })
-    
-    $toast.success('Payment gateways updated successfully')
+    navigateTo('/vendor/managed-shop/payment-gateway')
+    // $toast.success('Payment gateways updated successfully')
   } catch (error) {
     console.error(error)
     $toast.error('Failed to save settings')

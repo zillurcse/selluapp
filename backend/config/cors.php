@@ -3,23 +3,23 @@
 return [
 
     /*
-    |--------------------------------------------------------------------------
-    | Cross-Origin Resource Sharing (CORS) Configuration
-    |--------------------------------------------------------------------------
-    |
-    | Here you may configure your settings for cross-origin resource sharing
-    | or "CORS". This determines what cross-origin operations may execute
-    | in web browsers. You are free to adjust these settings as needed.
-    |
-    | To learn more: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
-    |
-    */
+     |--------------------------------------------------------------------------
+     | Cross-Origin Resource Sharing (CORS) Configuration
+     |--------------------------------------------------------------------------
+     |
+     | Here you may configure your settings for cross-origin resource sharing
+     | or "CORS". This determines what cross-origin operations may execute
+     | in web browsers. You are free to adjust these settings as needed.
+     |
+     | To learn more: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
+     |
+     */
 
     'paths' => ['api/*', 'sanctum/csrf-cookie', 'uploads/*', 'storage/*'],
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://localhost:3000', 'http://localhost:3001', 'https://app.thezillur.com', 'https://thezillur.com', 'https://www.thezillur.com', 'https://selluadmin.vercel.app'],
+    'allowed_origins' => ['http://localhost:3000', 'http://localhost:3001', 'https://app.thezillur.com', 'https://thezillur.com', 'https://www.thezillur.com', 'https://selluadmin.vercel.app', 'https://strideelectronics.com', 'https://www.strideelectronics.com'],
 
     'allowed_origins_patterns' => [],
 

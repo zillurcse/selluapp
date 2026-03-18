@@ -105,7 +105,7 @@ if (!function_exists('getShippingCost')) {
         $vendorId = $product->vendor_id;
         $shipping_type = get_vendor_business_setting($vendorId, 'shipping_method');
         
-        \Log::info("getShippingCost debug: Product ID {$product->id}, Vendor ID: " . ($vendorId ?? 'NULL') . ", Type: " . ($shipping_type ?? 'NONE'));
+        \Illuminate\Support\Facades\Log::info("getShippingCost debug: Product ID {$product->id}, Vendor ID: " . ($vendorId ?? 'NULL') . ", Type: " . ($shipping_type ?? 'NONE'));
 
         if (!$shipping_type) {
             return (float)($product->shipping_cost ?? 0);
@@ -120,6 +120,11 @@ if (!function_exists('getShippingCost')) {
                 $vId = $item_p->vendor_id;
                 $vendor_products_count[$vId] = ($vendor_products_count[$vId] ?? 0) + 1;
             }
+        }
+
+        if (!empty($shipping_info['is_manual_location'])) {
+            $baseCost = !empty($shipping_info['is_inside_dhaka']) ? 60 : 120;
+            return (float)$baseCost / ($vendor_products_count[$vendorId] ?: 1);
         }
 
         if ($shipping_type == 'flat_rate') {
@@ -179,11 +184,40 @@ if (!function_exists('getShippingCost')) {
                         ]);
                         return (float)($cost ?: (float)($product->shipping_cost ?? 0)) / ($vendor_products_count[$vendorId] ?: 1);
                     } catch (\Exception $e) {
-                        \Log::error("Pathao calculation failed: " . $e->getMessage());
+                        \Illuminate\Support\Facades\Log::error("Pathao calculation failed: " . $e->getMessage());
                     }
                 }
             } elseif ($selected_courier == 'steadfast') {
-                return (float)($product->shipping_cost ?? 60) / ($vendor_products_count[$vendorId] ?: 1);
+                $city = \App\Models\City::find($shipping_info['city_id'] ?? null);
+                $steadfast = new \App\Services\Courier\SteadfastService($vendorId);
+                
+                $weight = 0;
+                foreach ($carts as $item) {
+                   $p_id = $item['product_id'] ?? $item['id'] ?? null;
+                   $item_p = \App\Models\Product::find($p_id);
+                   if ($item_p && $item_p->vendor_id == $vendorId) {
+                       $weight += (($item_p->weight ?? 0) * $item['quantity']);
+                   }
+                }
+                $weight = $weight > 0 ? $weight : 0.5;
+
+                $is_inside_dhaka = false;
+                if ($city) {
+                    $cityName = strtolower($city->name);
+                    if (str_contains($cityName, 'dhaka')) {
+                        $is_inside_dhaka = true;
+                    }
+                }
+
+                try {
+                    $cost = $steadfast->checkDeliveryCharge([
+                        'weight' => $weight,
+                        'address' => $is_inside_dhaka ? 'inside_dhaka' : 'outside_dhaka'
+                    ]);
+                    return (float)($cost ?: (float)($product->shipping_cost ?? 60)) / ($vendor_products_count[$vendorId] ?: 1);
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error("Steadfast calculation failed: " . $e->getMessage());
+                }
             }
             return (float)($product->shipping_cost ?? 0);
         } else {

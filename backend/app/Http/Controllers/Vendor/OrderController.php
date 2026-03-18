@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
+use App\Services\Courier\PathaoService;
+use App\Services\Courier\SteadfastService;
 
 class OrderController extends Controller implements HasMiddleware
 {
@@ -349,6 +351,7 @@ class OrderController extends Controller implements HasMiddleware
             ->where('group', 'delivery')
             ->where('key', $request->courier)
             ->first();
+            
 
         if (!$deliverySetting) {
             return response()->json(['message' => ucfirst($request->courier) . ' settings not found', 'type' => 'error'], 400);
@@ -361,30 +364,40 @@ class OrderController extends Controller implements HasMiddleware
         }
         
         $customerName = optional($order->customer)->first_name ? trim($order->customer->first_name . ' ' . $order->customer->last_name) : (optional($order->customer)->name ?? 'Customer');
+        $shippingAddress = is_string($order->shipping_address) ? json_decode($order->shipping_address, true) : $order->shipping_address;
+        
+        if (!is_array($shippingAddress)) {
+            $shippingAddress = [];
+        }
+
+        $recipientPhone = $shippingAddress['phone'] ?? (optional($order->customer)->phone ?? '');
+        
+        // Clean phone number (Steadfast/Pathao expect 11 digits)
+        $recipientPhone = preg_replace('/[^0-9]/', '', $recipientPhone);
+        if (strlen($recipientPhone) > 11 && str_starts_with($recipientPhone, '88')) {
+            $recipientPhone = substr($recipientPhone, 2);
+        }
+        if (strlen($recipientPhone) == 10 && !str_starts_with($recipientPhone, '0')) {
+            $recipientPhone = '0' . $recipientPhone;
+        }
 
         if ($request->courier === 'steadfast') {
-            $apiKey = $credentials['apiKey'] ?? '';
-            $secretKey = $credentials['secretKey'] ?? '';
-
-            if (!$apiKey || !$secretKey) {
-                return response()->json(['message' => 'Steadfast credentials missing', 'type' => 'error'], 400);
-            }
-
-            $response = \Illuminate\Support\Facades\Http::withHeaders([
-                'Api-Key' => $apiKey,
-                'Secret-Key' => $secretKey,
-                'Content-Type' => 'application/json'
-            ])->post('https://portal.packzy.com/api/v1/create_order', [
+            $steadfast = new SteadfastService($order->user_id);
+            
+            $data = [
                 'invoice' => $order->invoice_number,
                 'recipient_name' => $customerName,
-                'recipient_phone' => optional($order->customer)->phone ?? '01XXXXXXXXX',
-                'recipient_address' => $order->shipping_address ?? 'N/A',
+                'recipient_phone' => $recipientPhone ?: '01XXXXXXXXX',
+                'recipient_address' => $shippingAddress['address'] ?? 'N/A',
                 'cod_amount' => $order->payment_status === 'paid' ? 0 : floatval($order->total_amount),
                 'note' => $order->notes ?? '',
-            ]);
+                'item_description' => $order->items->first()->product->name ?? 'Product',
+            ];
 
-            if ($response->successful() && isset($response['consignment']['tracking_code'])) {
-                $order->tracking_number = 'Steadfast:' . $response['consignment']['tracking_code'];
+            $result = $steadfast->createOrder($data);
+
+            if (isset($result['status']) && $result['status'] == 200 && isset($result['consignment']['tracking_code'])) {
+                $order->tracking_number = 'Steadfast:' . $result['consignment']['tracking_code'];
                 $order->status = 'courier';
                 $order->save();
 
@@ -393,8 +406,13 @@ class OrderController extends Controller implements HasMiddleware
 
             return response()->json([
                 'message' => 'Failed to sync with Steadfast',
-                'error' => $response->json()
+                'error' => $result
             ], 400);
+        } elseif ($request->courier === 'pathao') {
+            $pathao = new PathaoService($order->user_id);
+            // Pathao requires city/zone/area IDs which might not be in standard order.
+            // For now, return not supported if they are missing.
+            return response()->json(['message' => 'Pathao sync requires more location details', 'type' => 'error'], 400);
         }
 
         return response()->json(['message' => 'Courier integration not supported yet', 'type' => 'error'], 400);

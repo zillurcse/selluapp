@@ -33,13 +33,15 @@
                 Contact Information
               </h2>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                    Email Address <span class="text-red-500">*</span>
-                  </label>
-                  <input v-model="form.email" type="email" placeholder="you@example.com" :class="['w-full px-4 py-2.5 bg-white border rounded-xl outline-none focus:ring-2 focus:ring-black focus:border-transparent text-sm transition-shadow', validationErrors.email ? 'border-red-500' : 'border-gray-300']" />
-                  <p v-if="validationErrors.email" class="mt-1 text-xs text-red-500">{{ validationErrors.email }}</p>
-                </div>
+                <AppInput 
+                  v-model="form.email" 
+                  type="email" 
+                  label="Email Address"
+                  placeholder="you@example.com" 
+                  required
+                  :error="validationErrors.email"
+                  @input="validationErrors.email = ''"
+                />
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1.5">
                     Phone Number <span class="text-red-500">*</span>
@@ -69,10 +71,19 @@
             </section>
 
             <section class="p-6 sm:p-8 border-b border-gray-100">
-              <h2 class="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-3">
-                <span class="flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-gray-900 text-xs font-bold">2</span>
-                Shipping Address
-              </h2>
+              <div class="flex items-center justify-between mb-6">
+                <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-3">
+                  <span class="flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-gray-900 text-xs font-bold">2</span>
+                  Shipping Address
+                </h2>
+                <button 
+                  type="button" 
+                  @click="toggleManualLocation" 
+                  class="text-xs font-semibold text-black hover:text-gray-700 underline underline-offset-4 transition-colors tracking-wide"
+                >
+                  {{ isManualLocation ? 'Select from list' : 'Location not found? Enter manually' }}
+                </button>
+              </div>
               
               <!-- Saved Addresses -->
               <div v-if="authStore.token && savedAddresses.length > 0" class="mb-8">
@@ -103,47 +114,129 @@
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                    First Name <span class="text-red-500">*</span>
-                  </label>
-                  <input v-model="form.first_name" type="text" :class="['w-full px-4 py-2.5 bg-white border rounded-xl outline-none focus:ring-2 focus:ring-black focus:border-transparent text-sm transition-shadow', validationErrors.first_name ? 'border-red-500' : 'border-gray-300']" />
-                  <p v-if="validationErrors.first_name" class="mt-1 text-xs text-red-500">{{ validationErrors.first_name }}</p>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                    Last Name <span class="text-red-500">*</span>
-                  </label>
-                  <input v-model="form.last_name" type="text" :class="['w-full px-4 py-2.5 bg-white border rounded-xl outline-none focus:ring-2 focus:ring-black focus:border-transparent text-sm transition-shadow', validationErrors.last_name ? 'border-red-500' : 'border-gray-300']" />
-                  <p v-if="validationErrors.last_name" class="mt-1 text-xs text-red-500">{{ validationErrors.last_name }}</p>
-                </div>
-                <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
-                  <div class="relative z-[60]">
-                    <AppSearchSelect 
-                      v-model="form.state_id" 
-                      :items="states"
-                      label="State / Division"
-                      placeholder="Select State"
-                      required
-                      :error="!!validationErrors.state_id"
-                      @update:modelValue="handleStateChange"
-                      class="!border-gray-300"
-                    />
-                    <p v-if="validationErrors.state_id" class="mt-1 text-xs text-red-500">{{ validationErrors.state_id }}</p>
+                <AppInput 
+                  v-model="form.first_name" 
+                  label="First Name"
+                  placeholder="Enter your first name" 
+                  required
+                  :error="validationErrors.first_name"
+                  @input="validationErrors.first_name = ''"
+                />
+                <AppInput 
+                  v-model="form.last_name" 
+                  label="Last Name"
+                  placeholder="Enter your last name" 
+                  required
+                  :error="validationErrors.last_name"
+                  @input="validationErrors.last_name = ''"
+                />
+                <div class="sm:col-span-2">
+                  <!-- Standard Selection Mode -->
+                  <div v-if="!isManualLocation" class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+                    <div class="relative z-[60]">
+                      <AppSearchSelect 
+                        v-model="form.state_id" 
+                        :items="states"
+                        label="State / Division"
+                        placeholder="Select State"
+                        required
+                        :error="!!validationErrors.state_id"
+                        @update:modelValue="handleStateChange"
+                        class="!border-gray-300"
+                      />
+                      <p v-if="validationErrors.state_id" class="mt-1 text-xs text-red-500">{{ validationErrors.state_id }}</p>
+                    </div>
+                    
+                    <div class="relative z-[50]">
+                      <AppSearchSelect 
+                        v-model="form.city_id" 
+                        :items="cities"
+                        label="City / Area"
+                        :placeholder="loadingCities ? 'Loading...' : 'Select City'"
+                        :disabled="!form.state_id || loadingCities"
+                        required
+                        :error="!!validationErrors.city_id"
+                        @update:modelValue="handleCityChange"
+                        class="!border-gray-300"
+                      />
+                      <p v-if="validationErrors.city_id" class="mt-1 text-xs text-red-500">{{ validationErrors.city_id }}</p>
+                    </div>
                   </div>
-                  <div class="relative z-[50]">
-                    <AppSearchSelect 
-                      v-model="form.city_id" 
-                      :items="cities"
-                      label="City / Area"
-                      :placeholder="loadingCities ? 'Loading...' : 'Select City'"
-                      :disabled="!form.state_id || loadingCities"
-                      required
-                      :error="!!validationErrors.city_id"
-                      @update:modelValue="handleCityChange"
-                      class="!border-gray-300"
-                    />
-                    <p v-if="validationErrors.city_id" class="mt-1 text-xs text-red-500">{{ validationErrors.city_id }}</p>
+
+                  <!-- Manual Entry Mode -->
+                  <div v-else class="bg-gray-50/50 p-6 rounded-2xl border border-gray-200 shadow-sm space-y-5 animate-fade-in relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-4 opacity-5 pointer-events-none text-6xl">📍</div>
+                    
+                    <div class="flex items-center gap-2 mb-2 pb-3 border-b border-gray-200/60">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-black"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+                      <h3 class="text-sm font-extrabold text-gray-900 uppercase tracking-wider">Custom Shipping Location</h3>
+                    </div>
+
+                    <!-- Regional Selection -->
+                    <div>
+                      <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Select Shipping Zone <span class="text-red-500">*</span></label>
+                      <div class="grid grid-cols-2 gap-3">
+                        <button 
+                          type="button"
+                          @click="form.is_inside_dhaka = true; handleRegionalShipping()"
+                          :class="[
+                            'relative px-4 py-3 rounded-xl border-2 text-xs font-bold transition-all flex flex-col items-center gap-1.5 overflow-hidden',
+                            form.is_inside_dhaka === true
+                              ? 'border-black bg-black text-white shadow-[0_4px_20px_rgba(0,0,0,0.15)]' 
+                              : 'border-white bg-white text-gray-600 hover:border-gray-200 shadow-sm'
+                          ]"
+                        >
+                          <span class="text-lg">📍</span>
+                          Inside Dhaka
+                          <div v-if="form.is_inside_dhaka === true" class="absolute top-1.5 right-1.5">
+                              <svg class="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="4"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                          </div>
+                        </button>
+                        <button 
+                          type="button"
+                          @click="form.is_inside_dhaka = false; handleRegionalShipping()"
+                          :class="[
+                            'relative px-4 py-3 rounded-xl border-2 text-xs font-bold transition-all flex flex-col items-center gap-1.5 overflow-hidden',
+                            form.is_inside_dhaka === false
+                              ? 'border-black bg-black text-white shadow-[0_4px_20px_rgba(0,0,0,0.15)]' 
+                              : 'border-white bg-white text-gray-600 hover:border-gray-200 shadow-sm'
+                          ]"
+                        >
+                          <span class="text-lg">🚚</span>
+                          Outside Dhaka
+                          <div v-if="form.is_inside_dhaka === false" class="absolute top-1.5 right-1.5">
+                              <svg class="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="4"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                          </div>
+                        </button>
+                      </div>
+                      <p v-if="validationErrors.is_inside_dhaka" class="mt-1.5 text-[10px] text-red-500 font-bold italic animate-shake">{{ validationErrors.is_inside_dhaka }}</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <AppInput 
+                          v-model="form.state_name" 
+                          label="State / Division Name"
+                          placeholder="e.g. Dhaka, Sylhet"
+                          required
+                          class="[&>label]:text-[10px] [&>label]:uppercase [&>label]:tracking-widest [&>label]:text-gray-500 [&>label]:font-bold [&>label]:pl-1"
+                          :error="validationErrors.state_name"
+                          @input="validationErrors.state_name = ''"
+                        />
+                      </div>
+
+                      <div>
+                        <AppInput 
+                          v-model="form.city_name" 
+                          label="City / Area Name"
+                          placeholder="e.g. Uttara, Gulshan"
+                          required
+                          class="[&>label]:text-[10px] [&>label]:uppercase [&>label]:tracking-widest [&>label]:text-gray-500 [&>label]:font-bold [&>label]:pl-1"
+                          :error="validationErrors.city_name"
+                          @input="validationErrors.city_name = ''"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -169,15 +262,23 @@
                 </div>
 
                 <div class="sm:col-span-2">
-                  <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                    Full Address <span class="text-red-500">*</span>
-                  </label>
-                  <textarea v-model="form.full_address" rows="2" placeholder="House #, Road #, Area details..." :class="['w-full px-4 py-2.5 bg-white border rounded-xl outline-none focus:ring-2 focus:ring-black focus:border-transparent text-sm transition-shadow resize-none', validationErrors.full_address ? 'border-red-500' : 'border-gray-300']"></textarea>
-                  <p v-if="validationErrors.full_address" class="mt-1 text-xs text-red-500">{{ validationErrors.full_address }}</p>
+                  <AppTextarea 
+                    v-model="form.full_address" 
+                    label="Full Address"
+                    rows="2"
+                    placeholder="House #, Road #, Area details..."
+                    required
+                    :error="validationErrors.full_address"
+                    @input="validationErrors.full_address = ''"
+                  />
                 </div>
                 <div class="sm:col-span-2">
-                  <label class="block text-sm font-medium text-gray-700 mb-1.5">Order Note (Optional)</label>
-                  <textarea v-model="form.note" rows="3" placeholder="Notes about your order, e.g. special notes for delivery." class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black focus:border-transparent text-sm transition-shadow resize-none"></textarea>
+                  <AppTextarea 
+                    v-model="form.note" 
+                    label="Order Note (Optional)"
+                    rows="3"
+                    placeholder="Notes about your order, e.g. special notes for delivery."
+                  />
                 </div>
               </div>
             </section>
@@ -232,18 +333,25 @@
                 <!-- Custom Card Form Mockup (Optional logic based on Gateway type) -->
                 <div v-if="isValidCreditCardSelected" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
                   <div class="sm:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Card Number</label>
-                    <div class="relative">
-                      <input v-model="form.card_number" type="text" placeholder="0000 0000 0000 0000" class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black focus:border-transparent text-sm transition-shadow" />
-                    </div>
+                    <AppInput 
+                      v-model="form.card_number" 
+                      label="Card Number"
+                      placeholder="0000 0000 0000 0000"
+                    />
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Expiry Date</label>
-                    <input v-model="form.expiry_date" type="text" placeholder="MM/YY" class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black focus:border-transparent text-sm transition-shadow" />
+                    <AppInput 
+                      v-model="form.expiry_date" 
+                      label="Expiry Date"
+                      placeholder="MM/YY"
+                    />
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">CVC / CVV</label>
-                    <input v-model="form.cvc" type="text" placeholder="123" class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black focus:border-transparent text-sm transition-shadow" />
+                    <AppInput 
+                      v-model="form.cvc" 
+                      label="CVC / CVV"
+                      placeholder="123"
+                    />
                   </div>
                 </div>
               </div>
@@ -567,7 +675,32 @@ const loyaltyMessage = ref('')
    }
  }
  
- const form = ref({
+ const isManualLocation = ref(false)
+
+const toggleManualLocation = () => {
+    isManualLocation.value = !isManualLocation.value
+    if (isManualLocation.value) {
+        form.value.state_id = 'others'
+        form.value.city_id = 'others'
+        form.value.state_name = ''
+        form.value.city_name = ''
+        form.value.is_inside_dhaka = null
+        shippingCost.value = 0
+        cities.value = []
+        selectedCity.value = null
+    } else {
+        form.value.state_id = ''
+        form.value.city_id = ''
+        form.value.state_name = ''
+        form.value.city_name = ''
+        form.value.is_inside_dhaka = null
+        shippingCost.value = 0
+        selectedCity.value = null
+    }
+    validationErrors.value = {}
+}
+
+const form = ref({
   email: '',
   phone: '',
   first_name: '',
@@ -576,6 +709,8 @@ const loyaltyMessage = ref('')
   state_id: '',
   city_id: '',
   city_name: '',
+  state_name: '',
+  is_inside_dhaka: null, // No default, must be selected
   note: '',
   card_number: '',
   expiry_date: '',
@@ -588,9 +723,12 @@ const fetchStates = async () => {
     const response = await $fetch(`${config.public.apiBase}/storefront/states`)
     if (response.success) {
       states.value = response.data
+    } else {
+      states.value = []
     }
   } catch (error) {
     console.error('Failed to fetch states:', error)
+    states.value = []
   }
 }
 
@@ -603,9 +741,12 @@ const fetchCities = async (stateId) => {
     })
     if (response.success) {
       cities.value = response.data
+    } else {
+      cities.value = []
     }
   } catch (error) {
     console.error('Failed to fetch cities:', error)
+    cities.value = []
   } finally {
     loadingCities.value = false
   }
@@ -657,12 +798,40 @@ const selectSavedAddress = async (address) => {
 
 const handleStateChange = () => {
   form.value.city_id = ''
+  form.value.state_name = ''
+  form.value.city_name = ''
+  form.value.is_inside_dhaka = null
   selectedCity.value = null
   shippingCost.value = 0
-  fetchCities(form.value.state_id)
+  
+  if (!isManualLocation.value) {
+      fetchCities(form.value.state_id)
+  }
+}
+
+const handleRegionalShipping = () => {
+    if (form.value.is_inside_dhaka === null) {
+        shippingCost.value = 0
+        return
+    }
+    const cost = form.value.is_inside_dhaka ? 60 : 120
+    shippingCost.value = cost
+    
+    // Set a dummy selectedCity so placing order logic knows we have a cost
+    selectedCity.value = { name: form.value.city_name || 'Custom Area', cost: cost }
+    
+    // Fire AddShippingInfo event
+    trackAddShippingInfo({
+      total: cartTotal.value + shippingCost.value - discountTotal.value,
+      itemCount: cart.value.reduce((sum, item) => sum + item.quantity, 0),
+      items: cart.value
+    })
 }
 
 const handleCityChange = async () => {
+  if (isManualLocation.value) {
+    return
+  }
   const city = cities.value.find(c => c.id === form.value.city_id)
   if (city) {
     selectedCity.value = city
@@ -899,13 +1068,28 @@ const validateForm = () => {
     validationErrors.value.last_name = 'Last name is required'
     isValid = false
   }
-  if (!form.value.state_id) {
-    validationErrors.value.state_id = 'State is required'
-    isValid = false
-  }
-  if (!form.value.city_id) {
-    validationErrors.value.city_id = 'City is required'
-    isValid = false
+  if (isManualLocation.value) {
+    if (!form.value.state_name?.trim()) {
+      validationErrors.value.state_name = 'Please enter your state/division'
+      isValid = false
+    }
+    if (!form.value.city_name?.trim()) {
+      validationErrors.value.city_name = 'Please enter your city/area'
+      isValid = false
+    }
+    if (form.value.is_inside_dhaka === null) {
+      validationErrors.value.is_inside_dhaka = 'Please select a shipping zone'
+      isValid = false
+    }
+  } else {
+    if (!form.value.state_id) {
+      validationErrors.value.state_id = 'State is required'
+      isValid = false
+    }
+    if (!form.value.city_id) {
+      validationErrors.value.city_id = 'City is required'
+      isValid = false
+    }
   }
   if (!form.value.full_address?.trim()) {
     validationErrors.value.full_address = 'Full address is required'
@@ -942,6 +1126,12 @@ const placeOrder = async () => {
   try {
     const orderData = {
       ...form.value,
+      city_id: isManualLocation.value ? null : form.value.city_id,
+      state_id: isManualLocation.value ? null : form.value.state_id,
+      is_manual_location: isManualLocation.value,
+      is_inside_dhaka: form.value.is_inside_dhaka,
+      state_name: form.value.state_name,
+      city_name: form.value.city_name,
       payment_method: paymentMethod.value,
       items: cart.value.map(item => ({
         id: item.id,

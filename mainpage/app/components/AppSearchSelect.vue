@@ -107,7 +107,7 @@ const dropdownRef = ref(null)
 const filteredItems = computed(() => {
   if (!searchQuery.value) return props.items
   return props.items.filter(item => 
-    item.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+    item.name.toLowerCase().includes(searchQuery.value.toLowerCase()) || String(item.id).toLowerCase() === 'others'
   )
 })
 

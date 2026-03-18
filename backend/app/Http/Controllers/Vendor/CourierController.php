@@ -125,7 +125,7 @@ class CourierController extends Controller
     public function sendToSteadfast(Request $request)
     {
         $order = Order::findOrFail($request->order_id);
-        $steadfast = new SteadfastService();
+        $steadfast = new SteadfastService($order->user_id); // Assuming user_id is the vendor/shop owner
         
         $shipping_address = is_string($order->shipping_address) ? json_decode($order->shipping_address) : (object)$order->shipping_address;
 
@@ -197,7 +197,7 @@ class CourierController extends Controller
                 ]);
             }
         } elseif ($order->courier_name == 'Steadfast') {
-            $steadfast = new SteadfastService();
+            $steadfast = new SteadfastService($order->user_id);
             $result = $steadfast->getOrderStatus($order->courier_order_id);
             if ($result && isset($result['delivery_status'])) {
                 $order->courier_status = $result['delivery_status'];
