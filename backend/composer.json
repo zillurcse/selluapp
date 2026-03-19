@@ -16,7 +16,8 @@
         "laravel/tinker": "^2.10.1",
         "league/flysystem-aws-s3-v3": "^3.0",
         "picqer/php-barcode-generator": "*",
-        "spatie/laravel-permission": "^6.24"
+        "spatie/laravel-permission": "^6.24",
+        "steadfast-courier/steadfast-courier-laravel-package": "^1.1"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

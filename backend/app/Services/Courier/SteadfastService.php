@@ -4,10 +4,11 @@ namespace App\Services\Courier;
 
 use Illuminate\Support\Facades\Http;
 use App\Models\BusinessSetting;
+use SteadFast\SteadFastCourierLaravelPackage\Facades\SteadfastCourier;
 
 class SteadfastService
 {
-    protected $baseUrl = 'https://portal.packzy.com/api/v1';
+    protected $baseUrl;
     protected $config;
     protected $vendorId;
 
@@ -36,6 +37,22 @@ class SteadfastService
         if (empty($this->config['secret_key'])) {
             $this->config['secret_key'] = get_setting('steadfast_secret_key');
         }
+
+        // Keep local base URL for manual calls if needed
+        $this->baseUrl = config('steadfast-courier.base_url', 'https://portal.packzy.com/api/v1');
+    }
+
+    /**
+     * Dynamically set credentials for the package facade.
+     */
+    protected function setPackageConfig()
+    {
+        if (!empty($this->config['api_key']) && !empty($this->config['secret_key'])) {
+            config([
+                'steadfast-courier.api_key' => $this->config['api_key'],
+                'steadfast-courier.secret_key' => $this->config['secret_key'],
+            ]);
+        }
     }
 
     protected function getHeaders()
@@ -49,7 +66,7 @@ class SteadfastService
 
     public function checkDeliveryCharge($data)
     {
-        // Steadfast expects 'weight', 'address' (inside_dhaka, etc)
+        // Package does not have this method, keeping manual implementation
         $response = Http::withHeaders($this->getHeaders())->post($this->baseUrl . '/check_delivery_charge', [
             'weight' => $data['weight'] ?? 1,
             'address' => $data['address'] ?? 'outside_dhaka',
@@ -66,35 +83,52 @@ class SteadfastService
         if (empty($this->config['api_key']) || empty($this->config['secret_key'])) {
             return ['error' => true, 'message' => 'Steadfast credentials missing.'];
         }
-        $response = Http::withHeaders($this->getHeaders())->post($this->baseUrl . '/create_order', $data);
-        if ($response->successful()) {
-            return $response->json();
+
+        $this->setPackageConfig();
+        
+        try {
+            $result = SteadfastCourier::placeOrder($data);
+            
+            if ($result && isset($result['status']) && $result['status'] == 200) {
+                return $result;
+            }
+
+            \Illuminate\Support\Facades\Log::error("Steadfast API Failed via Package. Response: " . json_encode($result));
+            
+            return array_merge(['error' => true], (array)$result);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Steadfast Package Error: " . $e->getMessage());
+            return ['error' => true, 'message' => $e->getMessage()];
         }
-
-        \Illuminate\Support\Facades\Log::error("Steadfast API Failed. Status: " . $response->status() . " Body: " . $response->body());
-
-        return [
-            'error' => true,
-            'status' => $response->status(),
-            'message' => $response->json()['message'] ?? 'Steadfast API Error',
-            'errors' => $response->json()['errors'] ?? null
-        ];
     }
 
     public function getOrderStatus($consignmentId)
     {
-        $response = Http::withHeaders($this->getHeaders())->get($this->baseUrl . "/status_by_cid/{$consignmentId}");
-        return $response->successful() ? $response->json() : null;
+        $this->setPackageConfig();
+        try {
+            $result = SteadfastCourier::checkDeliveryStatusByConsignmentId($consignmentId);
+            return $result ?? ['error' => true, 'message' => 'Empty response from Steadfast'];
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Steadfast Package Status Error: " . $e->getMessage());
+            return null;
+        }
     }
 
     public function getBalance()
     {
-        $response = Http::withHeaders($this->getHeaders())->get($this->baseUrl . "/get_balance");
-        return $response->successful() ? $response->json() : null;
+        $this->setPackageConfig();
+        try {
+            $result = SteadfastCourier::getCurrentBalance();
+            return $result ?? ['error' => true, 'message' => 'Empty response from Steadfast'];
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Steadfast Package Balance Error: " . $e->getMessage());
+            return null;
+        }
     }
 
     public function getPoliceStations()
     {
+        // Package does not have this method, keeping manual implementation
         $response = Http::withHeaders($this->getHeaders())->get($this->baseUrl . "/police_stations");
         return $response->successful() ? $response->json() : null;
     }

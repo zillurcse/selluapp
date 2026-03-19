@@ -158,7 +158,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('vendor')->group(function () {
         Route::get('payment-methods', [App\Http\Controllers\API\PaymentMethodController::class, 'index']);
         Route::apiResource('attributes/categories', App\Http\Controllers\Vendor\CategoryController::class);
-        Route::apiResource('attributes/products', App\Http\Controllers\Vendor\CategoryController::class); 
         Route::apiResource('attributes/brands', App\Http\Controllers\Vendor\BrandController::class);
         Route::apiResource('attributes/units', App\Http\Controllers\Vendor\UnitController::class);
         Route::post('attributes/categories/sort', [App\Http\Controllers\Vendor\CategoryController::class, 'updateOrder']);
@@ -198,11 +197,15 @@ Route::middleware('auth:sanctum')->group(function () {
         // Shop Delivery
         Route::get('delivery', [App\Http\Controllers\Vendor\DeliveryController::class, 'index']);
         Route::post('delivery', [App\Http\Controllers\Vendor\DeliveryController::class, 'store']);
+        Route::get('delivery/steadfast/balance', [App\Http\Controllers\Vendor\DeliveryController::class, 'getSteadfastBalance']);
+        Route::get('delivery/steadfast/status/{consignment_id}', [App\Http\Controllers\Vendor\DeliveryController::class, 'checkSteadfastStatus']);
 
         // Courier Routes
         Route::controller(App\Http\Controllers\Vendor\CourierController::class)->prefix('couriers')->group(function () {
             Route::get('/', 'index');
             Route::post('/update', 'update');
+            Route::get('/orders', 'getCourierOrders');
+            Route::get('/sync-all', 'syncAllStatuses');
             Route::post('/send-to-pathao', 'sendToPathao');
             Route::post('/send-to-steadfast', 'sendToSteadfast');
             Route::get('/update-status/{id}', 'updateStatus');

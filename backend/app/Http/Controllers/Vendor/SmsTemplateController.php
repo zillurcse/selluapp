@@ -82,7 +82,9 @@ class SmsTemplateController extends Controller
             'shop_name' => 'Demo Shop',
             'courier' => 'TestCourier',
             'tracking_id' => 'TRK000000',
-            'status' => 'Testing'
+            'status' => 'Testing',
+            'email' => 'staff@example.com',
+            'password' => 'secret123'
         ];
 
         $directMessage = null;

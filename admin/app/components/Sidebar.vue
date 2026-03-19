@@ -38,11 +38,12 @@
       <div class="search-wrap">
         <Search :size="13" class="search-icon" />
         <input
+          id="sidebar-menu-search"
           ref="searchInputRef"
           v-model="searchQuery"
-          type="text"
-          name="sidebar-search"
-          autocomplete="off"
+          type="search"
+          name="sidebar_menu_search"
+          autocomplete="off-search"
           placeholder="Search menu..."
           class="search-input"
           @keydown.escape="clearSearch"
@@ -489,6 +490,7 @@ const productLinks = computed(() => filterItems(rawProductLinks))
 
 const rawOperationsItems = [
   { to: '/vendor/orders',       label: 'Orders',         icon: ClipboardList,  permission: 'orders.view',        feature: 'Orders' },
+  { to: '/vendor/courier/orders', label: 'Courier Orders',  icon: Truck,          permission: 'orders.view',        feature: 'Orders' },
   { to: '/vendor/customers',    label: 'Customers',      icon: Users,          permission: 'customers.view',     feature: 'Customers' },
   { to: '/vendor/pos',          label: 'Point of Sale',  icon: Monitor,        permission: 'pos.view',           feature: 'pos',          isPro: true },
   { to: '/vendor/coupon-code',  label: 'Coupon Code',    icon: Tag,            permission: 'coupons.view',       feature: 'Products' },
@@ -503,7 +505,7 @@ const rawToolItems = [
   { to: '/vendor/hrm',             label: 'HRM Suite',        icon: Briefcase, permission: 'hrm.dashboard.view', feature: 'hrm', isPro: true },
   { to: '/vendor/reports',         label: 'Analytics',        icon: BarChart3, permission: 'reports.view',       feature: 'Reports' },
   { to: '/vendor/managed-shop',    label: 'Manage Shop',      icon: Store,     permission: 'settings.view' },
-  { to: '/vendor/managed-website', label: 'Website Settings', icon: Globe,     permission: 'settings.view' },
+  { to: '/vendor/managed-website', label: 'Website Settings', icon: Globe, permission: 'website.view', isPro: true, feature: 'Landing Pages' },
 ]
 const toolItems = computed(() => filterItems(rawToolItems))
 

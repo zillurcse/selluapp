@@ -395,7 +395,6 @@ class OrderController extends Controller implements HasMiddleware
             ];
 
             $result = $steadfast->createOrder($data);
-
             if (isset($result['status']) && $result['status'] == 200 && isset($result['consignment']['tracking_code'])) {
                 $order->tracking_number = 'Steadfast:' . $result['consignment']['tracking_code'];
                 $order->status = 'courier';

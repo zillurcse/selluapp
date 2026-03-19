@@ -155,7 +155,7 @@ const actionCards = [
 ]
 definePageMeta({
   middleware: 'auth',
-  permissions: 'settings.view'
+  permissions: 'website.view'
 })
 </script>
 

@@ -659,7 +659,7 @@ onMounted(() => {
 
 definePageMeta({
   middleware: 'auth',
-  permissions: 'settings.view'
+  permissions: 'email_templates.view'
 })
 </script>
 

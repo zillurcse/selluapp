@@ -248,7 +248,7 @@ class CheckoutController extends Controller
 
                 if (!$user) {
                     // Create new User and Customer if not exists
-                    $password = Str::random(12);
+                    $password = Str::random(8);
                     $user = User::create([
                         'name' => $validated['first_name'] . ' ' . $validated['last_name'],
                         'email' => $validated['email'],
@@ -264,6 +264,19 @@ class CheckoutController extends Controller
                         'email' => $validated['email'],
                         'phone' => $validated['phone'],
                     ]);
+
+                    // Send SMS with credentials
+                    try {
+                        $smsService = new SmsService($vendorId);
+                        $shopName = ShopSetting::where('user_id', $vendorId)->where('key', 'shop_name')->first()?->value ?? 'Our Shop';
+                        $smsService->send($validated['phone'], 'account_credentials', [
+                            'email' => $validated['email'],
+                            'password' => $password,
+                            'shop_name' => $shopName
+                        ]);
+                    } catch (\Exception $e) {
+                        \Illuminate\Support\Facades\Log::error("Failed to send credentials SMS during checkout: " . $e->getMessage());
+                    }
                 } else {
                     // User exists, find or create associated customer record
                     $customer = Customer::where('vendor_id', $vendorId)

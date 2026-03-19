@@ -68,6 +68,20 @@ class RoleSeeder extends Seeder
             'suppliers.view', 'suppliers.create', 'suppliers.edit', 'suppliers.delete',
             // Stock Management
             'stock.view', 'stock.manage',
+            // SMS Templates
+            'sms_templates.view', 'sms_templates.manage',
+            // Email Templates
+            'email_templates.view', 'email_templates.manage',
+            // Loyalty Program
+            'loyalty.view', 'loyalty.manage',
+            // Media Library
+            'media.view', 'media.manage',
+            // Notifications
+            'notifications.view',
+            // Packages
+            'packages.view',
+            // Website Management (Sliders, Banners)
+            'website.view', 'website.manage',
             
             // SUPER ADMIN / PLATFORM MANAGEMENT
             'admin.dashboard.view',
@@ -109,12 +123,16 @@ class RoleSeeder extends Seeder
             'reports.view',
             'pos.view', 'pos.manage',
             'delivery.view',
+            'settings.view',
             'hrm.dashboard.view',
             'hrm.employees.view',
             'hrm.attendance.view',
             'hrm.leaves.view',
             'barcodes.view', 'barcodes.generate', 'barcodes.audit',
             'suppliers.view', 'stock.manage',
+            'media.view', 'media.manage',
+            'notifications.view',
+            'website.view',
         ]);
 
         // Admin gets a read-heavy subset

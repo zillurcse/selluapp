@@ -11,6 +11,7 @@ use App\Services\Courier\PathaoService;
 use App\Services\Courier\SteadfastService;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class CourierController extends Controller
 {
@@ -156,6 +157,7 @@ class CourierController extends Controller
         ];
 
         $result = $steadfast->createOrder($data);
+        
         if ($result && isset($result['consignment']['consignment_id'])) {
             $order->courier_name = 'Steadfast';
             $order->courier_order_id = (string)$result['consignment']['consignment_id'];
@@ -363,5 +365,64 @@ class CourierController extends Controller
         $city->pathao_area_id = $pAreaId;
         $city->state_id = $stateId;
         $city->save();
+    }
+
+    public function getCourierOrders(Request $request)
+    {
+        $query = Order::whereNotNull('courier_name')
+            ->where('user_id', Auth::id())
+            ->with(['items.product', 'customer'])
+            ->latest();
+
+        if ($request->has('courier')) {
+            $query->where('courier_name', $request->courier);
+        }
+
+        if ($request->has('search')) {
+            $query->where('invoice_number', 'like', '%' . $request->search . '%');
+        }
+
+        return response()->json($query->paginate($request->per_page ?? 15));
+    }
+
+    public function syncAllStatuses(Request $request)
+    {
+        $orders = Order::whereNotNull('courier_name')
+            ->where('user_id', Auth::id())
+            ->whereNotIn('courier_status', ['Delivered', 'Cancelled']) // Skip final statuses if possible
+            ->get();
+
+        $syncedCount = 0;
+        $errorsCount = 0;
+
+        foreach ($orders as $order) {
+            try {
+                if ($order->courier_name == 'Pathao' && $order->courier_order_id) {
+                    $pathao = new PathaoService();
+                    $result = $pathao->getOrderStatus($order->courier_order_id);
+                    if ($result && isset($result['order_status'])) {
+                        $order->courier_status = $result['order_status'];
+                        $order->save();
+                        $syncedCount++;
+                    }
+                } elseif ($order->courier_name == 'Steadfast' && $order->courier_order_id) {
+                    $steadfast = new SteadfastService($order->user_id);
+                    $result = $steadfast->getOrderStatus($order->courier_order_id);
+                    if ($result && isset($result['delivery_status'])) {
+                        $order->courier_status = $result['delivery_status'];
+                        $order->save();
+                        $syncedCount++;
+                    }
+                }
+            } catch (\Exception $e) {
+                $errorsCount++;
+                \Illuminate\Support\Facades\Log::error("Bulk Sync Error for Order #{$order->invoice_number}: " . $e->getMessage());
+            }
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Successfully synced $syncedCount orders. Errors: $errorsCount."
+        ]);
     }
 }

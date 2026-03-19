@@ -65,6 +65,16 @@ class CustomerController extends Controller implements HasMiddleware
         ]);
         $user->assignRole('customer');
 
+        // Send SMS with credentials
+        if ($customer->phone && !empty($request->password)) {
+            $smsService = new \App\Services\SmsService($customer->vendor_id);
+            $smsService->send($customer->phone, 'account_credentials', [
+                'email' => $customer->email,
+                'password' => $request->password,
+                'shop_name' => $request->user()->vendorProfile->shop_name ?? 'Our Shop'
+            ]);
+        }
+
         // Fire notification for vendor
         Notification::create([
             'user_id' => $request->user()->id,

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Vendor;
 
 use App\Http\Controllers\Controller;
 use App\Models\ShopSetting;
+use App\Services\Courier\SteadfastService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -76,5 +77,47 @@ class DeliveryController extends Controller implements HasMiddleware
             'status' => 'success',
             'message' => 'Delivery settings updated successfully'
         ]);
+    }
+
+    /**
+     * Get Steadfast balance for the vendor.
+     */
+    public function getSteadfastBalance()
+    {
+        $steadfast = new SteadfastService(Auth::id());
+        $result = $steadfast->getBalance();
+
+        if ($result && isset($result['current_balance'])) {
+            return response()->json([
+                'status' => 'success',
+                'balance' => $result['current_balance']
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Failed to fetch Steadfast balance. Please check your credentials.'
+        ], 400);
+    }
+
+    /**
+     * Check Steadfast order status.
+     */
+    public function checkSteadfastStatus($consignment_id)
+    {
+        $steadfast = new SteadfastService(Auth::id());
+        $result = $steadfast->getOrderStatus($consignment_id);
+
+        if ($result && isset($result['delivery_status'])) {
+            return response()->json([
+                'status' => 'success',
+                'delivery_status' => $result['delivery_status']
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Failed to fetch Steadfast status. Please check the Consignment ID.'
+        ], 400);
     }
 }

@@ -179,6 +179,10 @@
 </template>
 
 <script setup>
+definePageMeta({
+  middleware: 'auth',
+  permissions: 'loyalty.view'
+})
 import { 
   ChevronRight, 
   Gift, 

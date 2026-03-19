@@ -118,7 +118,7 @@ import { ref, onMounted } from 'vue'
 
 definePageMeta({
   middleware: 'auth',
-  permissions: 'settings.view'
+  permissions: 'website.view'
 })
 
 const { $toast } = useNuxtApp()

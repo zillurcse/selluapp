@@ -304,6 +304,15 @@ const templateTypes = [
     icon: RefreshCcw,
     tags: ['{{ order_id }}', '{{ status }}', '{{ shop_name }}'],
     default: 'Hi! Just an update: Your order {{ order_id }} is now {{ status }}. Thank you for shopping with {{ shop_name }}!'
+  },
+  { 
+    key: 'account_credentials', 
+    tab: 'auth',
+    label: 'Account Credentials', 
+    description: 'Send login details to new staff or users.',
+    icon: Key,
+    tags: ['{{ email }}', '{{ password }}', '{{ shop_name }}'],
+    default: 'Welcome to {{ shop_name }}! Your account has been created. Email: {{ email }} Password: {{ password }}. Please login and change your password.'
   }
 ]
 
@@ -335,7 +344,9 @@ const renderPreview = (key) => {
     '{{ shop_name }}': 'Elevate Shop',
     '{{ courier }}': 'Pathao',
     '{{ tracking_id }}': 'TH9081273',
-    '{{ status }}': 'Processing'
+    '{{ status }}': 'Processing',
+    '{{ email }}': 'user@example.com',
+    '{{ password }}': '••••••••'
   }
   
   Object.keys(mockData).forEach(tag => {
@@ -444,7 +455,7 @@ onMounted(() => {
 
 definePageMeta({
   middleware: 'auth',
-  permissions: 'settings.view'
+  permissions: 'sms_templates.view'
 })
 </script>
 

@@ -118,7 +118,17 @@
         <!-- Steadfast Courier -->
         <div class="bg-white rounded-[24px] border border-slate-100 shadow-sm p-8 space-y-6 relative overflow-hidden">
           <div class="flex items-center justify-between">
-            <h2 class="text-xl font-black text-[#22C55E]">Steadfast Courier</h2>
+            <div class="flex items-center gap-3">
+              <h2 class="text-xl font-black text-[#22C55E]">Steadfast Courier</h2>
+              <button 
+                v-if="form.steadfast.active"
+                @click="showSteadfastSettings = true"
+                class="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg text-slate-400 hover:text-[#22C55E] transition-all border border-slate-100 dark:border-slate-700"
+                title="Advanced Settings"
+              >
+                <Settings class="w-4 h-4" />
+              </button>
+            </div>
             <div class="flex items-center gap-2">
               <span class="text-[10px] font-black text-slate-300 uppercase tracking-widest">{{ form.steadfast.active ? 'Active' : 'Inactive' }}</span>
               <button 
@@ -188,6 +198,107 @@
         </div>
       </div>
     </div>
+
+    <!-- Steadfast Settings Modal -->
+    <Transition name="modal">
+      <div v-if="showSteadfastSettings" class="fixed inset-0 z-[100] overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex min-h-screen items-center justify-center p-4">
+          <div class="fixed inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm transition-opacity" @click="showSteadfastSettings = false"></div>
+          
+          <div class="relative w-full max-w-lg transform overflow-hidden rounded-[32px] bg-white dark:bg-slate-900 shadow-2xl transition-all border border-slate-100 dark:border-slate-800 p-8">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between mb-8">
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-green-50 dark:bg-green-900/20 rounded-2xl flex items-center justify-center">
+                  <Settings class="w-6 h-6 text-green-500" />
+                </div>
+                <div>
+                  <h3 class="text-xl font-black text-slate-800 dark:text-white">Steadfast Settings</h3>
+                  <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Advanced Configuration</p>
+                </div>
+              </div>
+              <button @click="showSteadfastSettings = false" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                <X class="w-5 h-5 text-slate-400" />
+              </button>
+            </div>
+
+            <div class="space-y-8">
+              <!-- Balance Section -->
+              <div class="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-700/50">
+                <div class="flex items-center justify-between mb-4">
+                  <div class="flex items-center gap-2">
+                    <Wallet class="w-4 h-4 text-slate-400" />
+                    <span class="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Current Balance</span>
+                  </div>
+                  <button @click="fetchBalance" :disabled="isFetchingBalance" class="hover:rotate-180 transition-transform duration-500 disabled:opacity-50">
+                    <RefreshCw :class="['w-4 h-4 text-indigo-500', isFetchingBalance ? 'animate-spin' : '']" />
+                  </button>
+                </div>
+                <div class="flex items-baseline gap-1">
+                  <span class="text-3xl font-black text-slate-900 dark:text-white">৳ {{ steadfastBalance !== null ? steadfastBalance : '---' }}</span>
+                  <span class="text-xs font-bold text-slate-400">BDT</span>
+                </div>
+              </div>
+
+              <!-- Status Lookup Section -->
+              <div class="space-y-4">
+                <div class="flex items-center gap-2 px-1">
+                  <Activity class="w-4 h-4 text-slate-400" />
+                  <span class="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Parcel Status Lookup</span>
+                </div>
+                <div class="flex gap-2">
+                  <input 
+                    v-model="checkStatusId" 
+                    type="text" 
+                    placeholder="Enter Consignment ID" 
+                    class="flex-grow h-12 px-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 font-semibold text-slate-700 dark:text-slate-200 text-sm transition-all"
+                  >
+                  <button 
+                    @click="checkParcelStatus" 
+                    :disabled="isCheckingStatus || !checkStatusId"
+                    class="px-6 h-12 bg-[#0F172A] text-white rounded-xl font-black text-sm hover:bg-slate-800 transition-all disabled:opacity-50 flex items-center gap-2"
+                  >
+                    <Loader2 v-if="isCheckingStatus" class="w-4 h-4 animate-spin" />
+                    <span>Check</span>
+                  </button>
+                </div>
+                <div v-if="statusResult" class="p-4 bg-indigo-50 dark:bg-indigo-900/10 rounded-xl border border-indigo-100 dark:border-indigo-900/20">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">Status Result</span>
+                    <span class="px-3 py-1 bg-white dark:bg-slate-800 rounded-full text-[10px] font-black text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/30 uppercase">
+                      {{ statusResult }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Webhook Configuration -->
+              <div class="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <div class="flex flex-col gap-1 px-1">
+                  <span class="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Webhook Configuration</span>
+                  <p class="text-[10px] font-semibold text-slate-400 leading-relaxed">Secure your status updates with a Bearer Token.</p>
+                </div>
+                <div class="space-y-1.5">
+                  <input 
+                    v-model="form.steadfast.webhookToken" 
+                    type="password" 
+                    placeholder="Webhook Auth Token (Bearer)" 
+                    class="w-full h-12 px-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 font-semibold text-slate-700 dark:text-slate-200 text-sm transition-all"
+                  >
+                </div>
+              </div>
+
+              <button 
+                @click="showSteadfastSettings = false" 
+                class="w-full py-4 bg-[#0F172A] text-white font-black rounded-2xl hover:bg-slate-800 transition-all active:scale-95 shadow-xl shadow-slate-900/10"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -198,9 +309,15 @@ import {
   Eye,
   EyeOff, 
   MapPin,
-  Save
+  Save,
+  Settings,
+  Activity,
+  Wallet,
+  RefreshCw,
+  X,
+  Loader2
 } from 'lucide-vue-next'
-import { reactive, ref, onMounted } from 'vue'
+import { reactive, ref, onMounted, watch } from 'vue'
 
 definePageMeta({
   middleware: 'auth',
@@ -218,9 +335,16 @@ const showSteadfastSecret = ref(false)
 const form = reactive({
   redx: { active: false, storeId: '', password: '' },
   pathao: { active: false, storeId: '', clientId: '', clientSecret: '', email: '', password: '' },
-  steadfast: { active: false, apiKey: '', secretKey: '' },
+  steadfast: { active: false, apiKey: '', secretKey: '', webhookToken: '' },
   personal: { active: true }
 })
+
+const showSteadfastSettings = ref(false)
+const steadfastBalance = ref(null)
+const isFetchingBalance = ref(false)
+const checkStatusId = ref('')
+const statusResult = ref(null)
+const isCheckingStatus = ref(false)
 
 const pending = ref(true)
 const saving = ref(false)
@@ -263,11 +387,69 @@ const copyToClipboard = (text) => {
   $toast.success('Webhook URL copied to clipboard')
 }
 
+const fetchBalance = async () => {
+  try {
+    isFetchingBalance.value = true
+    const response = await getAll('/vendor/delivery/steadfast/balance')
+    if (response.status === 'success') {
+      steadfastBalance.value = response.balance
+      $toast.success('Balance updated')
+    }
+  } catch (error) {
+    console.error(error)
+    $toast.error('Failed to fetch balance')
+  } finally {
+    isFetchingBalance.value = false
+  }
+}
+
+const checkParcelStatus = async () => {
+  if (!checkStatusId.value) return
+  try {
+    isCheckingStatus.value = true
+    statusResult.value = null
+    const response = await getAll(`/vendor/delivery/steadfast/status/${checkStatusId.value}`)
+    if (response.status === 'success') {
+      statusResult.value = response.delivery_status
+    }
+  } catch (error) {
+    console.error(error)
+    $toast.error('Failed to fetch status')
+  } finally {
+    isCheckingStatus.value = false
+  }
+}
+
 onMounted(() => {
   loadSettings()
+})
+
+watch(() => showSteadfastSettings.value, (val) => {
+  if (val && form.steadfast.active && form.steadfast.apiKey) {
+    fetchBalance()
+  }
 })
 </script>
 
 <style scoped>
-/* Any additional custom styling */
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+
+.modal-enter-active .transform,
+.modal-leave-active .transform {
+  transition: all 0.3s ease-out;
+}
+
+.modal-enter-from .transform,
+.modal-leave-to .transform {
+  opacity: 0;
+  transform: scale(0.95);
+}
 </style>
