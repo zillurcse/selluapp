@@ -1,11 +1,33 @@
 <template>
   <nav 
     :class="[
-      'fixed top-0 left-0 right-0 z-[900] flex items-center transition-all duration-500',
-      isScrolled ? 'bg-white/90 backdrop-blur-xl h-[70px] shadow-sm' : 'bg-transparent h-20'
+      'fixed top-0 left-0 right-0 z-[900] flex flex-col transition-all duration-500',
+      isScrolled ? 'bg-white/90 backdrop-blur-xl shadow-sm' : 'bg-transparent'
     ]"
   >
-    <div class="container mx-auto flex justify-between items-center h-full px-4 sm:px-6 -mt-1 md:-mt-0">
+    <!-- Announcement Bar -->
+    <div 
+      v-if="storefrontStore.generalSettings?.showAnnouncement" 
+      :style="{ 
+        backgroundColor: storefrontStore.generalSettings?.announcementBgColor || '#000000', 
+        color: storefrontStore.generalSettings?.announcementTextColor || '#ffffff' 
+      }"
+      class="w-full py-2.5 px-4 text-center text-[11px] sm:text-xs font-black tracking-widest uppercase transition-all duration-500 overflow-hidden relative"
+      :class="[isScrolled ? 'h-0 py-0 opacity-0' : 'h-auto opacity-100']"
+    >
+      <div class="container mx-auto">
+        {{ storefrontStore.generalSettings?.announcementText }}
+      </div>
+    </div>
+
+    <!-- Main Nav Content -->
+    <div 
+      :class="[
+        'w-full flex items-center transition-all duration-500',
+        isScrolled ? 'h-[70px]' : 'h-20'
+      ]"
+    >
+      <div class="container mx-auto flex justify-between items-center h-full px-4 sm:px-6 -mt-1 md:-mt-0">
       <NuxtLink to="/" class="flex items-center group shrink-0">
         <template v-if="storefrontStore.vendorProfile">
           <!-- Vendor Logo -->
@@ -73,7 +95,7 @@
                   <NuxtLink to="/shop?sort=newest" class="dropdown-item-tailwind">
                     <span class="mr-2">✨</span> New Arrivals
                   </NuxtLink>
-                  <NuxtLink to="/shop?sort=featured" class="dropdown-item-tailwind">
+                  <NuxtLink to="/shop?sort=best_selling" class="dropdown-item-tailwind">
                     <span class="mr-2">🔥</span> Best Sellers
                   </NuxtLink>
                   <NuxtLink to="/shop?sale=true" class="dropdown-item-tailwind text-rose-500 hover:bg-rose-50">
@@ -169,6 +191,7 @@
           <template v-else>
             <NuxtLink to="/login" class="px-3 sm:px-4 py-2 rounded-xl bg-gray-900 text-white font-bold text-xs sm:text-sm hover:bg-indigo-600 transition-colors shadow-lg shadow-gray-900/20">Login</NuxtLink>
           </template>
+          </div>
         </div>
       </div>
     </div>

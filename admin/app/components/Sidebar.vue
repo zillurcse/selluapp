@@ -269,7 +269,7 @@ import {
   UserCheck, SearchCheck, Headphones, ChevronDown, Sun, Moon, Plus,
   Box, FileText, Layers, ArrowUpDown, Award, Scale, Sparkles, Shield,
   PackagePlus, Building2, LogOut, Monitor, Truck, CreditCard, Zap, Settings,
-  Search, X, SearchX,
+  Search, X, SearchX, Mail,
 } from 'lucide-vue-next'
 
 import { toast } from 'vue-sonner'
@@ -331,6 +331,7 @@ const allSearchableItems = computed(() => {
     operationsItems.value.forEach(l =>
       items.push({ to: l.to, label: l.label, icon: l.icon, section: 'Operations', isPro: l.isPro, feature: l.feature })
     )
+    items.push({ to: '/vendor/newsletter', label: 'Newsletter', icon: Mail, section: 'Operations' })
     toolItems.value.forEach(l =>
       items.push({ to: l.to, label: l.label, icon: l.icon, section: 'Tools', isPro: l.isPro, feature: l.feature })
     )
@@ -497,6 +498,7 @@ const rawOperationsItems = [
   { to: '/vendor/promotions',   label: 'Promotions',     icon: Gift,           permission: 'promotions.view',    feature: 'Promotions',   isPro: true },
   { to: '/vendor/fraud-check',  label: 'AI Fraud Check', icon: SearchCheck,    permission: 'fraud_check.view',   feature: 'Fraud Check',  isPro: true },
   { to: '/vendor/ai-automation', label: 'AI Automation', icon: Sparkles,       permission: 'settings.manage' },
+  { to: '/vendor/newsletter',    label: 'Newsletter',    icon: Mail,           permission: 'newsletter.view' },
   { to: '/vendor/landing-page', label: 'Landing Page',   icon: LayoutTemplate, permission: 'landing_pages.view', feature: 'Landing Pages',isPro: true },
 ]
 const operationsItems = computed(() => filterItems(rawOperationsItems))

@@ -75,8 +75,64 @@
       </div>
     </section>
 
-    <!-- 4 Products Grid Showcase -->
-    <section class="py-20 px-6 lg:px-20 relative">
+    <!-- Showcase Sections -->
+    <section class="py-20 px-6 lg:px-20 space-y-40">
+      <!-- New Arrivals -->
+      <div v-if="newArrivals.length > 0" class="max-w-[1600px] mx-auto">
+        <div class="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
+          <div class="space-y-4">
+            <span class="text-rose-500 text-[10px] font-black uppercase tracking-[0.4em]">Just Dropped</span>
+            <h2 class="text-4xl md:text-6xl font-black font-heading tracking-tighter">New Arrivals.</h2>
+          </div>
+          <NuxtLink to="/shop?sort=newest" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 hover:text-white transition-colors flex items-center gap-2 group/link">
+            Explore All
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="translate-x-0 group-hover/link:translate-x-2 transition-transform"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </NuxtLink>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <ProductCard v-for="prod in newArrivals.slice(0, 4)" :key="prod.id" :product="prod" theme="dark" />
+        </div>
+      </div>
+
+      <!-- Best Sellers -->
+      <div v-if="bestSellers.length > 0" class="max-w-[1600px] mx-auto">
+        <div class="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
+          <div class="space-y-4 text-right md:text-left w-full md:w-auto">
+            <span class="text-indigo-400 text-[10px] font-black uppercase tracking-[0.4em]">Community Favorites</span>
+            <h2 class="text-4xl md:text-6xl font-black font-heading tracking-tighter">Best Sellers.</h2>
+          </div>
+          <NuxtLink to="/shop?sort=best_selling" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 hover:text-white transition-colors flex items-center gap-2 group/link">
+            See Trending
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="translate-x-0 group-hover/link:translate-x-2 transition-transform"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </NuxtLink>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <ProductCard v-for="prod in bestSellers.slice(0, 4)" :key="prod.id" :product="prod" theme="dark" />
+        </div>
+      </div>
+
+      <!-- Seasonal Sale -->
+      <div v-if="seasonalSale.length > 0" class="max-w-[1600px] mx-auto p-12 lg:p-20 rounded-[4rem] bg-gradient-to-br from-rose-500/10 to-transparent border border-rose-500/20 relative overflow-hidden">
+        <div class="absolute -right-40 -top-40 w-96 h-96 bg-rose-500/10 blur-[100px] rounded-full"></div>
+        <div class="relative z-10">
+          <div class="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
+            <div class="space-y-4">
+              <span class="text-rose-500 text-[10px] font-black uppercase tracking-[0.4em]">Limited Time Offer</span>
+              <h2 class="text-4xl md:text-6xl font-black font-heading tracking-tighter">Seasonal Sale.</h2>
+            </div>
+            <NuxtLink to="/shop?sale=true" class="px-8 py-4 rounded-2xl bg-rose-500 text-white text-[10px] font-black uppercase tracking-[0.3em] hover:bg-rose-600 transition-colors">
+              View All Offers
+            </NuxtLink>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <ProductCard v-for="prod in seasonalSale.slice(0, 4)" :key="prod.id" :product="prod" theme="dark" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 Products Grid Showcase (Existing) -->
+    <section v-if="showcaseProducts.length > 0" class="py-20 px-6 lg:px-20 relative">
       <div class="max-w-[1600px] mx-auto">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-16">
           <!-- Product Card Loop -->
@@ -193,6 +249,9 @@ const props = defineProps({
 import { toast } from 'vue-sonner'
 
 const showcaseProducts = computed(() => props.data.products || [])
+const newArrivals = computed(() => props.data.new_arrivals || [])
+const bestSellers = computed(() => props.data.best_sellers || [])
+const seasonalSale = computed(() => props.data.seasonal_sale || [])
 const vendor = computed(() => props.data.vendor || {})
 const settings = computed(() => props.data.landingPage?.settings || {})
 

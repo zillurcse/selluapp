@@ -89,6 +89,8 @@ class StorefrontController extends Controller
             });
 
             $featuredProductsQuery = Product::with(['categories:id,name,slug', 'brand:id,name,slug', 'vendor.vendorProfile:id,user_id,store_name,store_slug'])
+                ->withAvg('reviews', 'rating')
+                ->withCount('reviews')
                 ->select('id', 'name', 'sale_price', 'slug', 'image', 'thumbnail', 'vendor_id', 'brand_id', 'is_featured', 'is_active', 'status')
                 ->where('is_featured', true)
                 ->where('is_active', true)
@@ -103,6 +105,8 @@ class StorefrontController extends Controller
             $featuredProducts = \App\Http\Resources\Storefront\ProductResource::collection($featuredProductsQuery->get());
 
             $trendingProductsQuery = Product::with(['categories:id,name,slug', 'brand:id,name,slug'])
+                ->withAvg('reviews', 'rating')
+                ->withCount('reviews')
                 ->select('id', 'name', 'sale_price', 'slug', 'image', 'thumbnail', 'vendor_id', 'brand_id', 'is_active', 'status', 'is_trending')
                 ->where('is_trending', true)
                 ->where('is_active', true)
@@ -110,11 +114,53 @@ class StorefrontController extends Controller
                 ->latest()
                 ->take(8);
 
-            if ($tenantId) {
-                $trendingProductsQuery->where('vendor_id', $tenantId);
-            }
-
             $trendingProducts = $trendingProductsQuery->get();
+            
+            $newArrivalsQuery = Product::with(['categories:id,name,slug', 'brand:id,name,slug'])
+                ->withAvg('reviews', 'rating')
+                ->withCount('reviews')
+                ->select('id', 'name', 'sale_price', 'slug', 'image', 'thumbnail', 'vendor_id', 'brand_id', 'is_active', 'status')
+                ->where('is_active', true)
+                ->where('status', 'published')
+                ->latest()
+                ->take(8);
+
+            if ($tenantId) {
+                $newArrivalsQuery->where('vendor_id', $tenantId);
+            }
+            $newArrivals = $newArrivalsQuery->get();
+
+            $bestSellersQuery = Product::with(['categories:id,name,slug', 'brand:id,name,slug'])
+                ->withAvg('reviews', 'rating')
+                ->withCount('reviews')
+                ->join('order_items', 'products.id', '=', 'order_items.product_id')
+                ->selectRaw('products.id, products.name, products.sale_price, products.slug, products.image, products.thumbnail, products.vendor_id, products.brand_id, products.is_active, products.status, SUM(order_items.quantity) as total_sold')
+                ->where('products.is_active', true)
+                ->where('products.status', 'published')
+                ->groupBy('products.id', 'products.name', 'products.sale_price', 'products.slug', 'products.image', 'products.thumbnail', 'products.vendor_id', 'products.brand_id', 'products.is_active', 'products.status')
+                ->orderBy('total_sold', 'desc')
+                ->latest()
+                ->take(8);
+
+            if ($tenantId) {
+                $bestSellersQuery->where('vendor_id', $tenantId);
+            }
+            $bestSellers = $bestSellersQuery->get();
+
+            $seasonalSaleQuery = Product::with(['categories:id,name,slug', 'brand:id,name,slug'])
+                ->withAvg('reviews', 'rating')
+                ->withCount('reviews')
+                ->select('id', 'name', 'sale_price', 'discount_price', 'slug', 'image', 'thumbnail', 'vendor_id', 'brand_id', 'is_active', 'status')
+                ->whereNotNull('discount_price')
+                ->where('is_active', true)
+                ->where('status', 'published')
+                ->latest()
+                ->take(8);
+
+            if ($tenantId) {
+                $seasonalSaleQuery->where('vendor_id', $tenantId);
+            }
+            $seasonalSale = $seasonalSaleQuery->get();
 
             $categoriesQuery = Category::with('children')
                 ->where('is_active', true)
@@ -151,12 +197,50 @@ class StorefrontController extends Controller
             }
 
             if ($isEssential) {
+                $generalSettings = ShopSetting::where('user_id', $userId)
+                    ->where('group', 'website_general')
+                    ->get()
+                    ->pluck('value', 'key')
+                    ->map(function ($val, $key) {
+                        $decoded = json_decode($val, true);
+                        $parsedVal = (json_last_error() === JSON_ERROR_NONE) ? $decoded : $val;
+                        if (is_string($parsedVal) && str_starts_with($parsedVal, 'shop/')) {
+                            return Storage::disk('public')->url($parsedVal);
+                        }
+                        return $parsedVal;
+                    });
+
                 return response()->json([
                     'sliders' => $sliders,
                     'categories' => $categories,
                     'vendor' => $vendorProfile,
                     'loyalty_program' => ShopSetting::where('user_id', $userId)->where('group', 'loyalty_program')->get()->pluck('value', 'key'),
-                    'marketing' => ShopSetting::where('user_id', $userId)->where('group', 'marketing_social')->get()->pluck('value', 'key')
+                    'marketing' => ShopSetting::where('user_id', $userId)->where('group', 'marketing_social')->get()->pluck('value', 'key'),
+                    'website_general' => $generalSettings,
+                    'website_lookbook' => ShopSetting::where('user_id', $userId)
+                        ->where('group', 'website_lookbook')
+                        ->get()
+                        ->pluck('value', 'key')
+                        ->map(function ($val, $key) {
+                            $decoded = json_decode($val, true);
+                            $parsedVal = (json_last_error() === JSON_ERROR_NONE) ? $decoded : $val;
+                            if (is_string($parsedVal) && str_starts_with($parsedVal, 'shop/')) {
+                                return Storage::disk('public')->url($parsedVal);
+                            }
+                            return $parsedVal;
+                        }),
+                    'website_newsletter' => ShopSetting::where('user_id', $userId)
+                        ->where('group', 'website_newsletter')
+                        ->get()
+                        ->pluck('value', 'key')
+                        ->map(function ($val, $key) {
+                            $decoded = json_decode($val, true);
+                            $parsedVal = (json_last_error() === JSON_ERROR_NONE) ? $decoded : $val;
+                            if (is_string($parsedVal) && str_starts_with($parsedVal, 'shop/')) {
+                                return Storage::disk('public')->url($parsedVal);
+                            }
+                            return $parsedVal;
+                        })
                 ]);
             }
 
@@ -191,6 +275,9 @@ class StorefrontController extends Controller
             // format products
             $featuredProducts = \App\Http\Resources\Storefront\ProductResource::collection($featuredProducts)->resolve();
             $trendingProducts = \App\Http\Resources\Storefront\ProductResource::collection($trendingProducts)->resolve();
+            $newArrivals = \App\Http\Resources\Storefront\ProductResource::collection($newArrivals)->resolve();
+            $bestSellers = \App\Http\Resources\Storefront\ProductResource::collection($bestSellers)->resolve();
+            $seasonalSale = \App\Http\Resources\Storefront\ProductResource::collection($seasonalSale)->resolve();
 
             // format products for each category
             $categoryWiseProducts = $categoryWiseProducts->map(function ($category) {
@@ -272,11 +359,40 @@ class StorefrontController extends Controller
                 }
             }
 
+            $generalSettings = ShopSetting::where('user_id', $userId)
+                ->where('group', 'website_general')
+                ->get()
+                ->pluck('value', 'key')
+                ->map(function ($val, $key) {
+                    $decoded = json_decode($val, true);
+                    $parsedVal = (json_last_error() === JSON_ERROR_NONE) ? $decoded : $val;
+                    if (is_string($parsedVal) && str_starts_with($parsedVal, 'shop/')) {
+                        return Storage::disk('public')->url($parsedVal);
+                    }
+                    return $parsedVal;
+                });
+
+            $websiteNewsletterSettings = ShopSetting::where('user_id', $userId)
+                ->where('group', 'website_newsletter')
+                ->get()
+                ->pluck('value', 'key')
+                ->map(function ($val, $key) {
+                    $decoded = json_decode($val, true);
+                    $parsedVal = (json_last_error() === JSON_ERROR_NONE) ? $decoded : $val;
+                    if (is_string($parsedVal) && str_starts_with($parsedVal, 'shop/')) {
+                        return Storage::disk('public')->url($parsedVal);
+                    }
+                    return $parsedVal;
+                });
+
             return response()->json([
                 'sliders' => $sliders,
                 'website_banners' => $websiteBanners,
                 'featured_products' => $featuredProducts,
                 'trending_products' => $trendingProducts,
+                'new_arrivals' => $newArrivals,
+                'best_sellers' => $bestSellers,
+                'seasonal_sale' => $seasonalSale,
                 'category_wise_products' => $categoryWiseProducts,
                 'categories' => $categories,
                 'brands' => $brands,
@@ -285,7 +401,21 @@ class StorefrontController extends Controller
                 'promotions' => $promotions,
                 'marketing' => $marketingSettings,
                 'custom_pages' => reset($customPages) === false && count($customPages) > 0 && isset($customPages[0]) ? $customPages : array_values($customPages),
-                'loyalty_program' => ShopSetting::where('user_id', $userId)->where('group', 'loyalty_program')->get()->pluck('value', 'key')
+                'loyalty_program' => ShopSetting::where('user_id', $userId)->where('group', 'loyalty_program')->get()->pluck('value', 'key'),
+                'website_general' => $generalSettings,
+                'website_lookbook' => ShopSetting::where('user_id', $userId)
+                    ->where('group', 'website_lookbook')
+                    ->get()
+                    ->pluck('value', 'key')
+                    ->map(function ($val, $key) {
+                        $decoded = json_decode($val, true);
+                        $parsedVal = (json_last_error() === JSON_ERROR_NONE) ? $decoded : $val;
+                        if (is_string($parsedVal) && str_starts_with($parsedVal, 'shop/')) {
+                            return Storage::disk('public')->url($parsedVal);
+                        }
+                        return $parsedVal;
+                    }),
+                'website_newsletter' => $websiteNewsletterSettings
             ]);
         });
     }
@@ -295,6 +425,8 @@ class StorefrontController extends Controller
         $tenantId = $this->resolveTenantId($request);
 
         $query = Product::with(['categories', 'brand', 'unit', 'vendor.vendorProfile'])
+            ->withAvg('reviews', 'rating')
+            ->withCount('reviews')
             ->where('is_active', true)
             ->where('status', 'published');
 
@@ -384,6 +516,14 @@ class StorefrontController extends Controller
             $query->where('is_trending', true);
         }
 
+        if ($request->filled('is_featured') && filter_var($request->is_featured, FILTER_VALIDATE_BOOLEAN)) {
+            $query->where('is_featured', true);
+        }
+
+        if (($request->filled('on_sale') && filter_var($request->on_sale, FILTER_VALIDATE_BOOLEAN)) || ($request->filled('sale') && filter_var($request->sale, FILTER_VALIDATE_BOOLEAN))) {
+            $query->whereNotNull('discount_price');
+        }
+
         // Filter by Promotion
         if ($request->filled('promotion_id') || $request->filled('promotion')) {
             $promotion = null;
@@ -436,6 +576,12 @@ class StorefrontController extends Controller
                 case 'featured':
                     $query->orderBy('is_featured', 'desc');
                     break;
+                case 'best_selling':
+                    $query->join('order_items', 'products.id', '=', 'order_items.product_id')
+                        ->selectRaw('products.*, SUM(order_items.quantity) as total_sold')
+                        ->groupBy('products.id')
+                        ->orderByRaw('SUM(order_items.quantity) DESC');
+                    break;
                 default:
                     $query->latest();
                     break;
@@ -448,7 +594,15 @@ class StorefrontController extends Controller
             $limit = $request->get('limit', 10);
             $offset = $request->get('offset', 0);
             
-            $total = (clone $query)->count();
+            $totalQuery = (clone $query)->reorder();
+            if ($request->sort === 'best_selling') {
+                $subQuery = (clone $query)->reorder()->select('products.id');
+                $total = \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw("({$subQuery->toSql()}) as sub"))
+                    ->mergeBindings($subQuery->getQuery())
+                    ->count();
+            } else {
+                $total = $totalQuery->count();
+            }
             $items = $query->offset($offset)->limit($limit)->get();
             
             $items = \App\Http\Resources\Storefront\ProductResource::collection($items)->resolve();
@@ -463,7 +617,25 @@ class StorefrontController extends Controller
         }
 
         $perPage = $request->get('per_page', 10);
-        $products = $query->paginate($perPage);
+        
+        if ($request->sort === 'best_selling') {
+            // For best_selling, we manually calculate the total for a correct grouped count
+            $subQuery = (clone $query)->reorder()->select('products.id');
+            $total = \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw("({$subQuery->toSql()}) as sub"))
+                ->mergeBindings($subQuery->getQuery())
+                ->count();
+            
+            $items = $query->forPage($request->get('page', 1), $perPage)->get();
+            $products = new \Illuminate\Pagination\LengthAwarePaginator(
+                $items, 
+                $total, 
+                $perPage, 
+                $request->get('page', 1),
+                ['path' => $request->url(), 'query' => $request->query()]
+            );
+        } else {
+            $products = $query->paginate($perPage);
+        }
         $products->getCollection()->transform(function ($product) {
             return (new \App\Http\Resources\Storefront\ProductResource($product))->resolve();
         });
@@ -657,6 +829,44 @@ class StorefrontController extends Controller
             }
         }
 
+        $newArrivals = Product::with(['categories:id,name,slug', 'brand:id,name,slug', 'vendor.vendorProfile:id,user_id,store_name,store_slug'])
+            ->withAvg('reviews', 'rating')
+            ->withCount('reviews')
+            ->where('vendor_id', $landingPage->vendor_id)
+            ->where('is_active', true)
+            ->where('status', 'published')
+            ->latest()
+            ->take(8)
+            ->get();
+        $newArrivals = \App\Http\Resources\Storefront\ProductResource::collection($newArrivals)->resolve();
+
+        $bestSellers = Product::with(['categories:id,name,slug', 'brand:id,name,slug', 'vendor.vendorProfile:id,user_id,store_name,store_slug'])
+            ->withAvg('reviews', 'rating')
+            ->withCount('reviews')
+            ->join('order_items', 'products.id', '=', 'order_items.product_id')
+            ->selectRaw('products.id, products.name, products.sale_price, products.slug, products.image, products.thumbnail, products.vendor_id, products.brand_id, products.is_active, products.status, SUM(order_items.quantity) as total_sold')
+            ->where('products.vendor_id', $landingPage->vendor_id)
+            ->where('products.is_active', true)
+            ->where('products.status', 'published')
+            ->groupBy('products.id', 'products.name', 'products.sale_price', 'products.slug', 'products.image', 'products.thumbnail', 'products.vendor_id', 'products.brand_id', 'products.is_active', 'products.status')
+            ->orderBy('total_sold', 'desc')
+            ->latest()
+            ->take(8)
+            ->get();
+        $bestSellers = \App\Http\Resources\Storefront\ProductResource::collection($bestSellers)->resolve();
+
+        $seasonalSale = Product::with(['categories:id,name,slug', 'brand:id,name,slug', 'vendor.vendorProfile:id,user_id,store_name,store_slug'])
+            ->withAvg('reviews', 'rating')
+            ->withCount('reviews')
+            ->where('vendor_id', $landingPage->vendor_id)
+            ->whereNotNull('discount_price')
+            ->where('is_active', true)
+            ->where('status', 'published')
+            ->latest()
+            ->take(8)
+            ->get();
+        $seasonalSale = \App\Http\Resources\Storefront\ProductResource::collection($seasonalSale)->resolve();
+
         $vendorProfile = \App\Models\VendorProfile::where('user_id', $landingPage->vendor_id)->first();
         if ($vendorProfile) {
             $vendorProfile->logo_url = $vendorProfile->logo ? Storage::disk('public')->url($vendorProfile->logo) : null;
@@ -666,6 +876,9 @@ class StorefrontController extends Controller
         return response()->json([
             'landing_page' => $landingPage,
             'products'     => $products,
+            'new_arrivals' => $newArrivals,
+            'best_sellers' => $bestSellers,
+            'seasonal_sale' => $seasonalSale,
             'vendor'       => $vendorProfile,
             'loyalty_program' => ShopSetting::where('user_id', $landingPage->vendor_id)->where('group', 'loyalty_program')->get()->pluck('value', 'key')
         ]);

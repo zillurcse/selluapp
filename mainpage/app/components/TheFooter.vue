@@ -3,10 +3,15 @@
     <div class="container footer-inner">
       <div class="footer-grid">
         <div class="footer-brand">
-          <NuxtLink to="/" class="logo">
-            <span class="logo-text">MODERN</span><span class="logo-dot">.</span>
+          <NuxtLink to="/" class="logo uppercase">
+            <template v-if="storefrontStore.vendorProfile">
+              <span class="logo-text">{{ storefrontStore.vendorProfile.store_name }}</span><span class="logo-dot">.</span>
+            </template>
+            <template v-else>
+              <span class="logo-text">MODERN</span><span class="logo-dot">.</span>
+            </template>
           </NuxtLink>
-          <p class="brand-desc">Curating the finest minimal essentials for your modern lifestyle. Quality over quantity, always.</p>
+          <p class="brand-desc">{{ storefrontStore.generalSettings?.footerAbout || 'Curating the finest minimal essentials for your modern lifestyle. Quality over quantity, always.' }}</p>
         </div>
         
         <div class="footer-section">
@@ -38,7 +43,7 @@
       </div>
 
       <div class="footer-bottom">
-        <p>&copy; 2026 MODERN. All rights reserved.</p>
+        <p>{{ storefrontStore.generalSettings?.footerCopyright || `© ${new Date().getFullYear()} MODERN. All rights reserved.` }}</p>
         <div class="footer-socials">
           <a href="#">Instagram</a>
           <a href="#">Twitter</a>
@@ -48,6 +53,10 @@
     </div>
   </footer>
 </template>
+
+<script setup>
+const storefrontStore = useStorefrontStore()
+</script>
 
 <style scoped>
 .footer {

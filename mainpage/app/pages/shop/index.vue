@@ -188,6 +188,12 @@
                   <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
                 </button>
               </span>
+              <span v-if="filters.on_sale" class="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-[10px] font-bold flex items-center gap-2">
+                On Sale
+                <button @click="filters.on_sale = null" class="hover:text-amber-900">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+              </span>
             </div>
             <div class="flex items-center gap-4">
               <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">Sort By:</span>
@@ -197,6 +203,7 @@
                   class="appearance-none bg-gray-50 border border-gray-100 rounded-full px-8 py-2.5 text-xs font-bold text-gray-900 outline-none focus:ring-2 focus:ring-gray-100 transition-all cursor-pointer"
                 >
                   <option value="featured">Featured Products</option>
+                  <option value="best_selling">Best Selling</option>
                   <option value="price_asc">Price: Low to High</option>
                   <option value="price_desc">Price: High to Low</option>
                   <option value="newest">Newest First</option>
@@ -297,6 +304,7 @@ const filters = reactive({
   search: '',
   promotion: null,
   is_trending: null,
+  on_sale: null,
   offset: 0,
   limit: 10
 })
@@ -324,6 +332,7 @@ const initFiltersFromQuery = () => {
   if (route.query.max_price) filters.max_price = Number(route.query.max_price)
   if (route.query.promotion) filters.promotion = route.query.promotion
   if (route.query.is_trending) filters.is_trending = route.query.is_trending === 'true' || route.query.is_trending === '1'
+  if (route.query.sale || route.query.on_sale) filters.on_sale = true
 }
 
 initFiltersFromQuery()
@@ -354,7 +363,8 @@ const { data: productsData, pending } = await useAsyncData('products', () =>
       brands: filters.brands.join(','),
       units: filters.units.join(','),
       specs: filters.specs,
-      is_trending: filters.is_trending
+      is_trending: filters.is_trending,
+      on_sale: filters.on_sale
     }
   }), {
     watch: [
@@ -367,7 +377,8 @@ const { data: productsData, pending } = await useAsyncData('products', () =>
       () => filters.min_price,
       () => filters.max_price,
       () => filters.promotion,
-      () => filters.is_trending
+      () => filters.is_trending,
+      () => filters.on_sale
     ]
   }
 )
@@ -382,6 +393,8 @@ watch(productsData, (newData) => {
     slug: p.slug,
     price: p.sale_price,
     image: p.image || p.image_url || lampImg,
+    rating: p.rating,
+    reviewsCount: p.reviews_count,
     category: p.categories?.[0]?.name || 'Uncategorized',
     brand: p.brand?.name || null,
     vendor: p.vendor?.vendorProfile ? {
@@ -420,7 +433,8 @@ watch([
   () => filters.specs, 
   () => filters.min_price, 
   () => filters.max_price,
-  () => filters.is_trending
+  () => filters.is_trending,
+  () => filters.on_sale
 ], () => {
   filters.offset = 0
   filters.limit = 10
@@ -445,7 +459,8 @@ const loadMore = async (isManual = false) => {
         brands: filters.brands.join(','),
         units: filters.units.join(','),
         specs: filters.specs,
-        is_trending: filters.is_trending
+        is_trending: filters.is_trending,
+        on_sale: filters.on_sale
       }
     })
     
@@ -510,6 +525,7 @@ const clearFilters = () => {
   filters.search = ''
   filters.promotion = null
   filters.is_trending = null
+  filters.on_sale = null
 }
 
 const toggleFilter = (type, slug) => {
@@ -567,6 +583,7 @@ watch(filters, (newFilters) => {
   if (newFilters.max_price) query.max_price = newFilters.max_price
   if (newFilters.promotion) query.promotion = newFilters.promotion
   if (newFilters.is_trending) query.is_trending = newFilters.is_trending
+  if (newFilters.on_sale) query.on_sale = newFilters.on_sale
   
   router.push({ query, replace: true })
 }, { deep: true })

@@ -15,9 +15,15 @@ export const useStorefrontStore = defineStore('storefront', {
         homeLandingPage: null as any,
         promotions: [] as any[],
         websiteBanners: [] as any[],
+        newArrivals: [] as any[],
+        bestSellers: [] as any[],
+        seasonalSale: [] as any[],
         marketing: null as any,
         customPages: [] as any[],
-        loyaltyProgram: null as any
+        loyaltyProgram: null as any,
+        generalSettings: null as any,
+        lookbook: null as any,
+        newsletter: null as any,
     }),
 
     actions: {
@@ -72,11 +78,17 @@ export const useStorefrontStore = defineStore('storefront', {
             this.customPages = data.custom_pages || []
             this.vendorProfile = data.vendor || null
             this.loyaltyProgram = data.loyalty_program || null
+            this.generalSettings = data.website_general || null
+            this.lookbook = data.website_lookbook || null
+    this.newsletter = data.website_newsletter || null
 
             if (data.landing_page) {
                 this.homeLandingPage = {
                     landingPage: data.landing_page,
                     products: data.products,
+                    newArrivals: data.new_arrivals,
+                    bestSellers: data.best_sellers,
+                    seasonalSale: data.seasonal_sale,
                     vendor: data.vendor
                 }
                 return
@@ -107,7 +119,54 @@ export const useStorefrontStore = defineStore('storefront', {
                 price: p.sale_price,
                 slug: p.slug,
                 image: p.image,
+                rating: p.rating,
+                reviewsCount: p.reviews_count,
                 category: p.categories?.[0]?.name || 'Uncategorized'
+            })) || []
+
+            this.newArrivals = data.new_arrivals?.map((p: any) => ({
+                id: p.id,
+                name: p.name,
+                price: p.price || p.sale_price,
+                slug: p.slug,
+                image: p.image,
+                rating: p.rating,
+                reviewsCount: p.reviews_count,
+                category: p.categories?.[0]?.name || 'Uncategorized',
+                vendor: p.vendor?.vendor_profile ? {
+                    name: p.vendor.vendor_profile.store_name,
+                    slug: p.vendor.vendor_profile.store_slug
+                } : null
+            })) || []
+
+            this.bestSellers = data.best_sellers?.map((p: any) => ({
+                id: p.id,
+                name: p.name,
+                price: p.price || p.sale_price,
+                slug: p.slug,
+                image: p.image,
+                rating: p.rating,
+                reviewsCount: p.reviews_count,
+                category: p.categories?.[0]?.name || 'Uncategorized',
+                vendor: p.vendor?.vendor_profile ? {
+                    name: p.vendor.vendor_profile.store_name,
+                    slug: p.vendor.vendor_profile.store_slug
+                } : null
+            })) || []
+
+            this.seasonalSale = data.seasonal_sale?.map((p: any) => ({
+                id: p.id,
+                name: p.name,
+                price: p.price || p.sale_price,
+                slug: p.slug,
+                image: p.image,
+                rating: p.rating,
+                reviewsCount: p.reviews_count,
+                category: p.categories?.[0]?.name || 'Uncategorized',
+                vendor: p.vendor?.vendor_profile ? {
+                    name: p.vendor.vendor_profile.store_name,
+                    slug: p.vendor.vendor_profile.store_slug
+                } : null
             })) || []
 
             this.promotions = data.promotions?.map((promo: any) => ({
@@ -135,6 +194,8 @@ export const useStorefrontStore = defineStore('storefront', {
                     price: p.sale_price,
                     slug: p.slug,
                     image: p.image,
+                    rating: p.rating,
+                    reviewsCount: p.reviews_count,
                     category: cat.name
                 })) || []
             })) || []

@@ -48,10 +48,10 @@
     />
 
     <!-- ===== FEATURED LOOKBOOK ===== -->
-    <LazyLookbookSection />
+    <LazyLookbookSection :lookbook="lookbook" />
 
     <!-- ===== NEWSLETTER ===== -->
-    <LazyNewsletterSection />
+    <LazyNewsletterSection :newsletter="newsletter" />
   </div>
 </template>
 
@@ -60,7 +60,7 @@ import { storeToRefs } from 'pinia'
 import { defineAsyncComponent, shallowRef, watchEffect } from 'vue'
 
 const storefrontStore = useStorefrontStore()
-const { slides, topCategories, trendingProducts: products, categoryWiseProducts, homeLandingPage, promotions, websiteBanners } = storeToRefs(storefrontStore)
+const { slides, topCategories, trendingProducts: products, categoryWiseProducts, homeLandingPage, promotions, websiteBanners, lookbook, newsletter } = storeToRefs(storefrontStore)
 
 // Fetch essential initial data (Sliders, Categories, Settings)
 await useAsyncData('storefront-essential', () => storefrontStore.fetchStorefront('essential'))

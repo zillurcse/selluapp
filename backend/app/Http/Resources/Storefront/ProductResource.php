@@ -16,6 +16,8 @@ class ProductResource extends JsonResource
     {
         $data = parent::toArray($request);
         $data['price'] = $this->sale_price;
+        $data['rating'] = $this->reviews_avg_rating ? number_format($this->reviews_avg_rating, 1) : null;
+        $data['reviews_count'] = $this->reviews_count ?? 0;
 
         $data['image'] = $this->formatImageUrl($this->image);
         $data['thumbnail'] = $this->formatImageUrl($this->thumbnail);

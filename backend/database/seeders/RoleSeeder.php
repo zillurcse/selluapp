@@ -42,6 +42,8 @@ class RoleSeeder extends Seeder
             'fraud_check.view', 'fraud_check.manage',
             // Delivery
             'delivery.view', 'delivery.manage',
+            // Newsletter
+            'newsletter.view', 'newsletter.delete',
             // Orders
             'orders.view', 'orders.edit', 'orders.delete',
             // Settings
@@ -133,6 +135,7 @@ class RoleSeeder extends Seeder
             'media.view', 'media.manage',
             'notifications.view',
             'website.view',
+            'newsletter.view',
         ]);
 
         // Admin gets a read-heavy subset

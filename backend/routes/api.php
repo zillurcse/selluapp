@@ -24,6 +24,7 @@ use App\Http\Controllers\API\CustomerMessageController;
 // Public Storefront Routes
 Route::get('/storefront', [StorefrontController::class, 'index']);
 Route::post('/storefront/contact-message', [CustomerMessageController::class, 'store']);
+Route::post('/storefront/newsletter-subscribe', [\App\Http\Controllers\API\NewsletterController::class, 'subscribe']);
 Route::get('/storefront/products', [StorefrontController::class, 'products']);
 Route::get('/storefront/products/{product}', [StorefrontController::class, 'show']);
 Route::get('/storefront/landing-page/{slug}', [StorefrontController::class, 'landingPage']);
@@ -340,6 +341,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Media Library
         Route::apiResource('media', App\Http\Controllers\Vendor\UploadController::class);
+
+        // Newsletter
+        Route::get('newsletters', [App\Http\Controllers\API\NewsletterController::class, 'index']);
+        Route::delete('newsletters/{id}', [App\Http\Controllers\API\NewsletterController::class, 'destroy']);
 
         // Packages
         Route::get('packages', [App\Http\Controllers\Vendor\PackageController::class, 'index']);

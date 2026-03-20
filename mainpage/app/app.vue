@@ -19,13 +19,21 @@ const storefrontStore = useStorefrontStore()
 
 useHead(() => {
   const meta: any[] = []
-  const fbDomainVerification = storefrontStore.marketing?.fbDomainVerification
-  
-  if (fbDomainVerification) {
-    meta.push({ name: 'facebook-domain-verification', content: fbDomainVerification })
+  const title = storefrontStore.generalSettings?.seoTitle || storefrontStore.vendorProfile?.store_name || 'Sellull'
+  const description = storefrontStore.generalSettings?.seoDescription || ''
+  const favicon = storefrontStore.generalSettings?.favicon || '/favicon.ico'
+
+  if (description) {
+    meta.push({ name: 'description', content: description })
   }
   
-  return { meta }
+  return { 
+    title,
+    meta,
+    link: [
+      { rel: 'icon', type: 'image/x-icon', href: favicon }
+    ]
+  }
 })
 
 onMounted(() => {

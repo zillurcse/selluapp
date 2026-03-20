@@ -35,9 +35,13 @@
     <div class="mt-3 sm:mt-5 space-y-0.5 sm:space-y-1 px-1 sm:px-2">
       <div class="flex justify-between items-center">
         <span class="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest text-gray-400">{{ product.category }}</span>
-        <div class="flex items-center gap-1">
+        <div v-if="product.rating" class="flex items-center gap-1">
           <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="currentColor" class="text-amber-400 sm:w-2.5 sm:h-2.5"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-          <span class="text-[8px] sm:text-[10px] font-bold text-gray-400">4.9</span>
+          <span class="text-[8px] sm:text-[10px] font-bold text-gray-900">{{ product.rating }}</span>
+          <span v-if="product.reviewsCount" class="text-[7px] sm:text-[9px] text-gray-400 font-medium">({{ product.reviewsCount }})</span>
+        </div>
+        <div v-else class="flex items-center gap-1">
+          <span class="text-[8px] font-bold text-indigo-500 uppercase tracking-tighter bg-indigo-50 px-1.5 py-0.5 rounded">New</span>
         </div>
       </div>
       
