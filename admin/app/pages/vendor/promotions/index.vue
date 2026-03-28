@@ -94,6 +94,9 @@
                         </td>
                         <td class="px-6 py-4 text-right">
                            <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                               <button v-if="promotion.is_active" @click="confirmSendToSubscribers(promotion.id)" class="p-2 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 rounded-lg transition-colors tooltip-target" title="Send to Subscribers">
+                                   <SendIcon class="w-4 h-4" />
+                               </button>
                                <button @click="openEditDrawer(promotion)" class="p-2 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg transition-colors tooltip-target" title="Edit Promotion">
                                    <EditIcon class="w-4 h-4" />
                                </button>
@@ -467,6 +470,19 @@
               <ChevronDownIcon class="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
           </div>
+
+          <!-- Notification Rule -->
+          <div v-if="!isEditing" class="p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl space-y-2 border border-emerald-100 dark:border-emerald-800/30">
+             <label class="flex items-center gap-3 cursor-pointer group">
+                  <div class="relative flex items-center">
+                    <input type="checkbox" v-model="form.notify_subscribers" class="w-5 h-5 text-emerald-600 rounded-md border-emerald-300 focus:ring-emerald-500 bg-white transition-all cursor-pointer">
+                  </div>
+                  <div class="flex flex-col">
+                    <span class="text-sm font-bold text-emerald-900 dark:text-emerald-300 group-hover:text-emerald-700 transition-colors">Notify Subscribers via Email</span>
+                    <span class="text-[10px] text-emerald-600/70 dark:text-emerald-400/50 font-medium">Send this promotion to all your newsletter subscribers immediately after saving.</span>
+                  </div>
+             </label>
+          </div>
         </div>
 
         <!-- Drawer Footer -->
@@ -513,6 +529,17 @@
         @confirm="handleConfirmDelete"
         @cancel="isDeleteModalOpen = false"
     />
+    
+    <AppConfirmationModal
+        :isOpen="isSendModalOpen"
+        title="Send to Subscribers"
+        message="Are you sure you want to send this promotion to all your newsletter subscribers? This will start a bulk email campaign."
+        icon="SendIcon"
+        confirmText="Send Now"
+        :isLoading="isSending"
+        @confirm="handleConfirmSend"
+        @cancel="isSendModalOpen = false"
+    />
 
     <!-- Media Library Component -->
     <AppMediaLibrary 
@@ -541,7 +568,8 @@ import {
   TagIcon,
   PackageIcon,
   SettingsIcon,
-  ArrowRightIcon
+  ArrowRightIcon,
+  SendIcon
 } from 'lucide-vue-next'
 import { ref, onMounted, computed } from 'vue'
 import { toast } from 'vue-sonner'
@@ -633,6 +661,11 @@ const isSaving = ref(false)
 const isDeleteModalOpen = ref(false)
 const promotionToDelete = ref(null)
 const isDeleting = ref(false)
+
+const isSendModalOpen = ref(false)
+const promotionToSend = ref(null)
+const isSending = ref(false)
+
 const isMediaLibraryOpen = ref(false)
 
 const form = ref({
@@ -657,7 +690,8 @@ const form = ref({
   },
   banner: null,
   bannerPreview: null,
-  bannerUrl: null
+  bannerUrl: null,
+  notify_subscribers: false
 })
 
 const fetchItems = async () => {
@@ -746,7 +780,8 @@ const openEditDrawer = (promotion) => {
         rules: parsedRules,
         banner: null,
         bannerPreview: null,
-        bannerUrl: promotion.banner ? getMediaUrl(promotion.banner) : null
+        bannerUrl: promotion.banner ? getMediaUrl(promotion.banner) : null,
+        notify_subscribers: false
     }
     isOpen.value = true
 }
@@ -782,7 +817,8 @@ const resetForm = () => {
         rules: { buy_qty: 2, buy_product_id: '', get_qty: 1, get_product_id: '', required_items: [] },
         banner: null,
         bannerPreview: null,
-        bannerUrl: null
+        bannerUrl: null,
+        notify_subscribers: false
     }
 }
 
@@ -847,6 +883,7 @@ const handleSubmit = async () => {
         formData.append('discount_value', form.value.discount_value)
         formData.append('discount_unit', form.value.discount_unit)
         formData.append('is_active', form.value.is_active ? 1 : 0)
+        formData.append('notify_subscribers', form.value.notify_subscribers ? 1 : 0)
         
         if (form.value.target !== 'all' && form.value.target_ids && form.value.target_ids.length > 0) {
             form.value.target_ids.forEach(id => {
@@ -914,6 +951,26 @@ const handleConfirmDelete = async () => {
         isDeleting.value = false
         isDeleteModalOpen.value = false
         promotionToDelete.value = null
+    }
+}
+
+const confirmSendToSubscribers = (id) => {
+    promotionToSend.value = id
+    isSendModalOpen.value = true
+}
+
+const handleConfirmSend = async () => {
+    if (!promotionToSend.value) return
+    isSending.value = true
+    try {
+        await createItem(`/vendor/promotions/${promotionToSend.value}/send-to-subscribers`, {}, null, false)
+    } catch (e) {
+        console.error('Failed to send promotion', e)
+        toast.error(e.response?.data?.message || 'Failed to start email campaign')
+    } finally {
+        isSending.value = false
+        isSendModalOpen.value = false
+        promotionToSend.value = null
     }
 }
 

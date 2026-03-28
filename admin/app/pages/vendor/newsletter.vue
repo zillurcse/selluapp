@@ -36,7 +36,10 @@
                 <thead>
                     <tr class="bg-gray-50 dark:bg-gray-700 border-b border-gray-100 dark:border-gray-600">
                         <th class="py-4 px-6 font-semibold text-xs text-gray-500 dark:text-gray-300 uppercase tracking-wider">Email Address</th>
+                        <th class="py-4 px-6 font-semibold text-xs text-gray-500 dark:text-gray-300 uppercase tracking-wider">Source</th>
+                        <th class="py-4 px-6 font-semibold text-xs text-gray-500 dark:text-gray-300 uppercase tracking-wider">Tags</th>
                         <th class="py-4 px-6 font-semibold text-xs text-gray-500 dark:text-gray-300 uppercase tracking-wider">Subscribed At</th>
+                        <th class="py-4 px-6 font-semibold text-xs text-gray-500 dark:text-gray-300 uppercase tracking-wider">Last Sent</th>
                         <th class="py-4 px-6 font-semibold text-xs text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
                         <th class="py-4 px-6 font-semibold text-xs text-gray-500 dark:text-gray-300 uppercase tracking-wider text-right">Actions</th>
                     </tr>
@@ -47,8 +50,24 @@
                             <div class="font-bold text-gray-900 dark:text-white">{{ subscriber.email }}</div>
                         </td>
                         <td class="px-6 py-4">
+                            <span class="text-xs font-medium text-gray-500 dark:text-gray-400 capitalize">{{ subscriber.source || 'Standard' }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex flex-wrap gap-1">
+                                <span v-for="tag in subscriber.tags" :key="tag" class="px-2 py-0.5 text-[10px] bg-blue-50 text-blue-600 rounded border border-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-900/30">
+                                    {{ tag }}
+                                </span>
+                                <span v-if="!subscriber.tags || subscriber.tags.length === 0" class="text-[10px] text-gray-400">None</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
                             <div class="text-sm text-gray-600 dark:text-gray-300">
                                 {{ new Date(subscriber.created_at).toLocaleDateString() }}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                             <div class="text-xs text-gray-500 dark:text-gray-400">
+                                {{ subscriber.last_email_sent_at ? new Date(subscriber.last_email_sent_at).toLocaleDateString() : 'Never' }}
                             </div>
                         </td>
                         <td class="px-6 py-4">

@@ -155,7 +155,7 @@
               </div>
             </div>
             <div class="mt-8 flex items-center text-xs">
-              <span class="text-slate-900 dark:text-white font-black bg-slate-900 dark:bg-slate-800 px-2 py-1 rounded-lg mr-2 uppercase tracking-tighter">
+              <span class="dark:text-white text-white font-black bg-slate-900 dark:bg-slate-800 px-2 py-1 rounded-lg mr-2 uppercase tracking-tighter">
                 Live Status
               </span>
               <span class="text-slate-400 dark:text-slate-500 font-bold">Real-time sync</span>

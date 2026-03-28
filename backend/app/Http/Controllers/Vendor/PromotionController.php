@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Vendor;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Promotion;
+use App\Jobs\SendPromotionJob;
 
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
@@ -26,7 +28,7 @@ class PromotionController extends Controller implements HasMiddleware
      */
     public function index()
     {
-        $promotions = \App\Models\Promotion::where('vendor_id', auth()->id())->latest()->get();
+        $promotions = Promotion::where('vendor_id', auth()->id())->latest()->get();
         return response()->json($promotions);
     }
 
@@ -45,7 +47,12 @@ class PromotionController extends Controller implements HasMiddleware
             $validated['banner'] = $request->banner;
         }
 
-        $promotion = \App\Models\Promotion::create($validated);
+        $promotion = Promotion::create($validated);
+
+        if ($request->boolean('notify_subscribers')) {
+            SendPromotionJob::dispatch($promotion);
+        }
+
         return response()->json(['message' => 'Promotion created successfully', 'data' => $promotion], 201);
     }
 
@@ -54,7 +61,7 @@ class PromotionController extends Controller implements HasMiddleware
      */
     public function show(string $id)
     {
-        $promotion = \App\Models\Promotion::where('vendor_id', auth()->id())->findOrFail($id);
+        $promotion = Promotion::where('vendor_id', auth()->id())->findOrFail($id);
         return response()->json($promotion);
     }
 
@@ -63,7 +70,7 @@ class PromotionController extends Controller implements HasMiddleware
      */
     public function update(\App\Http\Requests\UpdatePromotionRequest $request, string $id)
     {
-        $promotion = \App\Models\Promotion::where('vendor_id', auth()->id())->findOrFail($id);
+        $promotion = Promotion::where('vendor_id', auth()->id())->findOrFail($id);
         $validated = $request->validated();
 
         if ($request->hasFile('banner')) {
@@ -85,8 +92,21 @@ class PromotionController extends Controller implements HasMiddleware
      */
     public function destroy(string $id)
     {
-        $promotion = \App\Models\Promotion::where('vendor_id', auth()->id())->findOrFail($id);
+        $promotion = Promotion::where('vendor_id', auth()->id())->findOrFail($id);
         $promotion->delete();
         return response()->json(['message' => 'Promotion deleted successfully']);
+    }
+
+    /**
+     * Send promotion to newsletter subscribers.
+     */
+    public function sendToSubscribers(string $id)
+    {
+        $promotion = Promotion::where('vendor_id', auth()->id())->findOrFail($id);
+        
+        // Dispatch the job
+        SendPromotionJob::dispatch($promotion);
+
+        return response()->json(['message' => 'Promotion email campaign started successfully']);
     }
 }

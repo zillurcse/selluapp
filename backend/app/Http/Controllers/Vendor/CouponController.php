@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use App\Jobs\SendCouponJob;
 
 class CouponController extends Controller implements HasMiddleware
 {
@@ -38,6 +39,11 @@ class CouponController extends Controller implements HasMiddleware
         $validated = $request->validated();
         $validated['vendor_id'] = auth()->id();
         $coupon = \App\Models\Coupon::create($validated);
+
+        if ($request->boolean('notify_subscribers')) {
+            SendCouponJob::dispatch($coupon);
+        }
+
         return response()->json(['message' => 'Coupon created successfully', 'data' => $coupon], 201);
     }
 
@@ -68,5 +74,18 @@ class CouponController extends Controller implements HasMiddleware
         $coupon = \App\Models\Coupon::where('vendor_id', auth()->id())->findOrFail($id);
         $coupon->delete();
         return response()->json(['message' => 'Coupon deleted successfully']);
+    }
+
+    /**
+     * Send coupon to newsletter subscribers.
+     */
+    public function sendToSubscribers(string $id)
+    {
+        $coupon = \App\Models\Coupon::where('vendor_id', auth()->id())->findOrFail($id);
+        
+        // Dispatch the job
+        SendCouponJob::dispatch($coupon);
+
+        return response()->json(['message' => 'Coupon email campaign started successfully']);
     }
 }

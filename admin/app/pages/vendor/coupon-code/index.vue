@@ -85,6 +85,9 @@
                         </td>
                         <td class="px-6 py-4 text-right">
                            <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                               <button v-if="coupon.is_active" @click="confirmSendToSubscribers(coupon.id)" class="p-2 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 rounded-lg transition-colors tooltip-target" title="Send to Subscribers">
+                                   <SendIcon class="w-4 h-4" />
+                               </button>
                                <button @click="openEditDrawer(coupon)" class="p-2 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg transition-colors tooltip-target" title="Edit Coupon">
                                    <EditIcon class="w-4 h-4" />
                                </button>
@@ -232,6 +235,19 @@
               <ChevronDownIcon class="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
           </div>
+
+          <!-- Notification Rule -->
+          <div v-if="!isEditing" class="p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl space-y-2 border border-emerald-100 dark:border-emerald-800/30">
+             <label class="flex items-center gap-3 cursor-pointer group">
+                  <div class="relative flex items-center">
+                    <input type="checkbox" v-model="form.notify_subscribers" class="w-5 h-5 text-emerald-600 rounded-md border-emerald-300 focus:ring-emerald-500 bg-white transition-all cursor-pointer">
+                  </div>
+                  <div class="flex flex-col">
+                    <span class="text-sm font-bold text-emerald-900 dark:text-emerald-300 group-hover:text-emerald-700 transition-colors">Notify Subscribers via Email</span>
+                    <span class="text-[10px] text-emerald-600/70 dark:text-emerald-400/50 font-medium">Send this coupon code to all your newsletter subscribers immediately after saving.</span>
+                  </div>
+             </label>
+          </div>
         </div>
 
         <!-- Drawer Footer -->
@@ -278,6 +294,17 @@
         @confirm="handleConfirmDelete"
         @cancel="isDeleteModalOpen = false"
     />
+
+    <AppConfirmationModal
+        :isOpen="isSendModalOpen"
+        title="Send to Subscribers"
+        message="Are you sure you want to send this coupon to all your newsletter subscribers? This will start a bulk email campaign."
+        icon="SendIcon"
+        confirmText="Send Now"
+        :isLoading="isSending"
+        @confirm="handleConfirmSend"
+        @cancel="isSendModalOpen = false"
+    />
   </div>
 </template>
 
@@ -290,7 +317,8 @@ import {
   XIcon, 
   ChevronDownIcon,
   TrashIcon,
-  EditIcon
+  EditIcon,
+  SendIcon
 } from 'lucide-vue-next'
 import { ref, onMounted } from 'vue'
 import { toast } from 'vue-sonner'
@@ -319,8 +347,13 @@ const form = ref({
   min_purchase: '',
   max_discount: '',
   usage_limit: '',
-  is_active: true
+  is_active: true,
+  notify_subscribers: false
 })
+
+const isSendModalOpen = ref(false)
+const couponToSend = ref(null)
+const isSending = ref(false)
 
 const fetchItems = async () => {
     loading.value = true
@@ -380,7 +413,8 @@ const resetForm = () => {
         min_purchase: '',
         max_discount: '',
         usage_limit: '',
-        is_active: true
+        is_active: true,
+        notify_subscribers: false
     }
 }
 
@@ -442,6 +476,26 @@ const handleConfirmDelete = async () => {
         isDeleting.value = false
         isDeleteModalOpen.value = false
         couponToDelete.value = null
+    }
+}
+
+const confirmSendToSubscribers = (id) => {
+    couponToSend.value = id
+    isSendModalOpen.value = true
+}
+
+const handleConfirmSend = async () => {
+    if (!couponToSend.value) return
+    isSending.value = true
+    try {
+        await createItem(`/vendor/coupons/${couponToSend.value}/send-to-subscribers`, {}, null, false)
+    } catch (e) {
+        console.error('Failed to send coupon', e)
+        toast.error(e.response?.data?.message || 'Failed to start email campaign')
+    } finally {
+        isSending.value = false
+        isSendModalOpen.value = false
+        couponToSend.value = null
     }
 }
 

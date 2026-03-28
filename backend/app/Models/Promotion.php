@@ -48,8 +48,9 @@ class Promotion extends Model
             if (empty($promotion->slug) || $promotion->isDirty('title')) {
                 $promotion->slug = \Illuminate\Support\Str::slug($promotion->title);
                 
-                // Ensure uniqueness
-                $count = static::where('slug', 'like', $promotion->slug . '%')
+                // Ensure uniqueness per vendor
+                $count = static::where('vendor_id', $promotion->vendor_id)
+                    ->where('slug', 'like', $promotion->slug . '%')
                     ->where('id', '!=', $promotion->id)
                     ->count();
                 

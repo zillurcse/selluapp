@@ -176,9 +176,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Coupons Routes
         Route::apiResource('coupons', App\Http\Controllers\Vendor\CouponController::class);
+        Route::post('coupons/{id}/send-to-subscribers', [App\Http\Controllers\Vendor\CouponController::class, 'sendToSubscribers']);
 
         // Promotions Routes
         Route::apiResource('promotions', App\Http\Controllers\Vendor\PromotionController::class);
+        Route::post('promotions/{id}/send-to-subscribers', [App\Http\Controllers\Vendor\PromotionController::class, 'sendToSubscribers']);
 
         // Fraud Check Routes
         Route::get('fraud-checks', [App\Http\Controllers\Vendor\FraudCheckController::class, 'index']);
