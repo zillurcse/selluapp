@@ -21,60 +21,174 @@ class ReportController extends Controller implements HasMiddleware
     public function overview(Request $request)
     {
         $vendorId = $request->user()->vendor_id ?? $request->user()->id;
+        $year     = $request->get('year', date('Y'));
+        $period   = $request->get('period'); // '7d' or '30d'
+
+        // ── KPI Queries ──────────────
+        $ordersQuery = \App\Models\Order::where('user_id', $vendorId)
+            ->whereNotIn('status', ['cancelled', 'returned']);
+        
+        $posQuery = \App\Models\PosSale::where('vendor_id', $vendorId)
+            ->where('status', 'paid');
+            
+        $expenseQuery = \App\Models\VendorExpense::where('user_id', $vendorId);
+
+        if ($period === '7d') {
+            $startDate = now()->subDays(6)->startOfDay(); // Includes today
+            $ordersQuery->where('created_at', '>=', $startDate);
+            $posQuery->where('created_at', '>=', $startDate);
+            $expenseQuery->where('expense_date', '>=', $startDate);
+        } elseif ($period === '30d') {
+            $startDate = now()->subDays(29)->startOfDay();
+            $ordersQuery->where('created_at', '>=', $startDate);
+            $posQuery->where('created_at', '>=', $startDate);
+            $expenseQuery->where('expense_date', '>=', $startDate);
+        } else {
+            $ordersQuery->whereYear('created_at', $year);
+            $posQuery->whereYear('created_at', $year);
+            $expenseQuery->whereYear('expense_date', $year);
+        }
 
         // Total Online Sales
-        $onlineSales = \App\Models\Order::where('user_id', $vendorId)
-            ->whereNotIn('status', ['cancelled', 'returned'])
-            ->sum('total_amount');
+        $onlineSales = (clone $ordersQuery)->sum('total_amount');
 
         // Total POS Sales
-        $posSales = \App\Models\PosSale::where('vendor_id', $vendorId)
-            ->where('status', 'paid')
-            ->sum('total');
+        $posSales = (clone $posQuery)->sum('total');
 
         $totalSales = $onlineSales + $posSales;
 
         // Expenses
-        $expenses = \App\Models\VendorExpense::where('user_id', $vendorId)
-            ->sum('amount');
+        $expenses = (clone $expenseQuery)->sum('amount');
 
         // Total Orders (Online + POS)
-        $onlineOrdersCount = \App\Models\Order::where('user_id', $vendorId)->count();
-        $posOrdersCount = \App\Models\PosSale::where('vendor_id', $vendorId)->count();
-        $totalOrders = $onlineOrdersCount + $posOrdersCount;
+        $onlineOrdersCount = (clone $ordersQuery)->count();
+        $posOrdersCount    = (clone $posQuery)->count();
+        $totalOrders       = $onlineOrdersCount + $posOrdersCount;
 
         // Net Profit
         $netProfit = $totalSales - $expenses;
+
+        // Expense Breakdown
+        $expenseBreakdownRaw = (clone $expenseQuery)
+            ->selectRaw('category, SUM(amount) as total')
+            ->groupBy('category')
+            ->get();
+
+        $totalExpForBreakdown = $expenseBreakdownRaw->sum('total');
+        $expenseBreakdown = $expenseBreakdownRaw->map(function ($item) use ($totalExpForBreakdown) {
+            $val = $totalExpForBreakdown > 0 ? round(($item->total / $totalExpForBreakdown) * 100) : 0;
+            $color = match ($item->category) {
+                'Logistics' => 'bg-indigo-500',
+                'Inventory' => 'bg-emerald-500',
+                'Marketing' => 'bg-amber-500',
+                'Staff'     => 'bg-rose-500',
+                default     => 'bg-slate-500',
+            };
+            return [
+                'label' => $item->category ?: 'Other',
+                'val'   => (int)$val,
+                'color' => $color,
+            ];
+        })->values()->toArray();
+
+        // Ensure we always have some data for the UI if requested, or just return empty
+        if (empty($expenseBreakdown)) {
+             $expenseBreakdown = [
+                ['label' => 'No Data', 'val' => 0, 'color' => 'bg-slate-200'],
+             ];
+        }
+
+        // Trends: compare current period to previous period
+        $trendDays = ($period === '7d') ? 7 : (($period === '30d') ? 30 : null);
+        $trends = $this->calculateTrends($vendorId, $trendDays, $year);
 
         return response()->json([
             'total_sales' => $totalSales,
             'expenses' => $expenses,
             'net_profit' => $netProfit,
             'total_orders' => $totalOrders,
-            'trends' => [
-                'sales' => 12, // Mocked for now
-                'expenses' => 4,
-                'profit' => 8.5,
-            ],
+            'trends' => $trends,
             // Monthly Sales breakdown
-            'monthly_sales' => $this->getMonthlySales($vendorId),
+            'monthly_sales' => $this->getMonthlySales($vendorId, $year),
             // Expense Breakdown
-            'expense_breakdown' => [
-                ['label' => 'Logistics', 'val' => 40, 'color' => 'bg-indigo-500'],
-                ['label' => 'Inventory', 'val' => 30, 'color' => 'bg-emerald-500'],
-                ['label' => 'Marketing', 'val' => 20, 'color' => 'bg-amber-500'],
-                ['label' => 'Staff', 'val' => 10, 'color' => 'bg-rose-500'],
-            ],
+            'expense_breakdown' => $expenseBreakdown,
             // Setup Checklist
             'setup_checklist' => $this->getSetupChecklist($vendorId)
         ]);
     }
 
-    private function getMonthlySales($vendorId)
+    private function calculateTrends($vendorId, $days, $year)
+    {
+        if ($days) {
+            $currentStart = now()->subDays($days - 1)->startOfDay();
+            $prevStart    = now()->subDays($days * 2 - 1)->startOfDay();
+            $prevEnd      = now()->subDays($days)->endOfDay();
+
+            $currentSales = \App\Models\Order::where('user_id', $vendorId)
+                ->whereNotIn('status', ['cancelled', 'returned'])
+                ->where('created_at', '>=', $currentStart)->sum('total_amount')
+                + \App\Models\PosSale::where('vendor_id', $vendorId)
+                ->where('status', 'paid')
+                ->where('created_at', '>=', $currentStart)->sum('total');
+
+            $prevSales = \App\Models\Order::where('user_id', $vendorId)
+                ->whereNotIn('status', ['cancelled', 'returned'])
+                ->whereBetween('created_at', [$prevStart, $prevEnd])->sum('total_amount')
+                + \App\Models\PosSale::where('vendor_id', $vendorId)
+                ->where('status', 'paid')
+                ->whereBetween('created_at', [$prevStart, $prevEnd])->sum('total');
+
+            $currentExpenses = \App\Models\VendorExpense::where('user_id', $vendorId)
+                ->where('expense_date', '>=', $currentStart)->sum('amount');
+            $prevExpenses = \App\Models\VendorExpense::where('user_id', $vendorId)
+                ->whereBetween('expense_date', [$prevStart, $prevEnd])->sum('amount');
+
+            $salesTrend    = $prevSales > 0 ? round((($currentSales - $prevSales) / $prevSales) * 100, 1) : 0;
+            $expenseTrend  = $prevExpenses > 0 ? round((($currentExpenses - $prevExpenses) / $prevExpenses) * 100, 1) : 0;
+            $currentProfit = $currentSales - $currentExpenses;
+            $prevProfit    = $prevSales - $prevExpenses;
+            $profitTrend   = $prevProfit > 0 ? round((($currentProfit - $prevProfit) / $prevProfit) * 100, 1) : 0;
+        } else {
+            $prevYear = (int)$year - 1;
+
+            $currentSales = \App\Models\Order::where('user_id', $vendorId)
+                ->whereNotIn('status', ['cancelled', 'returned'])
+                ->whereYear('created_at', $year)->sum('total_amount')
+                + \App\Models\PosSale::where('vendor_id', $vendorId)
+                ->where('status', 'paid')
+                ->whereYear('created_at', $year)->sum('total');
+
+            $prevSales = \App\Models\Order::where('user_id', $vendorId)
+                ->whereNotIn('status', ['cancelled', 'returned'])
+                ->whereYear('created_at', $prevYear)->sum('total_amount')
+                + \App\Models\PosSale::where('vendor_id', $vendorId)
+                ->where('status', 'paid')
+                ->whereYear('created_at', $prevYear)->sum('total');
+
+            $currentExpenses = \App\Models\VendorExpense::where('user_id', $vendorId)
+                ->whereYear('expense_date', $year)->sum('amount');
+            $prevExpenses = \App\Models\VendorExpense::where('user_id', $vendorId)
+                ->whereYear('expense_date', $prevYear)->sum('amount');
+
+            $salesTrend    = $prevSales > 0 ? round((($currentSales - $prevSales) / $prevSales) * 100, 1) : 0;
+            $expenseTrend  = $prevExpenses > 0 ? round((($currentExpenses - $prevExpenses) / $prevExpenses) * 100, 1) : 0;
+            $currentProfit = $currentSales - $currentExpenses;
+            $prevProfit    = $prevSales - $prevExpenses;
+            $profitTrend   = $prevProfit != 0 ? round((($currentProfit - $prevProfit) / abs($prevProfit)) * 100, 1) : 0;
+        }
+
+        return [
+            'sales'    => $salesTrend,
+            'expenses' => $expenseTrend,
+            'profit'   => $profitTrend,
+        ];
+    }
+
+    private function getMonthlySales($vendorId, $year)
     {
         // Monthly Online Sales
         $onlineMonthly = \App\Models\Order::where('user_id', $vendorId)
-            ->whereYear('created_at', date('Y'))
+            ->whereYear('created_at', $year)
             ->whereNotIn('status', ['cancelled', 'returned'])
             ->selectRaw('MONTH(created_at) as month, SUM(total_amount) as amount')
             ->groupBy('month')
@@ -83,7 +197,7 @@ class ReportController extends Controller implements HasMiddleware
 
         // Monthly POS Sales
         $posMonthly = \App\Models\PosSale::where('vendor_id', $vendorId)
-            ->whereYear('created_at', date('Y'))
+            ->whereYear('created_at', $year)
             ->where('status', 'paid')
             ->selectRaw('MONTH(created_at) as month, SUM(total) as amount')
             ->groupBy('month')
@@ -473,6 +587,7 @@ class ReportController extends Controller implements HasMiddleware
             'amount'       => 'required|numeric|min:0',
             'expense_date' => 'required|date',
             'status'       => 'required|string|in:pending,approved,rejected',
+            'category'     => 'nullable|string|max:255',
             'description'  => 'nullable|string',
         ]);
 
@@ -481,6 +596,7 @@ class ReportController extends Controller implements HasMiddleware
         $expense = \App\Models\VendorExpense::create([
             'user_id'      => $vendorId,
             'title'        => $request->title,
+            'category'     => $request->category ?: 'Other',
             'amount'       => $request->amount,
             'expense_date' => $request->expense_date,
             'status'       => strtolower($request->status),
@@ -728,9 +844,9 @@ class ReportController extends Controller implements HasMiddleware
 
         $totalSales = $onlineSales + $posSales;
 
-        $vendorProfile = \App\Models\VendorProfile::where('user_id', $vendorId)->first();
-        // Commission rate (could be fetched from global settings or vendor profile in reality)
-        $commissionRatePercentage = 10;
+        // Commission rate from global settings, default 0 if not configured
+        $commissionRateSetting = \App\Models\GlobalSetting::where('key', 'commission_rate')->first();
+        $commissionRatePercentage = $commissionRateSetting ? (float) $commissionRateSetting->value : 0;
         $platformFee = $totalSales * ($commissionRatePercentage / 100);
         $netEarnings = $totalSales - $platformFee;
 
@@ -776,7 +892,7 @@ class ReportController extends Controller implements HasMiddleware
             'total_sales' => $totalSales,
             'platform_fee' => $platformFee,
             'net_earnings' => $netEarnings,
-            'available_payout' => $vendorProfile ? $vendorProfile->balance : $netEarnings,
+            'available_payout' => $netEarnings,
             'growth_percentage' => round($growth, 1),
             'commission_rate' => $commissionRatePercentage,
             'ledger' => $ledger

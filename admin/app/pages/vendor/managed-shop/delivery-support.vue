@@ -59,8 +59,8 @@
             <div class="space-y-2">
               <p class="text-[10px] font-black text-slate-600 dark:text-slate-400">Please add this URL into your RedX courier panel for webhook.</p>
               <div class="flex">
-                <input readonly value="https://rakibstore.sellsull.com/redx/status-update" class="flex-grow h-12 px-5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 border-r-0 rounded-l-xl font-semibold text-slate-400 dark:text-slate-500 text-xs">
-                <button @click="copyToClipboard('https://rakibstore.sellsull.com/redx/status-update')" class="w-12 h-12 flex items-center justify-center bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-r-xl text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                <input readonly :value="`${webhookBase}/webhooks/redx/status-update`" class="flex-grow h-12 px-5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 border-r-0 rounded-l-xl font-semibold text-slate-400 dark:text-slate-500 text-xs">
+                <button @click="copyToClipboard(`${webhookBase}/webhooks/redx/status-update`)" class="w-12 h-12 flex items-center justify-center bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-r-xl text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
                   <Copy class="w-4 h-4" />
                 </button>
               </div>
@@ -74,7 +74,7 @@
             <h2 class="text-xl font-black text-[#F97316]">Pathao Courier</h2>
             <div class="flex items-center gap-2">
               <span class="text-[10px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-widest">{{ form.pathao.active ? 'Active' : 'Inactive' }}</span>
-              <button 
+              <button
                 @click="form.pathao.active = !form.pathao.active"
                 :class="['w-12 h-6 rounded-full transition-all duration-300 relative', form.pathao.active ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700']"
               >
@@ -82,32 +82,32 @@
               </button>
             </div>
           </div>
-          <p class="text-xs font-semibold text-slate-400 leading-relaxed">
+          <p class="text-xs font-semibold text-slate-400 dark:text-slate-500 leading-relaxed">
             Nationwide delivery with fast, reliable logistics for your business.
           </p>
           <div class="space-y-4" v-show="form.pathao.active">
-            <input v-model="form.pathao.storeId" type="text" placeholder="Store ID" class="w-full h-12 px-5 bg-white border border-slate-200 rounded-xl outline-none focus:border-indigo-500 font-semibold text-slate-700 text-sm">
-            <input v-model="form.pathao.clientId" type="text" placeholder="Client ID" class="w-full h-12 px-5 bg-white border border-slate-200 rounded-xl outline-none focus:border-indigo-500 font-semibold text-slate-700 text-sm">
+            <input v-model="form.pathao.storeId" type="text" placeholder="Store ID" class="w-full h-12 px-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 font-semibold text-slate-700 dark:text-slate-200 text-sm">
+            <input v-model="form.pathao.clientId" type="text" placeholder="Client ID" class="w-full h-12 px-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 font-semibold text-slate-700 dark:text-slate-200 text-sm">
             <div class="relative">
-              <input v-model="form.pathao.clientSecret" :type="showPathaoSecret ? 'text' : 'password'" placeholder="Client Secret" class="w-full h-12 px-5 pr-12 bg-white border border-slate-200 rounded-xl outline-none focus:border-indigo-500 font-semibold text-slate-700 text-sm">
-              <button @click="showPathaoSecret = !showPathaoSecret" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+              <input v-model="form.pathao.clientSecret" :type="showPathaoSecret ? 'text' : 'password'" placeholder="Client Secret" class="w-full h-12 px-5 pr-12 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 font-semibold text-slate-700 dark:text-slate-200 text-sm">
+              <button @click="showPathaoSecret = !showPathaoSecret" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
                 <EyeOff v-if="showPathaoSecret" class="w-4 h-4" />
                 <Eye v-else class="w-4 h-4" />
               </button>
             </div>
-            <input v-model="form.pathao.email" type="email" placeholder="Email" class="w-full h-12 px-5 bg-white border border-slate-200 rounded-xl outline-none focus:border-indigo-500 font-semibold text-slate-700 text-sm">
+            <input v-model="form.pathao.email" type="email" placeholder="Email" class="w-full h-12 px-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 font-semibold text-slate-700 dark:text-slate-200 text-sm">
             <div class="relative">
-              <input v-model="form.pathao.password" :type="showPathaoPass ? 'text' : 'password'" placeholder="Password" class="w-full h-12 px-5 pr-12 bg-white border border-slate-200 rounded-xl outline-none focus:border-indigo-500 font-semibold text-slate-700 text-sm">
-              <button @click="showPathaoPass = !showPathaoPass" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+              <input v-model="form.pathao.password" :type="showPathaoPass ? 'text' : 'password'" placeholder="Password" class="w-full h-12 px-5 pr-12 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 font-semibold text-slate-700 dark:text-slate-200 text-sm">
+              <button @click="showPathaoPass = !showPathaoPass" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
                 <EyeOff v-if="showPathaoPass" class="w-4 h-4" />
                 <Eye v-else class="w-4 h-4" />
               </button>
             </div>
             <div class="space-y-2">
-              <p class="text-[10px] font-black text-slate-600">Please add this URL into your Pathao courier panel for webhook.</p>
+              <p class="text-[10px] font-black text-slate-600 dark:text-slate-400">Please add this URL into your Pathao courier panel for webhook.</p>
               <div class="flex">
-                <input readonly value="https://rakibstore.sellsull.com/pathao/status-update" class="flex-grow h-12 px-5 bg-slate-50 border border-slate-200 border-r-0 rounded-l-xl font-semibold text-slate-400 text-xs">
-                <button @click="copyToClipboard('https://rakibstore.sellsull.com/pathao/status-update')" class="w-12 h-12 flex items-center justify-center bg-white border border-slate-200 rounded-r-xl text-slate-400 hover:text-indigo-600 transition-colors">
+                <input readonly :value="`${webhookBase}/webhooks/pathao/status-update`" class="flex-grow h-12 px-5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 border-r-0 rounded-l-xl font-semibold text-slate-400 dark:text-slate-500 text-xs">
+                <button @click="copyToClipboard(`${webhookBase}/webhooks/pathao/status-update`)" class="w-12 h-12 flex items-center justify-center bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-r-xl text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
                   <Copy class="w-4 h-4" />
                 </button>
               </div>
@@ -116,11 +116,11 @@
         </div>
 
         <!-- Steadfast Courier -->
-        <div class="bg-white rounded-[24px] border border-slate-100 shadow-sm p-8 space-y-6 relative overflow-hidden">
+        <div class="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-100 dark:border-slate-800 shadow-sm p-8 space-y-6 relative overflow-hidden transition-colors duration-300">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
               <h2 class="text-xl font-black text-[#22C55E]">Steadfast Courier</h2>
-              <button 
+              <button
                 v-if="form.steadfast.active"
                 @click="showSteadfastSettings = true"
                 class="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg text-slate-400 hover:text-[#22C55E] transition-all border border-slate-100 dark:border-slate-700"
@@ -130,32 +130,32 @@
               </button>
             </div>
             <div class="flex items-center gap-2">
-              <span class="text-[10px] font-black text-slate-300 uppercase tracking-widest">{{ form.steadfast.active ? 'Active' : 'Inactive' }}</span>
-              <button 
+              <span class="text-[10px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-widest">{{ form.steadfast.active ? 'Active' : 'Inactive' }}</span>
+              <button
                 @click="form.steadfast.active = !form.steadfast.active"
-                :class="['w-12 h-6 rounded-full transition-all duration-300 relative', form.steadfast.active ? 'bg-indigo-600' : 'bg-slate-200']"
+                :class="['w-12 h-6 rounded-full transition-all duration-300 relative', form.steadfast.active ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700']"
               >
                 <div :class="['w-4 h-4 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-sm', form.steadfast.active ? 'left-7' : 'left-1']"></div>
               </button>
             </div>
           </div>
-          <p class="text-xs font-semibold text-slate-400 leading-relaxed">
+          <p class="text-xs font-semibold text-slate-400 dark:text-slate-500 leading-relaxed">
             Secure and efficient parcel delivery service across Bangladesh.
           </p>
           <div class="space-y-4" v-show="form.steadfast.active">
-            <input v-model="form.steadfast.apiKey" type="text" placeholder="API Key" class="w-full h-12 px-5 bg-white border border-slate-200 rounded-xl outline-none focus:border-indigo-500 font-semibold text-slate-700 text-sm">
+            <input v-model="form.steadfast.apiKey" type="text" placeholder="API Key" class="w-full h-12 px-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 font-semibold text-slate-700 dark:text-slate-200 text-sm">
             <div class="relative">
-              <input v-model="form.steadfast.secretKey" :type="showSteadfastSecret ? 'text' : 'password'" placeholder="Secret Key" class="w-full h-12 px-5 pr-12 bg-white border border-slate-200 rounded-xl outline-none focus:border-indigo-500 font-semibold text-slate-700 text-sm">
-              <button @click="showSteadfastSecret = !showSteadfastSecret" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+              <input v-model="form.steadfast.secretKey" :type="showSteadfastSecret ? 'text' : 'password'" placeholder="Secret Key" class="w-full h-12 px-5 pr-12 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 font-semibold text-slate-700 dark:text-slate-200 text-sm">
+              <button @click="showSteadfastSecret = !showSteadfastSecret" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
                 <EyeOff v-if="showSteadfastSecret" class="w-4 h-4" />
                 <Eye v-else class="w-4 h-4" />
               </button>
             </div>
             <div class="space-y-2">
-              <p class="text-[10px] font-black text-slate-600">Please add this URL into your Steadfast courier panel for webhook.</p>
+              <p class="text-[10px] font-black text-slate-600 dark:text-slate-400">Please add this URL into your Steadfast courier panel for webhook.</p>
               <div class="flex">
-                <input readonly value="https://rakibstore.sellsull.com/steadfast/status-update" class="flex-grow h-12 px-5 bg-slate-50 border border-slate-200 border-r-0 rounded-l-xl font-semibold text-slate-400 text-xs">
-                <button @click="copyToClipboard('https://rakibstore.sellsull.com/steadfast/status-update')" class="w-12 h-12 flex items-center justify-center bg-white border border-slate-200 rounded-r-xl text-slate-400 hover:text-indigo-600 transition-colors">
+                <input readonly :value="`${webhookBase}/api/webhooks/steadfast`" class="flex-grow h-12 px-5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 border-r-0 rounded-l-xl font-semibold text-slate-400 dark:text-slate-500 text-xs">
+                <button @click="copyToClipboard(`${webhookBase}/api/webhooks/steadfast`)" class="w-12 h-12 flex items-center justify-center bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-r-xl text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
                   <Copy class="w-4 h-4" />
                 </button>
               </div>
@@ -164,14 +164,14 @@
         </div>
 
         <!-- Upcoming Courier Card -->
-        <div class="bg-white rounded-[24px] border border-slate-100 border-dashed border-2 p-12 flex flex-col items-center justify-center text-center space-y-4 group transition-all hover:bg-slate-50/50">
-          <div class="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+        <div class="bg-white dark:bg-slate-900 rounded-[24px] border-2 border-dashed border-slate-200 dark:border-slate-700 p-12 flex flex-col items-center justify-center text-center space-y-4 group transition-all hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
+          <div class="w-14 h-14 bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
             <MapPin class="w-7 h-7 text-indigo-500" />
           </div>
           <div>
-            <h3 class="text-lg font-black text-indigo-600">Upcoming Courier Integrations</h3>
-            <p class="text-xs font-semibold text-slate-400 max-w-[280px] mt-2 leading-relaxed">
-              Soon vendors will be able to integrate with more courier partners like <strong class="text-slate-600">Paperfly</strong>, <strong class="text-slate-600">Tiger Delivery</strong>, and many others.
+            <h3 class="text-lg font-black text-indigo-600 dark:text-indigo-400">Upcoming Courier Integrations</h3>
+            <p class="text-xs font-semibold text-slate-400 dark:text-slate-500 max-w-[280px] mt-2 leading-relaxed">
+              Soon vendors will be able to integrate with more courier partners like <strong class="text-slate-600 dark:text-slate-300">Paperfly</strong>, <strong class="text-slate-600 dark:text-slate-300">Tiger Delivery</strong>, and many others.
             </p>
           </div>
         </div>
@@ -180,17 +180,17 @@
       <!-- Footer Section -->
       <div class="space-y-6">
         <div class="grid grid-cols-1 gap-6">
-          <div class="bg-[#F8FAFC] rounded-[24px] border border-slate-100 p-8 flex items-center justify-between">
+          <div class="bg-[#F8FAFC] dark:bg-slate-900 rounded-[24px] border border-slate-100 dark:border-slate-800 p-8 flex items-center justify-between transition-colors duration-300">
             <div>
-              <h3 class="text-lg font-black text-[#1E293B]">Personal Delivery (OWN)</h3>
-              <p class="text-sm font-semibold text-slate-400 mt-1">Manage orders with your own delivery team.</p>
+              <h3 class="text-lg font-black text-[#1E293B] dark:text-white">Personal Delivery (OWN)</h3>
+              <p class="text-sm font-semibold text-slate-400 dark:text-slate-500 mt-1">Manage orders with your own delivery team.</p>
             </div>
-            <button 
+            <button
               @click="form.personal.active = !form.personal.active"
-              :class="['w-14 h-7 rounded-full transition-all duration-300 relative', form.personal.active ? 'bg-[#334155]' : 'bg-slate-200']"
+              :class="['w-14 h-7 rounded-full transition-all duration-300 relative', form.personal.active ? 'bg-[#334155] dark:bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700']"
             >
               <div :class="['w-5 h-5 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-sm', form.personal.active ? 'left-8' : 'left-1']"></div>
-              <span class="absolute -right-14 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              <span class="absolute -right-14 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
                 {{ form.personal.active ? 'Active' : 'Inactive' }}
               </span>
             </button>
@@ -326,6 +326,11 @@ definePageMeta({
 
 const { $toast } = useNuxtApp()
 const { getAll, createItem } = useCrud()
+const config = useRuntimeConfig()
+const webhookBase = computed(() => {
+  const apiBase = config.public.apiBase || ''
+  return apiBase.replace(/\/api\/?$/, '')
+})
 
 const showRedxPass = ref(false)
 const showPathaoSecret = ref(false)
@@ -373,7 +378,7 @@ const saveSettings = async () => {
   try {
     saving.value = true
     await createItem('/vendor/delivery', form, null, false)
-    $toast.success('Settings saved successfully')
+    $toast.success('Delivery settings saved successfully')
   } catch (error) {
     console.error(error)
     $toast.error('Failed to save settings')

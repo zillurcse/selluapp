@@ -9,6 +9,7 @@ class VendorExpense extends Model
     protected $fillable = [
         'user_id',
         'title',
+        'category',
         'description',
         'amount',
         'expense_date',

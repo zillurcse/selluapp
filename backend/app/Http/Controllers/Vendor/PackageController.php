@@ -60,7 +60,7 @@ class PackageController extends Controller
                 'user_id' => $user->id,
                 'subscription_id' => $subscription->id,
                 'amount' => $price,
-                'currency' => 'USD',
+                'currency' => 'BDT',
                 'status' => 'pending',
                 'payment_method' => $paymentMethod,
                 'payment_ref' => $paymentRef ?: 'REF-' . strtoupper(uniqid()),

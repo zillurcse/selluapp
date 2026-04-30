@@ -17,8 +17,14 @@ export default function useCrud() {
     const storefrontStore = useStorefrontStore();
     const vendorId = storefrontStore.vendorProfile?.user_id || 5;
 
+    // Send the current hostname so the backend resolves the correct tenant
+    const domain = import.meta.client
+      ? window.location.hostname.replace(/^www\./, '')
+      : useRequestURL().hostname.replace(/^www\./, '');
+
     const headers: any = {
       Accept: "application/json",
+      "X-Tenant-Domain": domain,
       "X-Vendor-Id": vendorId.toString(),
     };
     if (tokenStore.token) {

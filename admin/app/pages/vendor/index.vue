@@ -12,8 +12,20 @@
       </div>
       
       <div class="flex bg-white dark:bg-slate-900 rounded-md shadow-sm border border-gray-200 dark:border-slate-700 p-1">
-        <button class="px-4 py-1.5 text-sm font-medium rounded bg-gray-900 dark:bg-indigo-600 text-white shadow-sm transition-all active:scale-95">Last 7 Days</button>
-        <button class="px-4 py-1.5 text-sm font-medium rounded text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all">Last 30 Days</button>
+        <button 
+          @click="changePeriod('7d')"
+          :class="selectedPeriod === '7d' ? 'bg-gray-900 dark:bg-indigo-600 text-white shadow-sm' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800'"
+          class="px-4 py-1.5 text-sm font-medium rounded transition-all active:scale-95"
+        >
+          Last 7 Days
+        </button>
+        <button 
+          @click="changePeriod('30d')"
+          :class="selectedPeriod === '30d' ? 'bg-gray-900 dark:bg-indigo-600 text-white shadow-sm' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800'"
+          class="px-4 py-1.5 text-sm font-medium rounded transition-all active:scale-95"
+        >
+          Last 30 Days
+        </button>
       </div>
     </div>
 
@@ -173,9 +185,8 @@
               <h3 class="text-xl font-black text-slate-900 dark:text-white tracking-tight">Income Overview</h3>
               <p class="text-xs text-slate-500 dark:text-slate-500 font-bold uppercase tracking-widest mt-1">Monthly performance</p>
             </div>
-            <select class="bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-black px-4 py-2 outline-none cursor-pointer">
-              <option>2024</option>
-              <option>2023</option>
+            <select v-model="selectedYear" @change="fetchDashboardData" class="bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-black px-4 py-2 outline-none cursor-pointer">
+              <option v-for="year in availableYears" :key="year" :value="year">{{ year }}</option>
             </select>
           </div>
           
@@ -260,12 +271,27 @@ const { getAll } = useCrud()
 const stats = ref(null)
 const profile = ref(null)
 const loading = ref(true)
+const selectedYear = ref(new Date().getFullYear())
+const selectedPeriod = ref('7d')
+
+const availableYears = computed(() => {
+  const currentYear = new Date().getFullYear()
+  return Array.from({ length: 5 }, (_, i) => currentYear - i)
+})
+
+const changePeriod = (p) => {
+  selectedPeriod.value = p
+  fetchDashboardData()
+}
 
 const fetchDashboardData = async () => {
   loading.value = true
   try {
     const [statsRes, profileRes] = await Promise.all([
-      getAll('/vendor/reports/overview'),
+      getAll('/vendor/reports/overview', { 
+        year: selectedYear.value,
+        period: selectedPeriod.value 
+      }),
       getAll('/vendor/profile')
     ])
     stats.value = statsRes

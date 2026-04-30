@@ -2,32 +2,33 @@
 
 return [
 
-    /*
-     |--------------------------------------------------------------------------
-     | Cross-Origin Resource Sharing (CORS) Configuration
-     |--------------------------------------------------------------------------
-     |
-     | Here you may configure your settings for cross-origin resource sharing
-     | or "CORS". This determines what cross-origin operations may execute
-     | in web browsers. You are free to adjust these settings as needed.
-     |
-     | To learn more: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
-     |
-     */
-
     'paths' => ['api/*', 'sanctum/csrf-cookie', 'uploads/*', 'storage/*'],
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://localhost:3000', 'http://localhost:3001', 'https://app.thezillur.com', 'https://thezillur.com', 'https://www.thezillur.com', 'https://selluadmin.vercel.app', 'https://strideelectronics.com', 'https://www.strideelectronics.com'],
+    /*
+     | Static allowed origins (loaded from .env via CORS_ALLOWED_ORIGINS).
+     | Dynamic vendor domains are handled by DynamicCorsOrigin middleware.
+     | Example .env: CORS_ALLOWED_ORIGINS=https://admin.selluee.com,http://localhost:3000
+     */
+    'allowed_origins' => array_filter(
+        array_map('trim', explode(',', env('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://localhost:3001')))
+    ),
 
-    'allowed_origins_patterns' => [],
+    /*
+     | Regex patterns — matches any subdomain of the platform domain.
+     | Example .env: CORS_PLATFORM_DOMAIN=selluee.com
+     | This allows *.selluee.com automatically without a DB lookup.
+     */
+    'allowed_origins_patterns' => env('CORS_PLATFORM_DOMAIN')
+        ? ['^https?:\/\/([a-z0-9-]+\.)?' . preg_quote(env('CORS_PLATFORM_DOMAIN'), '/') . '$']
+        : [],
 
     'allowed_headers' => ['*'],
 
     'exposed_headers' => [],
 
-    'max_age' => 0,
+    'max_age' => 86400,
 
     'supports_credentials' => true,
 

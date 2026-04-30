@@ -16,41 +16,48 @@ class StorefrontController extends Controller
 {
     private function resolveTenantId(Request $request)
     {
+        // Direct vendor ID header (fastest — sent by client-side composables)
+        $vendorId = $request->header('X-Vendor-Id');
+        if ($vendorId && is_numeric($vendorId) && (int)$vendorId > 0) {
+            return (int) $vendorId;
+        }
+
         $domain = $request->header('X-Tenant-Domain') ?? $request->query('domain');
 
         if (!$domain) {
-            return null; // No specific tenant
+            return null;
         }
 
-        // Strip www. prefix to ensure clean database matches
+        // Strip www. prefix
         $domain = preg_replace('/^www\./', '', $domain);
 
-        // Check customDomain
-        $customSetting = ShopSetting::where('group', 'shop_domain')
-            ->where('key', 'customDomain')
-            ->where('value', $domain)
-            ->first();
-
-        if ($customSetting) {
-            return $customSetting->user_id;
-        }
-
-        // Check subDomain (Assuming main domain e.g. "demo.selluee.test" or "demo.localhost")
-        $parts = explode('.', $domain);
-        // If we have at least one dot, the first part might be a subdomain
-        if (count($parts) >= 2) {
-            $subdomain = $parts[0];
-            $subSetting = ShopSetting::where('group', 'shop_domain')
-                ->where('key', 'subDomain')
-                ->where('value', $subdomain)
+        // Cache domain→user_id lookups to avoid repeated DB queries
+        $cacheKey = 'tenant_domain_' . md5($domain);
+        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 600, function () use ($domain) {
+            $customSetting = ShopSetting::where('group', 'shop_domain')
+                ->where('key', 'customDomain')
+                ->where('value', $domain)
                 ->first();
 
-            if ($subSetting) {
-                return $subSetting->user_id;
+            if ($customSetting) {
+                return $customSetting->user_id;
             }
-        }
 
-        return null;
+            $parts = explode('.', $domain);
+            if (count($parts) >= 2) {
+                $subdomain = $parts[0];
+                $subSetting = ShopSetting::where('group', 'shop_domain')
+                    ->where('key', 'subDomain')
+                    ->where('value', $subdomain)
+                    ->first();
+
+                if ($subSetting) {
+                    return $subSetting->user_id;
+                }
+            }
+
+            return null;
+        });
     }
 
     public function index(Request $request)
@@ -114,6 +121,10 @@ class StorefrontController extends Controller
                 ->latest()
                 ->take(8);
 
+            if ($tenantId) {
+                $trendingProductsQuery->where('vendor_id', $tenantId);
+            }
+
             $trendingProducts = $trendingProductsQuery->get();
             
             $newArrivalsQuery = Product::with(['categories:id,name,slug', 'brand:id,name,slug'])
@@ -130,15 +141,20 @@ class StorefrontController extends Controller
             }
             $newArrivals = $newArrivalsQuery->get();
 
+            $bestSellingSub = \Illuminate\Support\Facades\DB::table('order_items')
+                ->select('product_id', \Illuminate\Support\Facades\DB::raw('SUM(quantity) as total_sold'))
+                ->groupBy('product_id');
+
             $bestSellersQuery = Product::with(['categories:id,name,slug', 'brand:id,name,slug'])
                 ->withAvg('reviews', 'rating')
                 ->withCount('reviews')
-                ->join('order_items', 'products.id', '=', 'order_items.product_id')
-                ->selectRaw('products.id, products.name, products.sale_price, products.slug, products.image, products.thumbnail, products.vendor_id, products.brand_id, products.is_active, products.status, SUM(order_items.quantity) as total_sold')
+                ->joinSub($bestSellingSub, 'best_selling', function ($join) {
+                    $join->on('products.id', '=', 'best_selling.product_id');
+                })
+                ->select('products.*', 'best_selling.total_sold')
                 ->where('products.is_active', true)
                 ->where('products.status', 'published')
-                ->groupBy('products.id', 'products.name', 'products.sale_price', 'products.slug', 'products.image', 'products.thumbnail', 'products.vendor_id', 'products.brand_id', 'products.is_active', 'products.status')
-                ->orderBy('total_sold', 'desc')
+                ->orderBy('best_selling.total_sold', 'desc')
                 ->latest()
                 ->take(8);
 
@@ -577,10 +593,16 @@ class StorefrontController extends Controller
                     $query->orderBy('is_featured', 'desc');
                     break;
                 case 'best_selling':
-                    $query->join('order_items', 'products.id', '=', 'order_items.product_id')
-                        ->selectRaw('products.*, SUM(order_items.quantity) as total_sold')
-                        ->groupBy('products.id')
-                        ->orderByRaw('SUM(order_items.quantity) DESC');
+                    $bestSellingSub = \Illuminate\Support\Facades\DB::table('order_items')
+                        ->select('product_id', \Illuminate\Support\Facades\DB::raw('SUM(quantity) as total_sold'))
+                        ->groupBy('product_id');
+
+                    $query->joinSub($bestSellingSub, 'best_selling', function ($join) {
+                        $join->on('products.id', '=', 'best_selling.product_id');
+                    })
+                    ->select('products.*', 'best_selling.total_sold')
+                    ->orderBy('best_selling.total_sold', 'desc')
+                    ->latest();
                     break;
                 default:
                     $query->latest();
@@ -594,15 +616,7 @@ class StorefrontController extends Controller
             $limit = $request->get('limit', 10);
             $offset = $request->get('offset', 0);
             
-            $totalQuery = (clone $query)->reorder();
-            if ($request->sort === 'best_selling') {
-                $subQuery = (clone $query)->reorder()->select('products.id');
-                $total = \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw("({$subQuery->toSql()}) as sub"))
-                    ->mergeBindings($subQuery->getQuery())
-                    ->count();
-            } else {
-                $total = $totalQuery->count();
-            }
+            $total = (clone $query)->reorder()->count();
             $items = $query->offset($offset)->limit($limit)->get();
             
             $items = \App\Http\Resources\Storefront\ProductResource::collection($items)->resolve();
@@ -618,24 +632,7 @@ class StorefrontController extends Controller
 
         $perPage = $request->get('per_page', 10);
         
-        if ($request->sort === 'best_selling') {
-            // For best_selling, we manually calculate the total for a correct grouped count
-            $subQuery = (clone $query)->reorder()->select('products.id');
-            $total = \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw("({$subQuery->toSql()}) as sub"))
-                ->mergeBindings($subQuery->getQuery())
-                ->count();
-            
-            $items = $query->forPage($request->get('page', 1), $perPage)->get();
-            $products = new \Illuminate\Pagination\LengthAwarePaginator(
-                $items, 
-                $total, 
-                $perPage, 
-                $request->get('page', 1),
-                ['path' => $request->url(), 'query' => $request->query()]
-            );
-        } else {
-            $products = $query->paginate($perPage);
-        }
+        $products = $query->paginate($perPage);
         $products->getCollection()->transform(function ($product) {
             return (new \App\Http\Resources\Storefront\ProductResource($product))->resolve();
         });

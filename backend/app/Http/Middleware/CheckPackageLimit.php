@@ -82,7 +82,7 @@ class CheckPackageLimit
                 // but including for completeness
                 $limit = $package->order_limit;
                 if ($limit !== -1) {
-                    $currentCount = \App\Models\Order::where('vendor_id', $vendorId)
+                    $currentCount = \App\Models\Order::where('user_id', $vendorId)
                         ->whereMonth('created_at', now()->month)
                         ->count();
                     if ($currentCount >= $limit) {

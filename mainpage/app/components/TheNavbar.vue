@@ -146,7 +146,7 @@
 
       <!-- Actions -->
       <div class="flex items-center gap-1 sm:gap-2 md:gap-4">
-        <button class="lg:hidden p-2 sm:p-2.5 rounded-full hover:bg-gray-100 transition-all active:scale-95 text-gray-900">
+        <button class="lg:hidden p-2 sm:p-2.5 rounded-full hover:bg-gray-100 transition-all active:scale-95 text-gray-900" @click="isMobileSearchOpen = !isMobileSearchOpen">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
         </button>
         
@@ -195,6 +195,13 @@
         </div>
       </div>
     </div>
+
+    <!-- Mobile Search Dropdown -->
+    <Transition name="search-drop">
+      <div v-if="isMobileSearchOpen" class="lg:hidden border-t border-gray-100 bg-white/95 backdrop-blur-xl px-4 py-3">
+        <TheGlobalSearch @select="isMobileSearchOpen = false" />
+      </div>
+    </Transition>
   </nav>
 </template>
 
@@ -209,6 +216,7 @@ const authStore = useAuthStore()
 const storefrontStore = useStorefrontStore()
 const isScrolled = ref(false)
 const isProfileOpen = ref(false)
+const isMobileSearchOpen = ref(false)
 const profileDropdown = ref<HTMLElement | null>(null)
 
 const userInitials = computed(() => {
@@ -244,9 +252,9 @@ const handleClickOutside = (event: Event) => {
 
 const accountLinks = [
   { to: '/account', label: 'Dashboard', icon: '🏠' },
-  { to: '/account', label: 'My Orders', icon: '📦' },
-  { to: '/account', label: 'Wishlist', icon: '❤️' },
-  { to: '/account', label: 'Profile Settings', icon: '👤' },
+  { to: '/account/orders', label: 'My Orders', icon: '📦' },
+  { to: '/account/wishlist', label: 'Wishlist', icon: '❤️' },
+  { to: '/account/profile', label: 'Profile Settings', icon: '👤' },
 ]
 
 onMounted(async () => {
@@ -299,5 +307,13 @@ onUnmounted(() => {
 }
 .animate-bounce {
   animation: bounce 0.6s infinite ease-in-out;
+}
+
+.search-drop-enter-active, .search-drop-leave-active {
+  transition: all 0.25s ease;
+}
+.search-drop-enter-from, .search-drop-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
 }
 </style>

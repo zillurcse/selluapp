@@ -8,6 +8,7 @@ use App\Models\VendorProfile;
 use App\Models\Package;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 
 class VendorManagementController extends Controller
@@ -75,9 +76,18 @@ class VendorManagementController extends Controller
 
         $user->assignRole('vendor');
 
+        $storeName = $validated['store_name'] ?? $validated['name'] . "'s Store";
+        $baseSlug  = Str::slug($storeName);
+        $storeSlug = $baseSlug;
+        $counter   = 1;
+        while (VendorProfile::where('store_slug', $storeSlug)->exists()) {
+            $storeSlug = $baseSlug . '-' . $counter++;
+        }
+
         VendorProfile::create([
             'user_id'              => $user->id,
-            'store_name'           => $validated['store_name'] ?? $validated['name'] . "'s Store",
+            'store_name'           => $storeName,
+            'store_slug'           => $storeSlug,
             'phone'                => $validated['phone'] ?? null,
             'address'              => $validated['address'] ?? null,
             'package_id'           => $validated['package_id'] ?? null,

@@ -397,7 +397,6 @@ const syncCourier = async (courier) => {
              order.value = res.data
              orderStatus.value = order.value.status
              emit('updated')
-             toast.success(`Successfully sent order to ${courier} Courier`)
         }
     } catch (e) {
         toast.error(e.response?.data?.message || `Failed to sync with ${courier} Courier.`)

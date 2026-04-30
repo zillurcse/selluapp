@@ -85,14 +85,13 @@ class SteadfastService
         }
 
         $this->setPackageConfig();
-        
         try {
             $result = SteadfastCourier::placeOrder($data);
             
             if ($result && isset($result['status']) && $result['status'] == 200) {
                 return $result;
             }
-
+            
             \Illuminate\Support\Facades\Log::error("Steadfast API Failed via Package. Response: " . json_encode($result));
             
             return array_merge(['error' => true], (array)$result);

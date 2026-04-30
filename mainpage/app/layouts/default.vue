@@ -2,6 +2,7 @@
   <div class="site-wrapper">
     <TheNavbar />
     <CartDrawer />
+    <WishlistDrawer />
     <main class="main-content">
       <slot />
     </main>

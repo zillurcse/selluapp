@@ -7,8 +7,8 @@
       <!-- Badges & Wishlist -->
       <div class="absolute top-4 w-full px-4 z-10 flex justify-between items-start pointer-events-none">
         <div class="flex flex-col gap-2">
-          <span v-if="product.id % 3 === 0" class="px-3 py-1 bg-gray-900 text-white text-[10px] font-bold uppercase tracking-wider rounded-[10px] shadow-md">New</span>
-          <span v-if="product.id % 4 === 0" class="px-3 py-1 bg-rose-500 text-white text-[10px] font-bold uppercase tracking-wider rounded-[10px] shadow-md">Sale</span>
+          <span v-if="product.is_featured" class="px-3 py-1 bg-gray-900 text-white text-[10px] font-bold uppercase tracking-wider rounded-[10px] shadow-md">Featured</span>
+          <span v-if="product.discount_price" class="px-3 py-1 bg-rose-500 text-white text-[10px] font-bold uppercase tracking-wider rounded-[10px] shadow-md">Sale</span>
         </div>
         <button 
           @click.stop="handleWishlist"
@@ -62,7 +62,7 @@
       </h3>
       <div class="flex items-center gap-1.5 sm:gap-2">
         <span class="text-sm sm:text-lg font-extrabold text-gray-900">৳{{ product.price }}</span>
-        <span v-if="product.id % 4 === 0" class="text-[10px] sm:text-xs text-gray-400 line-through">৳{{ (parseFloat(product.price) * 1.25).toFixed(2) }}</span>
+        <span v-if="product.discount_price" class="text-[10px] sm:text-xs text-gray-400 line-through">৳{{ product.discount_price }}</span>
       </div>
     </div>
   </div>
