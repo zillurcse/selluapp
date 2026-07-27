@@ -28,36 +28,7 @@ class StorefrontController extends Controller
             return null;
         }
 
-        // Strip www. prefix
-        $domain = preg_replace('/^www\./', '', $domain);
-
-        // Cache domain→user_id lookups to avoid repeated DB queries
-        $cacheKey = 'tenant_domain_' . md5($domain);
-        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 600, function () use ($domain) {
-            $customSetting = ShopSetting::where('group', 'shop_domain')
-                ->where('key', 'customDomain')
-                ->where('value', $domain)
-                ->first();
-
-            if ($customSetting) {
-                return $customSetting->user_id;
-            }
-
-            $parts = explode('.', $domain);
-            if (count($parts) >= 2) {
-                $subdomain = $parts[0];
-                $subSetting = ShopSetting::where('group', 'shop_domain')
-                    ->where('key', 'subDomain')
-                    ->where('value', $subdomain)
-                    ->first();
-
-                if ($subSetting) {
-                    return $subSetting->user_id;
-                }
-            }
-
-            return null;
-        });
+        return app(\App\Services\ShopDomainService::class)->resolveUserIdFromDomain($domain);
     }
 
     public function index(Request $request)
@@ -68,13 +39,18 @@ class StorefrontController extends Controller
         $homeLandingPage = \App\Models\LandingPage::where('is_home', true)
             ->where('status', 'active')
             ->when($tenantId, fn($q) => $q->where('vendor_id', $tenantId))
-            ->first();
+            ->get()
+            ->first(fn ($page) => $this->landingPageIsWithinCampaign($page));
 
         if ($homeLandingPage) {
             return $this->landingPage($homeLandingPage->slug);
         }
 
-        $userId = $tenantId ?? 5; // fallback to 5 for default global sliders
+        $userId = $tenantId ?? default_vendor_id();
+
+        if (!$userId) {
+            return response()->json(['message' => 'Store not found.'], 404);
+        }
 
         $isEssential = $request->query('only') === 'essential';
         $cacheKey = 'storefront_index_' . ($tenantId ?? 'global') . ($isEssential ? '_essential' : '_full');
@@ -640,9 +616,17 @@ class StorefrontController extends Controller
         return response()->json($products);
     }
 
-    public function categories()
+    public function categories(Request $request)
     {
-        return response()->json(Category::where('is_active', true)->whereNull('parent_id')->get());
+        $tenantId = $this->resolveTenantId($request);
+
+        $query = Category::where('is_active', true)->whereNull('parent_id');
+
+        if ($tenantId) {
+            $query->where('vendor_id', $tenantId);
+        }
+
+        return response()->json($query->get());
     }
 
     public function infiniteCategories(Request $request)
@@ -786,6 +770,10 @@ class StorefrontController extends Controller
             ->where('status', 'active')
             ->firstOrFail();
 
+        if (!$this->landingPageIsWithinCampaign($landingPage)) {
+            abort(404, 'This landing page is not available right now.');
+        }
+
         $products = [];
 
         if ($landingPage->landing_page_type === 'common') {
@@ -870,6 +858,15 @@ class StorefrontController extends Controller
             $vendorProfile->banner_url = $vendorProfile->banner ? Storage::disk('public')->url($vendorProfile->banner) : null;
         }
 
+        $landingPageSettings = ShopSetting::where('user_id', $landingPage->vendor_id)
+            ->where('group', 'landing_page')
+            ->get()
+            ->pluck('value', 'key')
+            ->map(function ($val) {
+                $decoded = json_decode($val, true);
+                return (json_last_error() === JSON_ERROR_NONE) ? $decoded : $val;
+            });
+
         return response()->json([
             'landing_page' => $landingPage,
             'products'     => $products,
@@ -877,8 +874,24 @@ class StorefrontController extends Controller
             'best_sellers' => $bestSellers,
             'seasonal_sale' => $seasonalSale,
             'vendor'       => $vendorProfile,
+            'landing_page_settings' => $landingPageSettings,
             'loyalty_program' => ShopSetting::where('user_id', $landingPage->vendor_id)->where('group', 'loyalty_program')->get()->pluck('value', 'key')
         ]);
+    }
+
+    private function landingPageIsWithinCampaign(\App\Models\LandingPage $landingPage): bool
+    {
+        $now = now();
+
+        if ($landingPage->campaign_start_at && $now->lt($landingPage->campaign_start_at)) {
+            return false;
+        }
+
+        if ($landingPage->campaign_end_at && $now->gt($landingPage->campaign_end_at)) {
+            return false;
+        }
+
+        return true;
     }
 
     public function states(Request $request)

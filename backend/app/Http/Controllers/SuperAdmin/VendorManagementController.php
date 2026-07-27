@@ -183,6 +183,10 @@ class VendorManagementController extends Controller
      */
     public function loginAsVendor(User $user)
     {
+        if (!auth()->user()?->hasRole('super-admin')) {
+            return response()->json(['message' => 'Forbidden. Super admin access required.'], 403);
+        }
+
         if (!$user->hasRole('vendor')) {
             return response()->json(['message' => 'User is not a vendor'], 403);
         }

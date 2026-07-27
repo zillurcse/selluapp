@@ -20,7 +20,11 @@ class AuthController extends Controller
         ]);
 
         $user = User::where('email', $request->email)->firstOrFail();
-        $vendorId = $request->header('X-Vendor-Id') ?: 5; // Use ?: to catch empty strings
+        $vendorId = resolve_vendor_id_from_request($request, required: true);
+
+        if (!$vendorId) {
+            return response()->json(['message' => 'Vendor context is required.'], 422);
+        }
 
         // Generate a signed URL that expires in 30 minutes
         $signedUrl = URL::temporarySignedRoute(
@@ -33,7 +37,7 @@ class AuthController extends Controller
         $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
         $magicLink = str_replace(url('/api/auth/magic-link/verify'), $frontendUrl . '/login/verify', $signedUrl);
 
-        \Illuminate\Support\Facades\Log::info("Magic Link Debug: VendorID={$vendorId}, UserID={$user->id}, Link={$magicLink}");
+        \Illuminate\Support\Facades\Log::info("Magic Link Debug: VendorID={$vendorId}, UserID={$user->id}");
 
         try {
             \App\Helpers\EmailHelper::setMailConfig($vendorId);
@@ -64,12 +68,16 @@ class AuthController extends Controller
 
         // Use false to ignore the host/absolute URL, checking only path and parameters
         if (!$request->hasValidSignature(false)) {
-            \Illuminate\Support\Facades\Log::warning("Magic Link Signature Validation FAILED (lenient check) for: " . $request->fullUrl());
-            return response()->json([
-                'message' => 'Invalid or expired magic link.',
-                'debug_url' => $request->fullUrl(),
-                'debug_params' => $request->all()
-            ], 401);
+            \Illuminate\Support\Facades\Log::warning("Magic Link Signature Validation FAILED for: " . $request->email);
+
+            $response = ['message' => 'Invalid or expired magic link.'];
+
+            if (config('app.debug')) {
+                $response['debug_url'] = $request->fullUrl();
+                $response['debug_params'] = $request->all();
+            }
+
+            return response()->json($response, 401);
         }
 
         \Illuminate\Support\Facades\Log::info("Magic Link Signature Validation SUCCESS for: " . $request->email);
@@ -105,7 +113,11 @@ class AuthController extends Controller
         ]);
 
 
-        $vendorId = $request->header('X-Vendor-Id') ?? 5; // Use header or fallback
+        $vendorId = resolve_vendor_id_from_request($request, required: true);
+
+        if (!$vendorId) {
+            return response()->json(['message' => 'Vendor context is required.'], 422);
+        }
 
         $customer = Customer::create([
             'vendor_id' => $vendorId,

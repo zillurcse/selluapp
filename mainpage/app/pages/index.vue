@@ -9,11 +9,7 @@
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
     </div>
   </div>
-  <div v-else class="bg-white relative overflow-hidden">
-    <!-- Decorative background elements -->
-    <div class="absolute top-0 right-0 w-[600px] h-[600px] bg-rose-50/50 rounded-full blur-[120px] -z-10 pointer-events-none"></div>
-    <div class="absolute bottom-1/4 left-0 w-[400px] h-[400px] bg-indigo-50/30 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
-
+  <div v-else class="bg-white">
     <!-- ===== HERO SLIDER ===== -->
     <HeroSlider :slides="slides" />
 

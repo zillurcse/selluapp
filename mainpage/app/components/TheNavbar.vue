@@ -1,18 +1,18 @@
 <template>
-  <nav 
+  <nav
     :class="[
-      'fixed top-0 left-0 right-0 z-[900] flex flex-col transition-all duration-500',
-      isScrolled ? 'bg-white/90 backdrop-blur-xl shadow-sm' : 'bg-transparent'
+      'fixed top-0 left-0 right-0 z-[900] flex flex-col transition-all duration-300',
+      isScrolled ? 'bg-white/95 backdrop-blur-md border-b border-[var(--border)] shadow-sm' : 'bg-white/80 backdrop-blur-md border-b border-transparent'
     ]"
   >
     <!-- Announcement Bar -->
-    <div 
-      v-if="storefrontStore.generalSettings?.showAnnouncement" 
-      :style="{ 
-        backgroundColor: storefrontStore.generalSettings?.announcementBgColor || '#000000', 
-        color: storefrontStore.generalSettings?.announcementTextColor || '#ffffff' 
+    <div
+      v-if="storefrontStore.generalSettings?.showAnnouncement"
+      :style="{
+        backgroundColor: storefrontStore.generalSettings?.announcementBgColor || '#111111',
+        color: storefrontStore.generalSettings?.announcementTextColor || '#ffffff'
       }"
-      class="w-full py-2.5 px-4 text-center text-[11px] sm:text-xs font-black tracking-widest uppercase transition-all duration-500 overflow-hidden relative"
+      class="w-full py-2 px-4 text-center text-[11px] sm:text-xs font-semibold tracking-wide transition-all duration-300 overflow-hidden"
       :class="[isScrolled ? 'h-0 py-0 opacity-0' : 'h-auto opacity-100']"
     >
       <div class="container mx-auto">
@@ -20,185 +20,149 @@
       </div>
     </div>
 
-    <!-- Main Nav Content -->
-    <div 
-      :class="[
-        'w-full flex items-center transition-all duration-500',
-        isScrolled ? 'h-[70px]' : 'h-20'
-      ]"
-    >
-      <div class="container mx-auto flex justify-between items-center h-full px-4 sm:px-6 -mt-1 md:-mt-0">
-      <NuxtLink to="/" class="flex items-center group shrink-0">
-        <template v-if="storefrontStore.vendorProfile">
-          <!-- Vendor Logo -->
-          <img v-if="storefrontStore.vendorProfile.logo_url" :src="storefrontStore.vendorProfile.logo_url" :alt="storefrontStore.vendorProfile.store_name" class="h-12 md:h-12 max-w-[120px] md:max-w-[150px] object-contain" />
-          <span v-else class="text-lg md:text-2xl font-extrabold tracking-tighter text-gray-900 font-heading">
-            {{ storefrontStore.vendorProfile.store_name }}<span class="text-indigo-600">.</span>
-          </span>
-        </template>
-        <template v-else>
-          <span class="text-xl md:text-2xl font-extrabold tracking-tighter text-gray-900 font-heading">EMU</span>
-          <span class="text-xl md:text-2xl font-extrabold text-indigo-600 font-heading">.</span>
-        </template>
-      </NuxtLink>
-      
-      <!-- Desktop Navigation -->
-      <div class="hidden md:flex items-center gap-10 h-full">
-        <NuxtLink to="/" class="nav-link-tailwind">Home</NuxtLink>
-        
-        <!-- Shop Dropdown (Hover) -->
-        <div class="relative h-full flex items-center group/nav">
-          <button class="nav-link-tailwind flex items-center gap-1">
-            Shop 
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-300 group-hover/nav:rotate-180"><path d="m6 9 6 6 6-6"/></svg>
-          </button>
-          
-          <div class="absolute -left-[175px] top-full translate-y-4 opacity-0 invisible group-hover/nav:opacity-100 group-hover/nav:visible group-hover/nav:translate-y-0 transition-all duration-500 bg-white/95 backdrop-blur-xl border border-gray-100 rounded-[2rem] p-8 flex gap-12 shadow-2xl z-[100] min-w-max max-w-[90vw]">
-            <!-- Categories Grid -->
-            <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-12 gap-y-10">
-              <div v-for="cat in storefrontStore.topCategories.slice(0, 8)" :key="cat.slug" class="flex flex-col gap-4 min-w-[160px]">
-                <NuxtLink :to="`/shop?category=${cat.slug}`" class="flex items-center gap-3 group/cat-title">
-                  <div class="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-xl group-hover/cat-title:bg-indigo-50 group-hover/cat-title:scale-110 transition-all duration-300">
-                    {{ cat.icon }}
-                  </div>
-                  <div class="flex flex-col">
-                    <span class="text-[0.7rem] uppercase tracking-[0.15em] font-black text-gray-900 group-hover/cat-title:text-indigo-600 transition-colors">{{ cat.name }}</span>
-                    <span class="text-[0.6rem] text-gray-400 font-bold uppercase tracking-tighter">{{ cat.children?.length || 0 }} Collections</span>
-                  </div>
-                </NuxtLink>
-                
-                <div class="flex flex-col gap-1.5 pl-1.5 border-l-2 border-transparent hover:border-indigo-100 transition-colors">
-                  <NuxtLink 
-                    v-for="child in cat.children" 
-                    :key="child.slug" 
-                    :to="`/shop?category=${child.slug}`" 
-                    class="text-[0.88rem] font-semibold text-gray-500 hover:text-indigo-600 hover:translate-x-2 transition-all duration-300 py-0.5"
-                  >
-                    {{ child.name }}
-                  </NuxtLink>
-                  <NuxtLink 
-                    v-if="!cat.children?.length" 
-                    :to="`/shop?category=${cat.slug}`" 
-                    class="text-[0.8rem] font-medium text-gray-400 hover:text-indigo-500 transition-colors italic"
-                  >
-                    View All {{ cat.name }}
-                  </NuxtLink>
-                </div>
-              </div>
-            </div>
-
-            <!-- Featured Section -->
-            <div class="border-l border-gray-100 pl-12 flex flex-col gap-6">
-              <div>
-                <h4 class="text-[0.65rem] uppercase tracking-[0.2em] font-bold text-gray-400 mb-4 px-2">Featured</h4>
-                <div class="flex flex-col gap-1">
-                  <NuxtLink to="/shop?sort=newest" class="dropdown-item-tailwind">
-                    <span class="mr-2">✨</span> New Arrivals
-                  </NuxtLink>
-                  <NuxtLink to="/shop?sort=best_selling" class="dropdown-item-tailwind">
-                    <span class="mr-2">🔥</span> Best Sellers
-                  </NuxtLink>
-                  <NuxtLink to="/shop?sale=true" class="dropdown-item-tailwind text-rose-500 hover:bg-rose-50">
-                    <span class="mr-2">🏷️</span> Seasonal Sale
-                  </NuxtLink>
-                </div>
-              </div>
-              
-              <div class="relative w-64 aspect-[4/3] rounded-2xl overflow-hidden group/nav-img shadow-lg">
-                <img src="~/assets/img/vase.png" alt="Featured" class="w-full h-full object-cover transition-transform duration-1000 group-hover/nav-img:scale-110" />
-                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-5">
-                  <span class="text-[0.6rem] font-black text-indigo-300 uppercase tracking-widest mb-1">Premium Quality</span>
-                  <h5 class="text-white font-extrabold text-sm leading-snug">The Artisanal Collection 2026</h5>
-                </div>
-                <div class="absolute inset-0 bg-indigo-600/10 opacity-0 group-hover/nav-img:opacity-100 transition-opacity duration-500"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Pages Dropdown (Hover) -->
-        <div v-if="storefrontStore.customPages && storefrontStore.customPages.length > 0" class="relative h-full flex items-center group/nav">
-          <button class="nav-link-tailwind flex items-center gap-1">
-            Pages 
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-300 group-hover/nav:rotate-180"><path d="m6 9 6 6 6-6"/></svg>
-          </button>
-          
-          <div class="absolute top-full left-1/2 -translate-x-1/2 translate-y-4 opacity-0 invisible group-hover/nav:opacity-100 group-hover/nav:visible group-hover/nav:translate-y-0 transition-all duration-500 bg-white/95 backdrop-blur-xl border border-gray-100 rounded-2xl p-2 flex flex-col gap-1 shadow-2xl z-[100] min-w-[220px]">
-             <template>
-               <NuxtLink v-for="page in storefrontStore.customPages" :key="page.id" :to="`/pages/${page.slug}`" class="dropdown-item-tailwind">
-                 {{ page.title }}
-               </NuxtLink>
-               <div class="border-t border-gray-50 my-1"></div>
-             </template>
-             <!-- <NuxtLink to="/about" class="dropdown-item-tailwind">About Us</NuxtLink>
-             <NuxtLink to="/contact" class="dropdown-item-tailwind">Contact</NuxtLink>
-             <NuxtLink to="/faq" class="dropdown-item-tailwind">FAQ</NuxtLink> -->
-          </div>
-        </div>
-
-        <NuxtLink to="/about" class="nav-link-tailwind">Our Story</NuxtLink>
-      </div>
-
-      <!-- Desktop Search Bar -->
-      <div class="hidden lg:flex flex-1 max-w-xl mx-8">
-        <TheGlobalSearch />
-      </div>
-
-      <!-- Actions -->
-      <div class="flex items-center gap-1 sm:gap-2 md:gap-4">
-        <button class="lg:hidden p-2 sm:p-2.5 rounded-full hover:bg-gray-100 transition-all active:scale-95 text-gray-900" @click="isMobileSearchOpen = !isMobileSearchOpen">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-        </button>
-        
-        <!-- Wishlist -->
-        <button @click="toggleWishlistDrawer" class="relative p-2 sm:p-2.5 rounded-full hover:bg-gray-100 transition-all active:scale-95 text-gray-900 group" title="Wishlist">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="transition-colors duration-300" :class="{ 'fill-rose-500 text-rose-500': wishlistCount > 0, 'group-hover:text-rose-500': wishlistCount === 0 }"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
-          <span v-if="wishlistCount > 0" class="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 bg-rose-500 text-white text-[9px] sm:text-[10px] font-bold w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full flex items-center justify-center">{{ wishlistCount }}</span>
-        </button>
-
-        <!-- Cart -->
-        <button class="relative p-2 sm:p-2.5 rounded-full hover:bg-gray-100 transition-all active:scale-95 text-gray-900" @click="toggleCart">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-          <span v-if="cartCount > 0" class="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 bg-gray-900 text-white text-[9px] sm:text-[10px] font-bold w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full flex items-center justify-center animate-bounce">{{ cartCount }}</span>
-        </button>
-
-        <!-- User Account / Login Toggle -->
-        <div class="relative h-auto flex items-center" ref="profileDropdown">
-          <template v-if="authStore.isAuthenticated">
-            <button @click="toggleProfile" class="h-10 w-10 md:h-11 md:w-11 rounded-xl bg-gradient-to-br from-indigo-600 to-blue-500 p-0.5 shadow-lg shadow-indigo-200/50 hover:scale-105 active:scale-95 transition-all flex items-center justify-center">
-              <div class="w-full h-full bg-white rounded-[10px] flex items-center justify-center font-black text-xs md:text-sm text-indigo-600">{{ userInitials }}</div>
-            </button>
-            
-            <div 
-              :class="[
-                'absolute top-full right-0 mt-3 bg-white/95 backdrop-blur-xl border border-gray-100 rounded-2xl p-2 flex flex-col shadow-2xl z-[100] min-w-[240px] transition-all duration-300 transform',
-                isProfileOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2 pointer-events-none'
-              ]"
+    <div class="w-full flex items-center h-[64px] md:h-[72px]">
+      <div class="container mx-auto flex justify-between items-center h-full gap-4">
+        <NuxtLink to="/" class="flex items-center shrink-0">
+          <template v-if="storefrontStore.vendorProfile">
+            <img
+              v-if="storefrontStore.vendorProfile.logo_url"
+              :src="storefrontStore.vendorProfile.logo_url"
+              :alt="storefrontStore.vendorProfile.store_name"
+              class="h-9 md:h-10 max-w-[140px] object-contain"
+            />
+            <span
+              v-else
+              class="text-lg md:text-xl font-semibold tracking-tight text-gray-900"
+              style="font-family: var(--font-heading)"
             >
-              <div class="px-4 py-3 border-b border-gray-50 mb-2">
-                <div class="text-[0.9rem] font-bold text-gray-900 truncate">{{ authStore.user?.name }}</div>
-                <div class="text-[0.75rem] font-medium text-gray-400 truncate">{{ authStore.user?.email }}</div>
-              </div>
-              <NuxtLink v-for="link in accountLinks" :key="link.to" :to="link.to" @click="isProfileOpen = false" class="dropdown-item-tailwind flex items-center gap-3">
-                <span class="text-lg opacity-70 group-hover:opacity-100">{{ link.icon }}</span> {{ link.label }}
-              </NuxtLink>
-              <div class="border-t border-gray-50 my-1"></div>
-              <button @click="handleLogout" class="dropdown-item-tailwind w-full text-left flex items-center gap-3 text-rose-500 hover:bg-rose-50 cursor-pointer border-none bg-transparent">
-                <span class="text-lg">🚪</span> Sign out
-              </button>
-            </div>
+              {{ storefrontStore.vendorProfile.store_name }}
+            </span>
           </template>
           <template v-else>
-            <NuxtLink to="/login" class="px-3 sm:px-4 py-2 rounded-xl bg-gray-900 text-white font-bold text-xs sm:text-sm hover:bg-indigo-600 transition-colors shadow-lg shadow-gray-900/20">Login</NuxtLink>
+            <span class="text-xl font-semibold tracking-tight text-gray-900" style="font-family: var(--font-heading)">Store</span>
           </template>
+        </NuxtLink>
+
+        <!-- Desktop Navigation -->
+        <div class="hidden md:flex items-center gap-8 h-full">
+          <NuxtLink to="/" class="nav-link">Home</NuxtLink>
+
+          <div class="relative h-full flex items-center group/nav">
+            <button class="nav-link flex items-center gap-1">
+              Shop
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="transition-transform duration-200 group-hover/nav:rotate-180"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+
+            <div class="absolute left-1/2 -translate-x-1/2 top-full pt-2 opacity-0 invisible group-hover/nav:opacity-100 group-hover/nav:visible transition-all duration-200 z-[100]">
+              <div class="bg-white border border-[var(--border)] rounded-2xl p-6 flex gap-10 shadow-lg min-w-max max-w-[90vw]">
+                <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-10 gap-y-6">
+                  <div v-for="cat in storefrontStore.topCategories.slice(0, 8)" :key="cat.slug" class="flex flex-col gap-2 min-w-[140px]">
+                    <NuxtLink :to="`/shop?category=${cat.slug}`" class="flex items-center gap-2.5 group/cat">
+                      <span class="w-9 h-9 rounded-xl bg-[var(--muted)] flex items-center justify-center text-lg">{{ cat.icon }}</span>
+                      <span class="text-sm font-semibold text-gray-900 group-hover/cat:opacity-60 transition-opacity">{{ cat.name }}</span>
+                    </NuxtLink>
+                    <div class="flex flex-col gap-1 pl-1">
+                      <NuxtLink
+                        v-for="child in cat.children"
+                        :key="child.slug"
+                        :to="`/shop?category=${child.slug}`"
+                        class="text-sm text-[var(--muted-foreground)] hover:text-gray-900 transition-colors py-0.5"
+                      >
+                        {{ child.name }}
+                      </NuxtLink>
+                      <NuxtLink
+                        v-if="!cat.children?.length"
+                        :to="`/shop?category=${cat.slug}`"
+                        class="text-sm text-[var(--muted-foreground)] hover:text-gray-900 transition-colors"
+                      >
+                        View all
+                      </NuxtLink>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="border-l border-[var(--border)] pl-8 flex flex-col gap-2 min-w-[180px]">
+                  <span class="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)] mb-1">Featured</span>
+                  <NuxtLink to="/shop?sort=newest" class="dropdown-item">New Arrivals</NuxtLink>
+                  <NuxtLink to="/shop?sort=best_selling" class="dropdown-item">Best Sellers</NuxtLink>
+                  <NuxtLink to="/shop?sale=true" class="dropdown-item text-[var(--sale)]">On Sale</NuxtLink>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="storefrontStore.customPages?.length" class="relative h-full flex items-center group/nav">
+            <button class="nav-link flex items-center gap-1">
+              Pages
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="transition-transform duration-200 group-hover/nav:rotate-180"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div class="absolute top-full left-1/2 -translate-x-1/2 pt-2 opacity-0 invisible group-hover/nav:opacity-100 group-hover/nav:visible transition-all duration-200 z-[100]">
+              <div class="bg-white border border-[var(--border)] rounded-2xl p-2 flex flex-col shadow-lg min-w-[200px]">
+                <NuxtLink v-for="page in storefrontStore.customPages" :key="page.id" :to="`/pages/${page.slug}`" class="dropdown-item">
+                  {{ page.title }}
+                </NuxtLink>
+              </div>
+            </div>
+          </div>
+
+          <NuxtLink to="/about" class="nav-link">Our Story</NuxtLink>
+        </div>
+
+        <div class="hidden lg:flex flex-1 max-w-md mx-4">
+          <TheGlobalSearch />
+        </div>
+
+        <div class="flex items-center gap-1 sm:gap-2">
+          <button class="lg:hidden p-2.5 rounded-xl hover:bg-[var(--muted)] transition-colors text-gray-900" @click="isMobileSearchOpen = !isMobileSearchOpen" aria-label="Search">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          </button>
+
+          <button @click="toggleWishlistDrawer" class="relative p-2.5 rounded-xl hover:bg-[var(--muted)] transition-colors text-gray-900" title="Wishlist" aria-label="Wishlist">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" :class="{ 'fill-[var(--sale)] text-[var(--sale)]': wishlistCount > 0 }"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+            <span v-if="wishlistCount > 0" class="absolute top-1.5 right-1.5 bg-[var(--sale)] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">{{ wishlistCount }}</span>
+          </button>
+
+          <button class="relative p-2.5 rounded-xl hover:bg-[var(--muted)] transition-colors text-gray-900" @click="toggleCart" aria-label="Cart">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <span v-if="cartCount > 0" class="absolute top-1.5 right-1.5 bg-gray-900 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">{{ cartCount }}</span>
+          </button>
+
+          <div class="relative" ref="profileDropdown">
+            <template v-if="authStore.isAuthenticated">
+              <button @click="toggleProfile" class="h-9 w-9 md:h-10 md:w-10 rounded-xl bg-[var(--muted)] flex items-center justify-center font-semibold text-xs text-gray-800 hover:bg-gray-200 transition-colors">
+                {{ userInitials }}
+              </button>
+              <div
+                :class="[
+                  'absolute top-full right-0 mt-2 bg-white border border-[var(--border)] rounded-2xl p-2 flex flex-col shadow-lg z-[100] min-w-[220px] transition-all duration-200',
+                  isProfileOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-1 pointer-events-none'
+                ]"
+              >
+                <div class="px-3 py-2.5 border-b border-[var(--border)] mb-1">
+                  <div class="text-sm font-semibold text-gray-900 truncate">{{ authStore.user?.name }}</div>
+                  <div class="text-xs text-[var(--muted-foreground)] truncate">{{ authStore.user?.email }}</div>
+                </div>
+                <NuxtLink v-for="link in accountLinks" :key="link.to" :to="link.to" @click="isProfileOpen = false" class="dropdown-item">
+                  {{ link.label }}
+                </NuxtLink>
+                <div class="border-t border-[var(--border)] my-1"></div>
+                <button @click="handleLogout" class="dropdown-item w-full text-left text-[var(--sale)] cursor-pointer">
+                  Sign out
+                </button>
+              </div>
+            </template>
+            <template v-else>
+              <NuxtLink to="/login" class="px-3.5 sm:px-4 py-2 rounded-xl bg-gray-900 text-white font-semibold text-xs sm:text-sm hover:opacity-90 transition-opacity">
+                Login
+              </NuxtLink>
+            </template>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Mobile Search Dropdown -->
     <Transition name="search-drop">
-      <div v-if="isMobileSearchOpen" class="lg:hidden border-t border-gray-100 bg-white/95 backdrop-blur-xl px-4 py-3">
+      <div v-if="isMobileSearchOpen" class="lg:hidden border-t border-[var(--border)] bg-white px-4 py-3">
         <TheGlobalSearch @select="isMobileSearchOpen = false" />
       </div>
     </Transition>
@@ -206,8 +170,6 @@
 </template>
 
 <script setup lang="ts">
-// import { useAuthStore } from '~/stores/useAuthStore'
-// import { useStorefrontStore } from '~/stores/useStorefrontStore'
 import { toast } from 'vue-sonner'
 
 const { toggleCart, cartCount } = useCart()
@@ -251,20 +213,18 @@ const handleClickOutside = (event: Event) => {
 }
 
 const accountLinks = [
-  { to: '/account', label: 'Dashboard', icon: '🏠' },
-  { to: '/account/orders', label: 'My Orders', icon: '📦' },
-  { to: '/account/wishlist', label: 'Wishlist', icon: '❤️' },
-  { to: '/account/profile', label: 'Profile Settings', icon: '👤' },
+  { to: '/account', label: 'Dashboard' },
+  { to: '/account/orders', label: 'My Orders' },
+  { to: '/account/wishlist', label: 'Wishlist' },
+  { to: '/account/profile', label: 'Profile Settings' },
 ]
 
 onMounted(async () => {
-  // Fetch storefront data if categories are empty
   if (storefrontStore.topCategories.length === 0) {
     await storefrontStore.fetchStorefront()
   }
-
   window.addEventListener('scroll', () => {
-    isScrolled.value = window.scrollY > 50
+    isScrolled.value = window.scrollY > 40
   })
   document.addEventListener('click', handleClickOutside)
 })
@@ -275,45 +235,25 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.font-heading {
-  font-family: var(--font-heading);
+.nav-link {
+  @apply text-sm font-medium text-[var(--muted-foreground)] transition-colors duration-200 hover:text-gray-900;
 }
 
-.nav-link-tailwind {
-  @apply text-[0.92rem] font-bold text-gray-400 tracking-tight transition-all duration-300 relative py-1 hover:text-gray-900;
-}
-
-.group\/nav:hover .nav-link-tailwind {
+.group\/nav:hover .nav-link {
   @apply text-gray-900;
 }
 
-.nav-link-tailwind::after {
-  content: '';
-  @apply absolute bottom-0 left-0 w-full h-[2.5px] bg-gray-900 scale-x-0 origin-right transition-transform duration-500;
+.dropdown-item {
+  @apply text-sm font-medium text-gray-600 px-3 py-2 rounded-xl transition-colors hover:bg-[var(--muted)] hover:text-gray-900;
 }
 
-.nav-link-tailwind:hover::after,
-.group\/nav:hover .nav-link-tailwind::after {
-  @apply scale-x-100 origin-left;
+.search-drop-enter-active,
+.search-drop-leave-active {
+  transition: all 0.2s ease;
 }
-
-.dropdown-item-tailwind {
-  @apply text-[0.88rem] font-semibold text-gray-500 px-4 py-2.5 rounded-xl transition-all duration-300 hover:bg-gray-50 hover:text-gray-900 hover:translate-x-1 flex items-center;
-}
-
-@keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
-}
-.animate-bounce {
-  animation: bounce 0.6s infinite ease-in-out;
-}
-
-.search-drop-enter-active, .search-drop-leave-active {
-  transition: all 0.25s ease;
-}
-.search-drop-enter-from, .search-drop-leave-to {
+.search-drop-enter-from,
+.search-drop-leave-to {
   opacity: 0;
-  transform: translateY(-8px);
+  transform: translateY(-6px);
 }
 </style>

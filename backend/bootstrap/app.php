@@ -22,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'package.feature' => \App\Http\Middleware\CheckPackageFeature::class,
             'package.limit' => \App\Http\Middleware\CheckPackageLimit::class,
+            'super-admin' => \App\Http\Middleware\EnsureSuperAdmin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

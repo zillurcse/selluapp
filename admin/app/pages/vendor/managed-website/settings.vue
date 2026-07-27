@@ -1,5 +1,5 @@
 <template>
-  <div class="p-10 bg-[#f8fafc] min-h-screen">
+  <div class="p-6 sm:p-10 bg-[#f8fafc] dark:bg-slate-950 min-h-screen transition-colors duration-300">
     <div class="max-w-[1200px] mx-auto mb-8">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-4">
@@ -9,7 +9,7 @@
           >
             <ChevronLeft class="w-6 h-6" />
           </NuxtLink>
-          <h1 class="text-2xl font-black text-slate-900 tracking-tight leading-none">Webpage Settings</h1>
+          <h1 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-none">Webpage Settings</h1>
         </div>
         <button 
           @click="saveSettings" 
@@ -29,13 +29,13 @@
     <div v-else class="max-w-[1200px] mx-auto space-y-8 pb-20">
       
       <!-- SEO & Webpage Identity -->
-      <div class="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
+      <div class="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
         <div class="p-8 border-b border-slate-50 flex items-center gap-4 bg-indigo-50/30">
           <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center">
             <Globe class="w-6 h-6" />
           </div>
           <div>
-            <h2 class="text-xl font-black text-slate-900">SEO & Webpage Identity</h2>
+            <h2 class="text-xl font-black text-slate-900 dark:text-white">SEO & Webpage Identity</h2>
             <p class="text-sm font-bold text-slate-500">Configure how your site appears in search engines and browser tabs</p>
           </div>
         </div>
@@ -84,13 +84,13 @@
       </div>
       
       <!-- Lookbook Settings -->
-      <div class="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
+      <div class="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
         <div class="p-8 border-b border-slate-50 flex items-center gap-4 bg-indigo-50/30">
           <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center">
             <Layout class="w-6 h-6" />
           </div>
           <div>
-            <h2 class="text-xl font-black text-slate-900">Lookbook Section</h2>
+            <h2 class="text-xl font-black text-slate-900 dark:text-white">Lookbook Section</h2>
             <p class="text-sm font-bold text-slate-500">Customize the featured lookbook section on your homepage</p>
           </div>
           <div class="ml-auto flex items-center gap-3">
@@ -242,13 +242,13 @@
       </div>
       
       <!-- Newsletter Settings -->
-      <div class="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
+      <div class="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
         <div class="p-8 border-b border-slate-50 flex items-center gap-4 bg-indigo-50/30">
           <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center">
             <Megaphone class="w-6 h-6" />
           </div>
           <div>
-            <h2 class="text-xl font-black text-slate-900">Newsletter Section</h2>
+            <h2 class="text-xl font-black text-slate-900 dark:text-white">Newsletter Section</h2>
             <p class="text-sm font-bold text-slate-500">Customize the newsletter subscription section on your homepage</p>
           </div>
           <div class="ml-auto flex items-center gap-3">
@@ -321,13 +321,13 @@
       </div>
       
       <!-- Top Announcement Bar Details -->
-      <div class="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
+      <div class="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
         <div class="p-8 border-b border-slate-50 flex items-center gap-4 bg-rose-50/30">
           <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center">
             <Megaphone class="w-6 h-6" />
           </div>
           <div>
-            <h2 class="text-xl font-black text-slate-900">Announcement Bar</h2>
+            <h2 class="text-xl font-black text-slate-900 dark:text-white">Announcement Bar</h2>
             <p class="text-sm font-bold text-slate-500">Display a prominent message at the top of your website</p>
           </div>
           <div class="ml-auto flex items-center gap-3">
@@ -371,13 +371,13 @@
       </div>
       
       <!-- Footer Settings -->
-      <div class="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
+      <div class="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
         <div class="p-8 border-b border-slate-50 flex items-center gap-4">
           <div class="w-12 h-12 bg-slate-100 text-slate-600 rounded-2xl flex items-center justify-center">
             <LayoutBottombar class="w-6 h-6" />
           </div>
           <div>
-            <h2 class="text-xl font-black text-slate-900">Footer Settings</h2>
+            <h2 class="text-xl font-black text-slate-900 dark:text-white">Footer Settings</h2>
             <p class="text-sm font-bold text-slate-500">Configure your website footer text</p>
           </div>
         </div>
@@ -424,7 +424,7 @@ import AppMediaLibrary from '~/components/AppMediaLibrary.vue'
 
 definePageMeta({
   middleware: 'auth',
-  permissions: 'settings.view'
+  permissions: ['website.view', 'settings.view']
 })
 
 const { $toast } = useNuxtApp()
@@ -549,9 +549,8 @@ const saveSettings = async () => {
           settings: newsletterForm
         }
       ]
-    })
+    }, null, false)
 
-    // $toast.success('Settings saved successfully')
     router.push('/vendor/managed-website')
   } catch (error) {
     console.error(error)

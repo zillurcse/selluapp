@@ -107,7 +107,8 @@ class ProductController extends Controller implements HasMiddleware
         }
 
         $validated['vendor_id'] = auth()->id();
-        $validated['slug'] = Str::slug($validated['name']) . '-' . Str::random(6);
+        $slugSource = ! empty($validated['slug']) ? $validated['slug'] : $validated['name'];
+        $validated['slug'] = $this->resolveUniqueSlug($slugSource);
         
         // Ensure SKU is null if empty string to avoid unique constraint issues
         if (isset($validated['sku']) && empty($validated['sku'])) {
@@ -262,8 +263,12 @@ class ProductController extends Controller implements HasMiddleware
             $validated['specifications'] = json_decode($validated['specifications'], true);
         }
 
-        if (isset($validated['name']) && $validated['name'] !== $product->name) {
-            $validated['slug'] = Str::slug($validated['name']) . '-' . Str::random(6);
+        if (! empty($validated['slug']) && $validated['slug'] !== $product->slug) {
+            $validated['slug'] = $this->resolveUniqueSlug($validated['slug'], $product->id);
+        } elseif (isset($validated['name']) && $validated['name'] !== $product->name && empty($validated['slug'])) {
+            $validated['slug'] = $this->resolveUniqueSlug($validated['name'], $product->id);
+        } elseif (isset($validated['slug']) && $validated['slug'] === $product->slug) {
+            unset($validated['slug']);
         }
 
         // Ensure SKU is null if empty string
@@ -473,5 +478,31 @@ class ProductController extends Controller implements HasMiddleware
         if ($vendorId) {
             Cache::forget('storefront_index_' . $vendorId);
         }
+    }
+
+    private function resolveUniqueSlug(string $base, ?int $ignoreProductId = null): string
+    {
+        $slug = Str::slug($base);
+
+        if ($slug === '') {
+            $slug = 'product';
+        }
+
+        $original = $slug;
+        $attempts = 0;
+
+        while (Product::query()
+            ->when($ignoreProductId, fn ($query) => $query->where('id', '!=', $ignoreProductId))
+            ->where('slug', $slug)
+            ->exists()) {
+            $slug = $original.'-'.Str::random(6);
+            $attempts++;
+
+            if ($attempts > 20) {
+                break;
+            }
+        }
+
+        return $slug;
     }
 }

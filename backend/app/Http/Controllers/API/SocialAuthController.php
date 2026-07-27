@@ -30,8 +30,11 @@ class SocialAuthController extends Controller
         $tenantId = $this->resolveTenantId($domain);
 
         if (!$tenantId) {
-            // Fallback to default vendor for development
-            $tenantId = 5;
+            $tenantId = default_vendor_id();
+        }
+
+        if (!$tenantId) {
+            return response()->json(['message' => 'Store not found.'], 404);
         }
 
         // Load vendor's Google Client ID to validate the token audience

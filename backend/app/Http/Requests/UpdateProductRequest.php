@@ -2,10 +2,15 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\NormalizesProductInput;
+use App\Http\Requests\Concerns\ValidatesProductBusinessRules;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class UpdateProductRequest extends FormRequest
 {
+    use NormalizesProductInput;
+    use ValidatesProductBusinessRules;
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -21,23 +26,25 @@ class UpdateProductRequest extends FormRequest
      */
     public function rules(): array
     {
-        $productId = $this->route('product')->id ?? $this->product;
+        $product = $this->route('product');
+        $productId = is_object($product) ? $product->id : $product;
 
         return [
             'category_ids' => 'sometimes|array',
             'category_ids.*' => 'exists:categories,id',
             'brand_id' => 'nullable|exists:brands,id',
             'unit_id' => 'nullable|exists:units,id',
-            'name' => 'sometimes|string|max:255',
-            'sku' => 'nullable|string|max:100|unique:products,sku,' . $productId,
-            'product_code' => 'nullable|string|max:100|unique:products,product_code,' . $productId,
+            'name' => 'sometimes|required|string|max:255',
+            'slug' => 'sometimes|nullable|string|max:255',
+            'sku' => 'sometimes|required|string|max:100|unique:products,sku,' . $productId,
+            'product_code' => 'sometimes|required|string|max:100|unique:products,product_code,' . $productId,
             'short_description' => 'nullable|string',
-            'description' => 'nullable|string',
+            'description' => 'sometimes|required|string',
             'purchase_price' => 'nullable|numeric',
             'sale_price' => 'sometimes|numeric',
             'discount_price' => 'nullable|numeric',
             'stock_qty' => 'nullable|integer',
-            'weight' => 'required|numeric|min:0',
+            'weight' => 'sometimes|numeric|min:0',
             'has_variants' => 'boolean',
             'is_featured' => 'boolean',
             'is_special' => 'boolean',
@@ -49,7 +56,10 @@ class UpdateProductRequest extends FormRequest
             'discount_type' => 'nullable|string|in:flat,percent',
             'note' => 'nullable|string',
             'video_url' => 'nullable|string|url',
-            'status' => 'nullable|string',
+            'status' => 'nullable|string|in:published,draft,pending',
+            'dropshipping_url' => 'nullable|url|required_if:is_dropshipping,1,true',
+            'dropshipping_sku' => 'nullable|string|max:100',
+            'gallery_items' => 'nullable|string',
             'seo_title' => 'nullable|string|max:255',
             'seo_description' => 'nullable|string',
             'seo_keywords' => 'nullable|string',
@@ -65,5 +75,12 @@ class UpdateProductRequest extends FormRequest
             'gallery' => 'nullable|array',
             'gallery.*' => 'nullable',
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            $this->validateProductBusinessRules($validator);
+        });
     }
 }

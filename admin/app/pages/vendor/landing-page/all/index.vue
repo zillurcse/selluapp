@@ -1,24 +1,29 @@
 <template>
-  <div class="flex flex-col h-full bg-gray-50/50 dark:bg-slate-950 min-h-screen transition-colors duration-300 p-10">
+  <div class="flex flex-col h-full bg-gray-50/50 dark:bg-slate-950 min-h-screen transition-colors duration-300 p-4 sm:p-6 lg:p-10">
     <!-- Header -->
-    <div class="flex items-center justify-between px-8 py-6 bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 transition-colors duration-300 rounded-2xl mb-8 shadow-sm">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 sm:px-8 py-6 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 transition-colors duration-300 rounded-2xl mb-6 sm:mb-8 shadow-sm">
       <div class="flex items-center">
-        <button @click="$router.back()" class="p-2 bg-black text-white rounded-full hover:bg-gray-800 transition-colors mr-6 shadow-sm">
+        <NuxtLink to="/vendor/landing-page" class="p-2 bg-black text-white rounded-full hover:bg-gray-800 transition-colors mr-4 sm:mr-6 shadow-sm">
           <ArrowLeft class="w-5 h-5" />
-        </button>
+        </NuxtLink>
         <div>
-          <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">All Landing Pages</h1>
-          <p class="text-gray-500 dark:text-slate-400 mt-1">View and manage all your landing pages.</p>
+          <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">All Landing Pages</h1>
+          <p class="text-gray-500 dark:text-slate-400 mt-1 text-sm">View, preview, and manage every page in your campaign library.</p>
         </div>
       </div>
-      <NuxtLink to="/vendor/landing-page/create" class="bg-black dark:bg-slate-800 text-white px-6 py-3 rounded-xl font-bold hover:bg-gray-800 transition-all flex items-center shadow-lg active:scale-95">
+      <NuxtLink to="/vendor/landing-page/create" class="bg-black dark:bg-slate-800 text-white px-6 py-3 rounded-xl font-bold hover:bg-gray-800 transition-all flex items-center justify-center shadow-lg active:scale-95">
         <Plus class="w-5 h-5 mr-2" />
         Create New
       </NuxtLink>
     </div>
 
+    <div v-if="loading" class="flex flex-col items-center justify-center py-24 gap-3">
+      <Loader2 class="w-8 h-8 animate-spin text-gray-400" />
+      <p class="text-sm text-gray-500">Loading landing pages...</p>
+    </div>
+
     <!-- Table -->
-    <div class="max-w-7xl mx-auto w-full">
+    <div v-else class="max-w-7xl mx-auto w-full">
       <div class="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden transition-colors duration-300">
         <table class="w-full text-left border-collapse">
           <thead>
@@ -91,14 +96,15 @@
                     {{ countdown(page.campaign_end_at) }}
                   </div>
                 </div>
-                <span v-else class="text-xs text-gray-300 dark:text-slate-600">—</span>
+                <span v-else class="text-xs text-gray-300 dark:text-slate-600">Always on</span>
               </td>
 
               <!-- Status Toggle -->
               <td class="px-6 py-5">
                 <button
                   @click="handleToggleStatus(page)"
-                  class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold transition-all active:scale-95"
+                  :disabled="actionId === page.id"
+                  class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold transition-all active:scale-95 disabled:opacity-50"
                   :class="page.status === 'active' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200' : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-gray-200'"
                 >
                   <span class="w-1.5 h-1.5 rounded-full mr-2" :class="page.status === 'active' ? 'bg-green-500' : 'bg-gray-400'"></span>
@@ -109,19 +115,19 @@
               <!-- Actions -->
               <td class="px-6 py-5 text-right">
                 <div class="flex items-center justify-end space-x-1">
-                  <a :href="`/l/${page.slug}`" target="_blank" class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Preview">
+                  <button @click="openPreview(page)" :disabled="actionId === page.id" class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Preview on storefront">
                     <Eye class="w-4 h-4" />
-                  </a>
+                  </button>
                   <NuxtLink :to="`/vendor/landing-page/create?id=${page.id}`" class="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all" title="Edit">
                     <Pencil class="w-4 h-4" />
                   </NuxtLink>
-                  <button @click="copyLink(page.slug)" class="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all" title="Copy Link">
+                  <button @click="copyLink(page)" :disabled="actionId === page.id" class="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all" title="Copy storefront link">
                     <Copy class="w-4 h-4" />
                   </button>
-                  <button @click="handleSetHome(page)" :class="page.is_home ? 'text-indigo-600 bg-indigo-50' : 'text-gray-400 hover:text-indigo-600 hover:bg-indigo-50'" class="p-2 rounded-lg transition-all" title="Set as Home">
+                  <button @click="handleSetHome(page)" :disabled="actionId === page.id" :class="page.is_home ? 'text-indigo-600 bg-indigo-50' : 'text-gray-400 hover:text-indigo-600 hover:bg-indigo-50'" class="p-2 rounded-lg transition-all" title="Set as Home">
                     <Home class="w-4 h-4" />
                   </button>
-                  <button @click="handleDelete(page.id)" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Delete">
+                  <button @click="handleDelete(page)" :disabled="actionId === page.id" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Delete">
                     <Trash2 class="w-4 h-4" />
                   </button>
                 </div>
@@ -150,7 +156,7 @@
 <script setup>
 import {
   ArrowLeft, Plus, LayoutTemplate, Eye, Pencil, Copy, Trash2,
-  Link2, Home, Box, Layers, Globe, Calendar, Clock
+  Link2, Home, Box, Layers, Globe, Calendar, Clock, Loader2
 } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 
@@ -161,14 +167,22 @@ definePageMeta({
 })
 
 const { getAll, deleteItem, updateItem } = useCrud()
+const { buildLandingPageUrl, copyLandingPageLink } = useStorefrontUrl()
+
 const landingPages = ref([])
+const loading = ref(true)
+const actionId = ref(null)
 
 const fetchLandingPages = async () => {
+  loading.value = true
   try {
     const res = await getAll('/vendor/landing-pages')
-    landingPages.value = res || []
+    landingPages.value = Array.isArray(res) ? res : (res?.data || [])
   } catch (e) {
     console.error('Failed to fetch landing pages:', e)
+    toast.error('Could not load landing pages.')
+  } finally {
+    loading.value = false
   }
 }
 
@@ -200,31 +214,62 @@ const countdown = (endDate) => {
 }
 
 // ---- Actions ----
-const copyLink = (slug) => {
-  if (typeof window !== 'undefined') {
-    navigator.clipboard.writeText(`${window.location.origin}/l/${slug}`)
-    toast.success('Link copied!')
+const openPreview = async (page) => {
+  try {
+    const url = await buildLandingPageUrl(page.slug)
+    window.open(url, '_blank', 'noopener,noreferrer')
+  } catch {
+    toast.error('Could not open preview link.')
+  }
+}
+
+const copyLink = async (page) => {
+  try {
+    await copyLandingPageLink(page.slug)
+    toast.success('Storefront link copied!')
+  } catch {
+    toast.error('Could not copy link.')
   }
 }
 
 const handleToggleStatus = async (page) => {
+  actionId.value = page.id
   const newStatus = page.status === 'active' ? 'draft' : 'active'
-  await updateItem(`/vendor/landing-pages/${page.id}`, { status: newStatus })
-  page.status = newStatus
+  try {
+    await updateItem(`/vendor/landing-pages/${page.id}`, { status: newStatus })
+    page.status = newStatus
+    toast.success(newStatus === 'active' ? 'Page is now live.' : 'Page moved to draft.')
+  } catch (e) {
+    console.error(e)
+  } finally {
+    actionId.value = null
+  }
 }
 
 const handleSetHome = async (page) => {
+  actionId.value = page.id
   const newHomeStatus = !page.is_home
-  await updateItem(`/vendor/landing-pages/${page.id}`, { is_home: newHomeStatus })
-  fetchLandingPages()
-  toast.success(newHomeStatus ? 'Set as home page!' : 'Home status removed.')
+  try {
+    await updateItem(`/vendor/landing-pages/${page.id}`, { is_home: newHomeStatus })
+    await fetchLandingPages()
+    toast.success(newHomeStatus ? 'Set as store home page!' : 'Home status removed.')
+  } catch (e) {
+    console.error(e)
+  } finally {
+    actionId.value = null
+  }
 }
 
-const handleDelete = async (id) => {
-  if (confirm('Delete this landing page?')) {
-    await deleteItem(id, '/vendor/landing-pages')
-    fetchLandingPages()
-    toast.success('Deleted.')
+const handleDelete = async (page) => {
+  if (!confirm(`Delete "${page.title}"? This cannot be undone.`)) return
+  actionId.value = page.id
+  try {
+    await deleteItem(page.id, '/vendor/landing-pages')
+    await fetchLandingPages()
+  } catch (e) {
+    console.error(e)
+  } finally {
+    actionId.value = null
   }
 }
 </script>

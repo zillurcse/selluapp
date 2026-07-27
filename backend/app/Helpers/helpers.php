@@ -225,3 +225,35 @@ if (!function_exists('getShippingCost')) {
         }
     }
 }
+
+if (!function_exists('default_vendor_id')) {
+    function default_vendor_id(): ?int
+    {
+        $id = config('tenant.default_vendor_id');
+
+        return ($id !== null && $id !== '') ? (int) $id : null;
+    }
+}
+
+if (!function_exists('resolve_vendor_id_from_request')) {
+    function resolve_vendor_id_from_request(\Illuminate\Http\Request $request, bool $required = false): ?int
+    {
+        $vendorId = $request->header('X-Vendor-Id');
+
+        if ($vendorId && is_numeric($vendorId) && (int) $vendorId > 0) {
+            return (int) $vendorId;
+        }
+
+        $default = default_vendor_id();
+
+        if ($default) {
+            return $default;
+        }
+
+        if ($required) {
+            return null;
+        }
+
+        return null;
+    }
+}

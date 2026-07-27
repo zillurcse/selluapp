@@ -1,87 +1,74 @@
 <template>
-  <section v-if="promotions && promotions.length > 0" class="bg-white">
-    <div class="container mx-auto px-4 sm:px-6">
-      <!-- Section Header -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 sm:mb-10">
+  <section v-if="promotions && promotions.length > 0" class="section-pad">
+    <div class="container mx-auto">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
         <div>
-          <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight font-heading">Exclusive Deals</h2>
-          <div class="h-1 w-12 bg-indigo-600 mt-2 rounded-full"></div>
+          <span class="section-label">Limited time</span>
+          <h2 class="section-title mt-1">Exclusive deals</h2>
         </div>
-        <NuxtLink to="/shop" class="text-xs sm:text-sm font-bold uppercase tracking-widest text-gray-400 hover:text-indigo-600 transition-colors">
-          View All Offers
+        <NuxtLink to="/shop" class="text-sm font-semibold text-gray-900 hover:opacity-60 transition-opacity">
+          View all offers
         </NuxtLink>
       </div>
 
-      <!-- Promotions Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div 
-          v-for="promo in promotions" 
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div
+          v-for="promo in promotions"
           :key="promo.id"
-          class="group relative overflow-hidden rounded-3xl transition-all duration-500 hover:shadow-2xl hover:-translate-y-1"
+          class="group relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--muted)] transition-shadow hover:shadow-md"
         >
-          <!-- Background Visual -->
-          <div 
-            class="absolute inset-0 transition-transform duration-700 group-hover:scale-110"
-            :class="getPromoBgClass(promo.type)"
-          >
-            <img 
-              v-if="promo.banner" 
-              :src="promo.banner" 
-              class="w-full h-full object-cover opacity-50 mix-blend-overlay"
+          <div class="absolute inset-0">
+            <img
+              v-if="promo.banner"
+              :src="promo.banner"
+              class="w-full h-full object-cover opacity-40"
               :alt="promo.title"
+              loading="lazy"
             />
-            <div v-else class="w-full h-full opacity-10 flex items-center justify-center text-[10rem] select-none">
-              {{ getPromoEmoji(promo.type) }}
-            </div>
           </div>
 
-          <!-- Content Overlay -->
-          <div class="relative p-6 sm:p-8 h-full min-h-[200px] sm:min-h-[220px] flex flex-col justify-between z-10">
+          <div class="relative p-6 sm:p-7 min-h-[200px] flex flex-col justify-between z-10 bg-gradient-to-br from-white/90 via-white/80 to-white/60 backdrop-blur-[2px]">
             <div>
-              <div class="flex items-center gap-2 mb-4">
-                <span 
-                  class="px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm"
-                  :class="getPromoTextClass(promo.type)"
-                >
+              <div class="flex items-center gap-2 mb-3">
+                <span class="px-2.5 py-1 bg-white border border-[var(--border)] rounded-lg text-[10px] font-semibold uppercase tracking-wider text-gray-700">
                   {{ formatType(promo.type) }}
                 </span>
-                <span v-if="promo.is_stackable" class="px-2 py-1 bg-green-500 text-white rounded-full text-[8px] font-bold uppercase">
+                <span v-if="promo.is_stackable" class="px-2 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-[10px] font-semibold uppercase">
                   Stackable
                 </span>
               </div>
-              <h3 class="text-xl sm:text-2xl font-bold text-gray-900 leading-tight mb-2 group-hover:text-indigo-600 transition-colors">
+              <h3 class="text-xl font-semibold text-gray-900 leading-snug mb-3" style="font-family: var(--font-heading)">
                 {{ promo.title }}
               </h3>
-              
-              <!-- Countdown Timer -->
-              <div v-if="promo.end_date" class="flex gap-2 sm:gap-3 mb-4">
+
+              <div v-if="promo.end_date" class="flex gap-2 mb-3">
                 <div v-for="(val, label) in getCountdown(promo.end_date)" :key="label" class="flex flex-col items-center">
-                  <div class="w-8 h-8 sm:w-10 sm:h-10 bg-white/80 backdrop-blur-md rounded-lg sm:rounded-xl border border-white/50 shadow-sm flex items-center justify-center font-bold text-gray-900 text-xs sm:text-sm">
+                  <div class="w-9 h-9 bg-white border border-[var(--border)] rounded-lg flex items-center justify-center font-semibold text-gray-900 text-sm tabular-nums">
                     {{ val }}
                   </div>
-                  <span class="text-[7px] sm:text-[8px] font-bold uppercase tracking-tighter text-gray-400 mt-1">{{ label }}</span>
+                  <span class="text-[9px] font-medium uppercase tracking-wide text-[var(--muted-foreground)] mt-1">{{ label }}</span>
                 </div>
               </div>
 
-              <p v-if="promo.type === 'buy_x_get_y' && promo.rules" class="text-gray-600 text-sm font-medium">
-                Buy {{ promo.rules.buy_qty }} Get {{ promo.rules.get_qty }} with 
-                {{ formatDiscount(promo.discount_value, promo.discount_unit) }} Off
+              <p v-if="promo.type === 'buy_x_get_y' && promo.rules" class="text-gray-600 text-sm">
+                Buy {{ promo.rules.buy_qty }} Get {{ promo.rules.get_qty }} —
+                {{ formatDiscount(promo.discount_value, promo.discount_unit) }} off
               </p>
-              <p v-else-if="promo.type === 'bundle'" class="text-gray-600 text-sm font-medium">
-                Bundle Deal: {{ formatDiscount(promo.discount_value, promo.discount_unit) }} Instant Savings
+              <p v-else-if="promo.type === 'bundle'" class="text-gray-600 text-sm">
+                Bundle: {{ formatDiscount(promo.discount_value, promo.discount_unit) }} savings
               </p>
-              <p v-else class="text-gray-600 text-sm font-medium">
-                Enjoy {{ formatDiscount(promo.discount_value, promo.discount_unit) }} discount today!
+              <p v-else class="text-gray-600 text-sm">
+                {{ formatDiscount(promo.discount_value, promo.discount_unit) }} discount
               </p>
             </div>
 
-            <div class="mt-5 sm:mt-6">
-              <NuxtLink 
-                :to="getPromoLink(promo)" 
-                class="inline-flex items-center gap-2 text-xs sm:text-sm font-bold uppercase tracking-widest text-gray-900 group/link"
+            <div class="mt-5">
+              <NuxtLink
+                :to="getPromoLink(promo)"
+                class="inline-flex items-center gap-2 text-sm font-semibold text-gray-900 group/link"
               >
-                Claim Offer
-                <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform duration-300 group-hover/link:translate-x-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                Claim offer
+                <svg class="w-4 h-4 transition-transform group-hover/link:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
               </NuxtLink>
             </div>
           </div>
@@ -94,7 +81,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 
-const props = defineProps({
+defineProps({
   promotions: {
     type: Array,
     default: () => []
@@ -116,7 +103,7 @@ onUnmounted(() => {
 
 const getCountdown = (endDate) => {
   const diff = new Date(endDate) - currentTime.value
-  
+
   if (diff <= 0) {
     return { days: '00', hours: '00', min: '00', sec: '00' }
   }
@@ -134,58 +121,12 @@ const getCountdown = (endDate) => {
   }
 }
 
-const getPromoLink = (promo) => {
-  return `/shop?promotion=${promo.slug}`
-}
+const getPromoLink = (promo) => `/shop?promotion=${promo.slug}`
 
 const formatDiscount = (value, unit) => {
   if (unit === 'percentage') return `${parseFloat(value)}%`
   return `৳${parseFloat(value)}`
 }
 
-const formatType = (type) => {
-  return type.replace(/_/g, ' ')
-}
-
-const getPromoBgClass = (type) => {
-  const classes = {
-    'flash_sale': 'bg-rose-50',
-    'flat_discount': 'bg-indigo-50',
-    'buy_x_get_y': 'bg-amber-50',
-    'bundle': 'bg-fuchsia-50',
-    'category': 'bg-emerald-50',
-    'variant': 'bg-blue-50'
-  }
-  return classes[type] || 'bg-gray-50'
-}
-
-const getPromoTextClass = (type) => {
-  const classes = {
-    'flash_sale': 'text-rose-600',
-    'flat_discount': 'text-indigo-600',
-    'buy_x_get_y': 'text-amber-600',
-    'bundle': 'text-fuchsia-600',
-    'category': 'text-emerald-600',
-    'variant': 'text-blue-600'
-  }
-  return classes[type] || 'text-gray-600'
-}
-
-const getPromoEmoji = (type) => {
-  const emojis = {
-    'flash_sale': '⚡',
-    'flat_discount': '💰',
-    'buy_x_get_y': '🎁',
-    'bundle': '📦',
-    'category': '🏷️',
-    'variant': '✨'
-  }
-  return emojis[type] || '🎊'
-}
+const formatType = (type) => type.replace(/_/g, ' ')
 </script>
-
-<style scoped>
-.font-heading {
-  font-family: var(--font-heading);
-}
-</style>

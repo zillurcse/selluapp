@@ -15,9 +15,24 @@ use Illuminate\Support\Facades\Auth;
 
 class CourierController extends Controller
 {
+    private function vendorId(): int
+    {
+        $user = Auth::user();
+
+        return $user->vendor_id ?? $user->id;
+    }
+
+    private function findVendorOrder(int|string $orderId): Order
+    {
+        return Order::where('id', $orderId)
+            ->where('user_id', $this->vendorId())
+            ->with('items.product')
+            ->firstOrFail();
+    }
+
     public function index()
     {
-        $settings = BusinessSetting::all();
+        $settings = BusinessSetting::where('vendor_id', $this->vendorId())->get();
         return response()->json([
             'status' => 'success',
             'data' => $settings
@@ -26,14 +41,21 @@ class CourierController extends Controller
 
     public function update(Request $request)
     {
-        foreach ($request->types as $key => $type) {
-            $value = $request[$type];
+        $validated = $request->validate([
+            'types' => 'required|array',
+            'types.*' => 'required|string|max:100',
+        ]);
+
+        $vendorId = $this->vendorId();
+
+        foreach ($validated['types'] as $type) {
+            $value = $request->input($type);
             if (is_array($value)) {
                 $value = json_encode($value);
             }
 
             BusinessSetting::updateOrCreate(
-                ['type' => $type],
+                ['vendor_id' => $vendorId, 'type' => $type],
                 ['value' => $value]
             );
         }
@@ -48,7 +70,14 @@ class CourierController extends Controller
 
     public function sendToPathao(Request $request)
     {
-        $order = Order::findOrFail($request->order_id);
+        $request->validate([
+            'order_id' => 'required|integer',
+            'pathao_city_id' => 'required|integer',
+            'pathao_zone_id' => 'required|integer',
+            'pathao_area_id' => 'required|integer',
+        ]);
+
+        $order = $this->findVendorOrder($request->order_id);
         $pathao = new PathaoService();
         
         $shipping_address = is_string($order->shipping_address) ? json_decode($order->shipping_address) : (object)$order->shipping_address;
@@ -125,7 +154,11 @@ class CourierController extends Controller
 
     public function sendToSteadfast(Request $request)
     {
-        $order = Order::findOrFail($request->order_id);
+        $request->validate([
+            'order_id' => 'required|integer',
+        ]);
+
+        $order = $this->findVendorOrder($request->order_id);
         $steadfast = new SteadfastService($order->user_id); // Assuming user_id is the vendor/shop owner
         
         $shipping_address = is_string($order->shipping_address) ? json_decode($order->shipping_address) : (object)$order->shipping_address;
@@ -185,7 +218,7 @@ class CourierController extends Controller
 
     public function updateStatus($id)
     {
-        $order = Order::findOrFail($id);
+        $order = $this->findVendorOrder($id);
         
         if ($order->courier_name == 'Pathao') {
             $pathao = new PathaoService();
@@ -220,10 +253,17 @@ class CourierController extends Controller
     public function steadfastWebhook(Request $request)
     {
         $configuredToken = get_setting('steadfast_webhook_auth_token');
-        if ($configuredToken) {
+
+        if (!$configuredToken) {
+            if (app()->environment('production')) {
+                return response()->json(['status' => 'error', 'message' => 'Webhook authentication is not configured.'], 503);
+            }
+
+            \Illuminate\Support\Facades\Log::warning('Steadfast webhook received without auth token configured.');
+        } else {
             $bearerToken = $request->bearerToken();
-            $queryToken = $request->input('token'); 
-            
+            $queryToken = $request->input('token');
+
             if ($bearerToken !== $configuredToken && $queryToken !== $configuredToken) {
                 return response()->json(['status' => 'error', 'message' => 'Unauthorized token'], 401);
             }
@@ -370,7 +410,7 @@ class CourierController extends Controller
     public function getCourierOrders(Request $request)
     {
         $query = Order::whereNotNull('courier_name')
-            ->where('user_id', Auth::id())
+            ->where('user_id', $this->vendorId())
             ->with(['items.product', 'customer'])
             ->latest();
 
@@ -388,7 +428,7 @@ class CourierController extends Controller
     public function syncAllStatuses(Request $request)
     {
         $orders = Order::whereNotNull('courier_name')
-            ->where('user_id', Auth::id())
+            ->where('user_id', $this->vendorId())
             ->whereNotIn('courier_status', ['Delivered', 'Cancelled']) // Skip final statuses if possible
             ->get();
 

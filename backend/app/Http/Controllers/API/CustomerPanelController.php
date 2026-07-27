@@ -306,18 +306,14 @@ class CustomerPanelController extends Controller
 
         // Check if reviews are enabled for this vendor
         $vendorId = $product->vendor_id;
-        $reviewSettings = \App\Models\ShopSetting::where('user_id', $vendorId)
-            ->where('group', 'customer_reviews')
-            ->first();
-
-        $settings = $reviewSettings ? json_decode($reviewSettings->value, true) : [
+        $settings = \App\Models\ShopSetting::getGroupSettings($vendorId, 'customer_reviews', [
             'enableReviews' => true,
             'autoApprove' => false,
             'verifiedOnly' => true,
-            'minAutoApproveRating' => '4'
-        ];
+            'minAutoApproveRating' => '4',
+        ]);
 
-        if (isset($settings['enableReviews']) && !$settings['enableReviews']) {
+        if (!\App\Models\ShopSetting::toBool($settings['enableReviews'] ?? true)) {
             return response()->json(['message' => 'Reviews are disabled for this product.'], 403);
         }
 
@@ -336,11 +332,11 @@ class CustomerPanelController extends Controller
 
         // Determine initial status based on auto-approve settings
         $status = 'pending';
-        if (isset($settings['autoApprove']) && $settings['autoApprove']) {
-             $minRating = isset($settings['minAutoApproveRating']) ? (int)$settings['minAutoApproveRating'] : 4;
-             if ($validated['rating'] >= $minRating) {
-                 $status = 'approved';
-             }
+        if (\App\Models\ShopSetting::toBool($settings['autoApprove'] ?? false)) {
+            $minRating = isset($settings['minAutoApproveRating']) ? (int) $settings['minAutoApproveRating'] : 4;
+            if ($validated['rating'] >= $minRating) {
+                $status = 'approved';
+            }
         }
 
         $review = \App\Models\ProductReview::create([
@@ -367,16 +363,12 @@ class CustomerPanelController extends Controller
         }
 
         $vendorId = $product->vendor_id;
-        $reviewSettings = \App\Models\ShopSetting::where('user_id', $vendorId)
-            ->where('group', 'customer_reviews')
-            ->first();
-
-        $settings = $reviewSettings ? json_decode($reviewSettings->value, true) : [
+        $settings = \App\Models\ShopSetting::getGroupSettings($vendorId, 'customer_reviews', [
             'enableReviews' => true,
-        ];
+        ]);
 
-        if (isset($settings['enableReviews']) && !$settings['enableReviews']) {
-             return response()->json(['can_review' => false, 'message' => 'Reviews are disabled for this product.']);
+        if (!\App\Models\ShopSetting::toBool($settings['enableReviews'] ?? true)) {
+            return response()->json(['can_review' => false, 'message' => 'Reviews are disabled for this product.']);
         }
 
         $hasPurchased = \App\Models\Order::where('customer_id', $customer->id)

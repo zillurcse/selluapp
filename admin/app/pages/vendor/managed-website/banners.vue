@@ -1,5 +1,5 @@
 <template>
-  <div class="p-10 bg-[#f8fafc] min-h-screen">
+  <div class="p-6 sm:p-10 bg-[#f8fafc] dark:bg-slate-950 min-h-screen transition-colors duration-300">
     <div class="max-w-[1200px] mx-auto mb-8">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-4">
@@ -9,7 +9,7 @@
           >
             <ChevronLeft class="w-6 h-6" />
           </NuxtLink>
-          <h1 class="text-2xl font-black text-slate-900 tracking-tight leading-none">Manage Small Banners</h1>
+          <h1 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-none">Manage Small Banners</h1>
         </div>
         <button 
           @click="saveSettings" 
@@ -28,12 +28,12 @@
     
     <div v-else class="max-w-[1200px] mx-auto space-y-8">
       <!-- Info Header -->
-      <div class="bg-white rounded-[32px] border border-slate-100 p-8 shadow-sm flex items-center gap-6">
+      <div class="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 p-8 shadow-sm flex items-center gap-6">
         <div class="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center flex-shrink-0">
           <Image class="w-8 h-8" />
         </div>
         <div>
-          <h2 class="text-xl font-black text-slate-800 tracking-tight">Promotional Banners</h2>
+          <h2 class="text-xl font-black text-slate-800 dark:text-white tracking-tight">Promotional Banners</h2>
           <p class="text-slate-500 font-medium text-sm mt-1">
             These 3 banners will be displayed below the main slider on your homepage. Use them to highlight categories, sales, or featured collections.
           </p>
@@ -45,7 +45,7 @@
         <div 
           v-for="(banner, index) in banners" 
           :key="banner.id"
-          class="bg-white rounded-[32px] border border-slate-100 p-6 shadow-sm relative group hover:border-emerald-100 transition-all flex flex-col"
+          class="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 p-6 shadow-sm relative group hover:border-emerald-100 dark:hover:border-emerald-900 transition-all flex flex-col"
         >
           <div class="flex items-center justify-between mb-4">
             <span class="px-3 py-1 bg-emerald-50 text-emerald-600 font-black text-xs uppercase tracking-wider rounded-lg">
@@ -104,6 +104,8 @@
     <!-- Media Library Component -->
     <AppMediaLibrary 
         :show="isMediaLibraryOpen"
+        :multiple="false"
+        :allowed-types="['image']"
         @close="isMediaLibraryOpen = false"
         @select="handleMediaSelect"
         type-label="Banner Image"
@@ -118,7 +120,7 @@ import { ref, onMounted } from 'vue'
 
 definePageMeta({
   middleware: 'auth',
-  permissions: 'website.view'
+  permissions: ['website.view', 'settings.view']
 })
 
 const { $toast } = useNuxtApp()
@@ -148,6 +150,8 @@ const handleMediaSelect = (file) => {
     banners.value[index].previewUrl = null
     banners.value[index].file = null
   }
+  isMediaLibraryOpen.value = false
+  activeBannerIndex.value = null
 }
 
 const loadSettings = async () => {
@@ -204,6 +208,7 @@ const saveSettings = async () => {
     await loadSettings()
   } catch (error) {
     console.error(error)
+    $toast.error('Failed to update banners')
   } finally {
     saving.value = false
   }

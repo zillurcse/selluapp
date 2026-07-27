@@ -1,18 +1,14 @@
 <template>
-  <div class="shop-page bg-white min-h-screen relative overflow-hidden">
-    <!-- Decorative background elements -->
-    <div class="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-50/50 rounded-full blur-[120px] -z-10 pointer-events-none"></div>
-    <div class="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-50/30 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
-
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 relative z-10">
+  <div class="shop-page bg-white min-h-screen">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14 relative z-10">
       <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4">
-        <header class="text-left animate-fade-in flex-1">
-          <span class="inline-block px-3 py-1 rounded-full bg-gray-100 text-gray-900 text-[10px] font-bold uppercase tracking-widest mb-3">Explore the Collection</span>
-          <h1 class="text-3xl md:text-6xl font-extrabold tracking-tight text-gray-900 mb-2 font-heading">
+        <header class="text-left flex-1">
+          <span class="section-label mb-2 block">Shop</span>
+          <h1 class="section-title text-3xl md:text-5xl mb-2">
             Our Collection
           </h1>
-          <p class="text-gray-500 text-sm md:text-xl max-w-2xl leading-relaxed">
-            Meticulously designed pieces for any modern home.
+          <p class="text-[var(--muted-foreground)] text-sm md:text-base max-w-2xl leading-relaxed">
+            Browse products and find what you need.
           </p>
         </header>
 
@@ -34,7 +30,7 @@
               <h3 class="text-lg font-bold text-gray-900 font-heading">Filters</h3>
               <button 
                 @click="clearFilters"
-                class="text-xs font-bold text-indigo-600 hover:text-indigo-700 uppercase tracking-wider transition-colors"
+                class="text-xs font-bold text-gray-900 hover:opacity-70 uppercase tracking-wider transition-opacity"
               >
                 Clear All
               </button>
@@ -68,7 +64,7 @@
                         @change="toggleCategory(cat.slug)"
                         class="peer hidden" 
                       />
-                      <div class="w-full h-full border-2 border-gray-200 rounded-md transition-all peer-checked:bg-indigo-600 peer-checked:border-indigo-600 group-hover:border-gray-300"></div>
+                      <div class="w-full h-full border-2 border-gray-200 rounded-md transition-all peer-checked:bg-gray-900 peer-checked:border-gray-900 group-hover:border-gray-300"></div>
                       <svg class="absolute w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                     </div>
                     <span class="text-sm font-bold text-gray-700 group-hover:text-gray-900 transition-colors">{{ cat.name }}</span>
@@ -77,10 +73,10 @@
                     <label v-for="child in cat.children" :key="child.id" class="flex items-center gap-3 cursor-pointer group">
                       <div class="relative w-4 h-4 flex items-center justify-center">
                         <input type="checkbox" :value="child.slug" :checked="filters.categories.includes(child.slug)" @change="toggleCategory(child.slug)" class="peer hidden" />
-                        <div class="w-full h-full border-2 border-gray-200 rounded transition-all peer-checked:bg-indigo-500 peer-checked:border-indigo-500 group-hover:border-gray-300"></div>
+                        <div class="w-full h-full border-2 border-gray-200 rounded transition-all peer-checked:bg-gray-800 peer-checked:border-gray-800 group-hover:border-gray-300"></div>
                         <svg class="absolute w-2.5 h-2.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                       </div>
-                      <span class="text-xs font-medium text-gray-500 group-hover:text-indigo-600 transition-colors">{{ child.name }}</span>
+                      <span class="text-xs font-medium text-gray-500 group-hover:text-gray-900 transition-colors">{{ child.name }}</span>
                     </label>
                   </div>
                 </div>
@@ -108,13 +104,12 @@
           </div>
 
           <!-- Featured Offer -->
-          <div class="relative p-8 rounded-[2rem] bg-indigo-600 overflow-hidden group shadow-2xl shadow-indigo-100 lg:mt-10">
-            <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl transition-transform group-hover:scale-150 duration-700"></div>
+          <div class="relative p-8 rounded-2xl bg-gray-900 overflow-hidden group lg:mt-10">
             <div class="relative z-10 space-y-4">
-              <span class="text-[10px] font-bold text-white/60 uppercase tracking-widest">Limited Offer</span>
-              <h4 class="text-xl font-bold text-white leading-tight font-heading">Summer Collection Sale is here!</h4>
-              <p class="text-white/70 text-xs leading-relaxed">Get up to 40% off on all lighting products this week.</p>
-              <button class="text-xs font-bold text-white border-b-2 border-white pb-1 group-hover:gap-2 flex items-center gap-1 transition-all">Shop Sale →</button>
+              <span class="text-[10px] font-semibold text-white/50 uppercase tracking-wider">Limited Offer</span>
+              <h4 class="text-xl font-semibold text-white leading-tight" style="font-family: var(--font-heading)">Summer Collection Sale is here!</h4>
+              <p class="text-white/70 text-xs leading-relaxed">Get up to 40% off on selected products this week.</p>
+              <NuxtLink to="/shop?sale=true" class="text-xs font-semibold text-white border-b border-white/40 pb-0.5 inline-flex items-center gap-1 hover:border-white transition-colors">Shop Sale →</NuxtLink>
             </div>
           </div>
         </aside>

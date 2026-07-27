@@ -1,5 +1,5 @@
 <template>
-  <div class="p-10 bg-[#f8fafc] min-h-screen">
+  <div class="p-6 sm:p-10 bg-[#f8fafc] dark:bg-slate-950 min-h-screen transition-colors duration-300">
     <div class="max-w-[1200px] mx-auto mb-8">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-4">
@@ -9,7 +9,7 @@
           >
             <ChevronLeft class="w-6 h-6" />
           </NuxtLink>
-          <h1 class="text-2xl font-black text-slate-900 tracking-tight leading-none">Update Website Slider</h1>
+          <h1 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-none">Update Website Slider</h1>
         </div>
         <button 
           @click="saveSettings" 
@@ -28,11 +28,11 @@
     
     <div v-else class="max-w-[1200px] mx-auto space-y-8">
       <!-- Empty State -->
-      <div v-if="sliders.length === 0" class="bg-white rounded-[32px] border border-slate-100 p-12 shadow-sm text-center">
+      <div v-if="sliders.length === 0" class="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 p-12 shadow-sm text-center">
         <div class="w-20 h-20 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center mx-auto mb-6">
           <Sliders class="w-10 h-10" />
         </div>
-        <h2 class="text-2xl font-black text-slate-800 mb-4">No Sliders Found</h2>
+        <h2 class="text-2xl font-black text-slate-800 dark:text-white mb-4">No Sliders Found</h2>
         <p class="text-slate-500 font-medium max-w-md mx-auto mb-8">
           Manage your website's main sliders here to improve user experience and showcase your best products.
         </p>
@@ -46,7 +46,7 @@
         <div 
           v-for="(slider, index) in sliders" 
           :key="slider.id"
-          class="bg-white rounded-[32px] border border-slate-100 p-8 shadow-sm flex flex-col md:flex-row gap-8 relative overflow-hidden group hover:border-blue-100 transition-all"
+          class="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 p-8 shadow-sm flex flex-col md:flex-row gap-8 relative overflow-hidden group hover:border-blue-100 dark:hover:border-blue-900 transition-all"
         >
           <!-- Image Upload Area -->
           <div 
@@ -178,7 +178,7 @@ import { ref, onMounted } from 'vue'
 
 definePageMeta({
   middleware: 'auth',
-  permissions: 'website.view'
+  permissions: ['website.view', 'settings.view']
 })
 
 const { $toast } = useNuxtApp()
@@ -291,8 +291,7 @@ const saveSettings = async () => {
     })
 
     await createItem('/vendor/settings', formData, null, false)
-    $toast.success('Sliders updated successfully')
-    await loadSettings() // Reload to get updated URLs
+    await loadSettings()
   } catch (error) {
     console.error(error)
     $toast.error('Failed to update sliders')

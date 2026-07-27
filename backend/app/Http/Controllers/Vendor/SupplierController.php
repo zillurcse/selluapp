@@ -39,7 +39,7 @@ class SupplierController extends Controller implements HasMiddleware
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:20',
@@ -48,7 +48,7 @@ class SupplierController extends Controller implements HasMiddleware
         ]);
 
         $vendor_id = auth()->id();
-        $supplier = Supplier::create(array_merge($request->all(), ['vendor_id' => $vendor_id]));
+        $supplier = Supplier::create(array_merge($validated, ['vendor_id' => $vendor_id]));
 
         return response()->json([
             'status' => 'success',
@@ -80,7 +80,7 @@ class SupplierController extends Controller implements HasMiddleware
             abort(403);
         }
 
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:20',
@@ -88,7 +88,7 @@ class SupplierController extends Controller implements HasMiddleware
             'is_active' => 'nullable|boolean',
         ]);
 
-        $supplier->update($request->all());
+        $supplier->update($validated);
 
         return response()->json([
             'status' => 'success',

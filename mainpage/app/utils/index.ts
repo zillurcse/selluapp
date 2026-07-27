@@ -3,6 +3,25 @@
  */
 
 /**
+ * Resolve the current tenant vendor ID from storefront state or env config.
+ */
+export const resolveVendorId = (): number | null => {
+    const storefrontStore = useStorefrontStore()
+    const config = useRuntimeConfig()
+
+    if (storefrontStore.vendorProfile?.user_id) {
+        return storefrontStore.vendorProfile.user_id
+    }
+
+    const fromEnv = config.public.defaultVendorId
+    if (fromEnv) {
+        return Number(fromEnv)
+    }
+
+    return null
+}
+
+/**
  * Format a date to a readable string
  */
 export const formatDate = (date: Date | string): string => {

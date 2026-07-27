@@ -19,11 +19,13 @@
 
         <!-- Empty State -->
         <div v-if="cart.length === 0" class="flex-1 flex flex-col items-center justify-center p-8 text-center">
-          <div class="w-24 h-24 rounded-[2rem] bg-gray-50 flex items-center justify-center text-4xl mb-6">🛒</div>
-          <h3 class="text-xl font-bold text-gray-900 mb-2">Your cart is empty</h3>
-          <p class="text-sm text-gray-400 font-medium mb-8">Add some items to get started</p>
+          <div class="w-20 h-20 rounded-2xl bg-[var(--muted)] flex items-center justify-center mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-gray-400"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          </div>
+          <h3 class="text-xl font-semibold text-gray-900 mb-2" style="font-family: var(--font-heading)">Your cart is empty</h3>
+          <p class="text-sm text-[var(--muted-foreground)] mb-8">Add some items to get started</p>
           <button
-            class="px-8 py-3 bg-gray-900 text-white rounded-xl font-bold text-sm hover:bg-indigo-600 transition-colors"
+            class="btn-primary"
             @click="closeCart"
           >Start Shopping</button>
         </div>
@@ -69,7 +71,7 @@
           <p class="text-xs text-gray-400 font-medium -mt-1">Shipping & taxes calculated at checkout.</p>
           <NuxtLink
             to="/checkout"
-            class="flex items-center justify-center gap-2 w-full py-4 bg-gray-900 text-white rounded-xl font-bold text-sm hover:bg-indigo-600 transition-colors shadow-lg shadow-gray-900/10"
+            class="flex items-center justify-center gap-2 w-full py-4 bg-gray-900 text-white rounded-xl font-semibold text-sm hover:opacity-90 transition-opacity"
             @click="closeCart"
           >
             Proceed to Checkout

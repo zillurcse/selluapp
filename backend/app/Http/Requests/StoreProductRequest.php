@@ -2,10 +2,15 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\NormalizesProductInput;
+use App\Http\Requests\Concerns\ValidatesProductBusinessRules;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class StoreProductRequest extends FormRequest
 {
+    use NormalizesProductInput;
+    use ValidatesProductBusinessRules;
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -27,10 +32,11 @@ class StoreProductRequest extends FormRequest
             'brand_id' => 'nullable|exists:brands,id',
             'unit_id' => 'nullable|exists:units,id',
             'name' => 'required|string|max:255',
-            'sku' => 'nullable|string|max:100|unique:products,sku',
-            'product_code' => 'nullable|string|max:100|unique:products,product_code',
+            'slug' => 'nullable|string|max:255',
+            'sku' => 'required|string|max:100|unique:products,sku',
+            'product_code' => 'required|string|max:100|unique:products,product_code',
             'short_description' => 'nullable|string',
-            'description' => 'nullable|string',
+            'description' => 'required|string',
             'purchase_price' => 'nullable|numeric',
             'sale_price' => 'required|numeric',
             'discount_price' => 'nullable|numeric',
@@ -47,7 +53,10 @@ class StoreProductRequest extends FormRequest
             'discount_type' => 'nullable|string|in:flat,percent',
             'note' => 'nullable|string',
             'video_url' => 'nullable|string|url',
-            'status' => 'nullable|string',
+            'status' => 'nullable|string|in:published,draft,pending',
+            'dropshipping_url' => 'nullable|url|required_if:is_dropshipping,1,true',
+            'dropshipping_sku' => 'nullable|string|max:100',
+            'gallery_items' => 'nullable|string',
             'seo_title' => 'nullable|string|max:255',
             'seo_description' => 'nullable|string',
             'seo_keywords' => 'nullable|string',
@@ -63,5 +72,12 @@ class StoreProductRequest extends FormRequest
             'gallery' => 'nullable|array',
             'gallery.*' => 'nullable',
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            $this->validateProductBusinessRules($validator);
+        });
     }
 }

@@ -1,5 +1,5 @@
 <template>
-  <div class="p-10 bg-[#f8fafc] min-h-screen">
+  <div class="p-6 sm:p-10 bg-[#f8fafc] dark:bg-slate-950 min-h-screen transition-colors duration-300">
     <div class="max-w-[1200px] mx-auto mb-8">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-4">
@@ -10,7 +10,7 @@
             <ChevronLeft class="w-6 h-6" />
           </NuxtLink>
           <div class="flex items-center gap-2">
-            <h1 class="text-2xl font-black text-slate-900 tracking-tight leading-none">Customer Review Settings</h1>
+            <h1 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-none">Customer Review Settings</h1>
             <span class="px-2 py-0.5 bg-orange-500 text-white text-[9px] font-black rounded-full uppercase tracking-wider">PRO</span>
           </div>
         </div>
@@ -33,22 +33,22 @@
       <div class="lg:col-span-8 space-y-8">
         
         <!-- General Toggles -->
-        <div class="bg-white rounded-[32px] border border-slate-100 shadow-sm p-8 space-y-8">
+        <div class="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-sm p-8 space-y-8">
           <div class="flex items-center gap-4 border-b border-slate-50 pb-6">
             <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center">
               <Star class="w-6 h-6 fill-current" />
             </div>
             <div>
-              <h2 class="text-xl font-black text-slate-900">Review Preferences</h2>
+              <h2 class="text-xl font-black text-slate-900 dark:text-white">Review Preferences</h2>
               <p class="text-sm font-bold text-slate-500">Manage how product reviews work on your shop</p>
             </div>
           </div>
           
           <div class="space-y-6">
             <!-- Allow Reviews -->
-            <div class="flex items-center justify-between p-6 bg-slate-50 rounded-2xl border border-slate-100">
+            <div class="flex items-center justify-between p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700">
               <div>
-                <h3 class="font-black text-slate-800">Enable Customer Reviews</h3>
+                <h3 class="font-black text-slate-800 dark:text-slate-100">Enable Customer Reviews</h3>
                 <p class="text-xs font-bold text-slate-400 mt-0.5">Allow customers to write reviews on your products</p>
               </div>
               <button 
@@ -60,9 +60,9 @@
             </div>
 
             <!-- Auto Approval -->
-            <div class="flex items-center justify-between p-6 bg-slate-50 rounded-2xl border border-slate-100" :class="{'opacity-50 pointer-events-none': !form.enableReviews}">
+            <div class="flex items-center justify-between p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700" :class="{'opacity-50 pointer-events-none': !form.enableReviews}">
               <div>
-                <h3 class="font-black text-slate-800">Auto-Approve Reviews</h3>
+                <h3 class="font-black text-slate-800 dark:text-slate-100">Auto-Approve Reviews</h3>
                 <p class="text-xs font-bold text-slate-400 mt-0.5">New reviews will be published instantly without manual check</p>
               </div>
               <button 
@@ -74,9 +74,9 @@
             </div>
 
             <!-- Only Verified Buyers -->
-            <div class="flex items-center justify-between p-6 bg-slate-50 rounded-2xl border border-slate-100" :class="{'opacity-50 pointer-events-none': !form.enableReviews}">
+            <div class="flex items-center justify-between p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700" :class="{'opacity-50 pointer-events-none': !form.enableReviews}">
               <div>
-                <h3 class="font-black text-slate-800">Verified Buyers Only</h3>
+                <h3 class="font-black text-slate-800 dark:text-slate-100">Verified Buyers Only</h3>
                 <p class="text-xs font-bold text-slate-400 mt-0.5">Only customers who purchased the item can leave a review</p>
               </div>
               <button 
@@ -89,7 +89,7 @@
             
             <div class="space-y-2 pt-4" :class="{'opacity-50 pointer-events-none': !form.enableReviews}">
               <label class="text-xs font-black text-slate-400 uppercase tracking-wider ml-1">Minimum Rating Required to Auto-Approve (Stars)</label>
-              <select v-model="form.minAutoApproveRating" class="w-full h-14 px-6 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 outline-none transition-all font-semibold text-slate-700 appearance-none">
+              <select v-model="form.minAutoApproveRating" class="w-full h-14 px-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 outline-none transition-all font-semibold text-slate-700 dark:text-slate-200 appearance-none">
                 <option value="1">1 Star & Above</option>
                 <option value="2">2 Stars & Above</option>
                 <option value="3">3 Stars & Above</option>
@@ -116,13 +116,14 @@
              <div>
                 <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Average Rating</p>
                 <div class="flex items-end gap-2">
-                   <span class="text-4xl font-black">4.8</span>
+                   <span class="text-4xl font-black">{{ reviewStats.averageRating || '0' }}</span>
                    <div class="flex pb-1">
-                      <Star class="w-4 h-4 text-amber-400 fill-current" />
-                      <Star class="w-4 h-4 text-amber-400 fill-current" />
-                      <Star class="w-4 h-4 text-amber-400 fill-current" />
-                      <Star class="w-4 h-4 text-amber-400 fill-current" />
-                      <Star class="w-4 h-4 text-amber-400 fill-current" />
+                      <Star
+                        v-for="i in 5"
+                        :key="i"
+                        class="w-4 h-4"
+                        :class="i <= Math.round(reviewStats.averageRating) ? 'text-amber-400 fill-current' : 'text-slate-600'"
+                      />
                    </div>
                 </div>
              </div>
@@ -130,11 +131,11 @@
              <div class="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
                 <div>
                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Total Reviews</p>
-                   <span class="text-2xl font-black">1.2k</span>
+                   <span class="text-2xl font-black">{{ formatCount(reviewStats.totalReviews) }}</span>
                 </div>
                 <div>
                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Pending Approval</p>
-                   <span class="text-2xl font-black text-amber-400">24</span>
+                   <span class="text-2xl font-black text-amber-400">{{ reviewStats.pendingReviews }}</span>
                 </div>
              </div>
           </div>
@@ -160,7 +161,7 @@ import { ref, reactive, onMounted } from 'vue'
 
 definePageMeta({
   middleware: 'auth',
-  permissions: 'settings.view'
+  permissions: ['website.view', 'settings.view']
 })
 
 const { $toast } = useNuxtApp()
@@ -169,6 +170,17 @@ const router = useRouter()
 
 const pending = ref(true)
 const saving = ref(false)
+
+const reviewStats = reactive({
+  totalReviews: 0,
+  pendingReviews: 0,
+  averageRating: 0,
+})
+
+const formatCount = (count) => {
+  if (count >= 1000) return `${(count / 1000).toFixed(1)}k`
+  return String(count)
+}
 
 const form = reactive({
   enableReviews: true,
@@ -180,15 +192,23 @@ const form = reactive({
 const loadSettings = async () => {
   try {
     pending.value = true
-    const response = await getAll('/vendor/settings?group=customer_reviews')
-    if (response?.data) {
-       if (Object.keys(response.data).length > 0) {
-          const loaded = response.data
-          form.enableReviews = loaded.enableReviews === 'true' || loaded.enableReviews === true || loaded.enableReviews === '1' || loaded.enableReviews === 1
-          form.autoApprove = loaded.autoApprove === 'true' || loaded.autoApprove === true || loaded.autoApprove === '1' || loaded.autoApprove === 1
-          form.verifiedOnly = loaded.verifiedOnly === 'true' || loaded.verifiedOnly === true || loaded.verifiedOnly === '1' || loaded.verifiedOnly === 1
-          form.minAutoApproveRating = String(loaded.minAutoApproveRating || '4')
-       }
+    const [settingsRes, statsRes] = await Promise.all([
+      getAll('/vendor/settings?group=customer_reviews'),
+      getAll('/vendor/reviews/stats').catch(() => null),
+    ])
+
+    if (settingsRes?.data && Object.keys(settingsRes.data).length > 0) {
+      const loaded = settingsRes.data
+      form.enableReviews = loaded.enableReviews === 'true' || loaded.enableReviews === true || loaded.enableReviews === '1' || loaded.enableReviews === 1
+      form.autoApprove = loaded.autoApprove === 'true' || loaded.autoApprove === true || loaded.autoApprove === '1' || loaded.autoApprove === 1
+      form.verifiedOnly = loaded.verifiedOnly === 'true' || loaded.verifiedOnly === true || loaded.verifiedOnly === '1' || loaded.verifiedOnly === 1
+      form.minAutoApproveRating = String(loaded.minAutoApproveRating || '4')
+    }
+
+    if (statsRes?.data) {
+      reviewStats.totalReviews = statsRes.data.total_reviews ?? 0
+      reviewStats.pendingReviews = statsRes.data.pending_reviews ?? 0
+      reviewStats.averageRating = statsRes.data.average_rating ?? 0
     }
   } catch (error) {
     if (error.response?.status !== 404) {
@@ -205,10 +225,11 @@ const saveSettings = async () => {
     await createItem('/vendor/settings', {
       group: 'customer_reviews',
       settings: form
-    })
+    }, null, false)
     router.push('/vendor/managed-website')
   } catch (error) {
     console.error(error)
+    $toast.error('Failed to save review preferences')
   } finally {
     saving.value = false
   }

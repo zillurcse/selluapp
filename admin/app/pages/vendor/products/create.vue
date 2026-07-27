@@ -1,16 +1,57 @@
 ﻿<template>
   <div class="max-w-[1600px] mx-auto p-6 lg:p-8 bg-slate-50 dark:bg-slate-950 min-h-screen transition-colors duration-300">
-    <div class="flex items-center justify-between mb-8">
-      <div>
-        <h1 class="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Add Product</h1>
-        <p class="text-sm text-slate-500 dark:text-slate-400">Create a new product for your catalog.</p>
-      </div>
-      <NuxtLink to="/vendor/products" class="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-semibold transition-all shadow-sm">
+    <div class="flex flex-col gap-5 mb-8">
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 text-xs font-bold uppercase tracking-[0.18em] mb-3">
+            Vendor Panel
+          </div>
+          <h1 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Create Product</h1>
+          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Build a complete product page with pricing, media, SEO, variants, and stock rules.</p>
+        </div>
+        <NuxtLink to="/vendor/products" class="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-semibold transition-all shadow-sm">
         Back to List
-      </NuxtLink>
+        </NuxtLink>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm">
+          <div class="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">Completion</div>
+          <div class="mt-2 flex items-end justify-between gap-3">
+            <div>
+              <div class="text-2xl font-bold text-slate-900 dark:text-white">{{ completionPercentage }}%</div>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Core product details ready</p>
+            </div>
+            <div class="w-12 h-12 rounded-full border-4 border-indigo-100 dark:border-slate-700 flex items-center justify-center">
+              <span class="text-xs font-bold text-indigo-600 dark:text-indigo-400">{{ completionCount }}/{{ completionChecks.length }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm">
+          <div class="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">Catalog Setup</div>
+          <div class="mt-2 text-sm font-semibold text-slate-900 dark:text-white">{{ form.category_ids.length || 0 }} categories selected</div>
+          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ form.brand_id ? 'Brand linked' : 'Add a brand to improve search and filtering.' }}</p>
+        </div>
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm">
+          <div class="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">Selling Status</div>
+          <div class="mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide"
+            :class="statusBadgeClass">
+            <span class="w-2 h-2 rounded-full" :class="statusDotClass"></span>
+            {{ form.status }}
+          </div>
+          <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">You can save directly as published, draft, or pending review.</p>
+        </div>
+      </div>
     </div>
 
     <form @submit.prevent="submitProduct" class="grid grid-cols-12 gap-6 lg:gap-8">
+      <div v-if="hasValidationErrors" class="col-span-12 rounded-xl border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-900/10 p-4">
+        <p class="text-sm font-semibold text-red-700 dark:text-red-300">Please fix the following validation errors:</p>
+        <ul class="mt-2 space-y-1 text-sm text-red-600 dark:text-red-400 list-disc list-inside">
+          <li v-for="(messages, field) in errors" :key="field">{{ messages[0] }}</li>
+        </ul>
+      </div>
+
       <!-- Left Column (Main Content) -->
       <div class="col-span-12 lg:col-span-9 space-y-6 lg:space-y-8">
         
@@ -19,14 +60,16 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="col-span-1 md:col-span-2">
                 <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Product Name <span class="text-red-500">*</span></label>
-                <input v-model="form.name" type="text" placeholder="e.g. Premium Cotton T-Shirt" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white" required @input="generateSlug" />
+                <input v-model="form.name" type="text" placeholder="e.g. Premium Cotton T-Shirt" class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white" :class="fieldError('name') ? 'border-red-400 dark:border-red-500' : 'border-gray-200 dark:border-slate-700'" required @input="generateSlug" />
+                <p v-if="fieldError('name')" class="mt-1 text-xs text-red-500">{{ fieldError('name') }}</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Product Slug <span class="text-red-500">*</span></label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Product Slug</label>
               <div class="relative">
                   <span class="absolute left-4 top-2.5 text-gray-400 dark:text-slate-500 text-sm">/products/</span>
-                  <input v-model="form.slug" type="text" class="w-full pl-24 pr-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all bg-gray-50/50 dark:bg-slate-800/50 text-gray-600 dark:text-slate-300" required />
+                  <input v-model="form.slug" type="text" class="w-full pl-24 pr-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all bg-gray-50/50 dark:bg-slate-800/50 text-gray-600 dark:text-slate-300" placeholder="auto-generated-from-name" />
               </div>
+              <p class="mt-1 text-xs text-slate-400">Leave blank to auto-generate from the product name.</p>
             </div>
             <div class="col-span-1 md:col-span-2">
               <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Short Description</label>
@@ -46,11 +89,13 @@
                    <RefreshCw class="w-3.5 h-3.5 mr-1" /> Generate SKU
                  </button>
               </label>
-              <input v-model="form.sku" type="text" placeholder="Ex: UORLA-14464" class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400 bg-white dark:bg-slate-900 text-slate-900 dark:text-white uppercase" required />
+              <input v-model="form.sku" type="text" placeholder="Ex: UORLA-14464" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400 bg-white dark:bg-slate-900 text-slate-900 dark:text-white uppercase" :class="fieldError('sku') ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-700'" required />
+              <p v-if="fieldError('sku')" class="mt-1 text-xs text-red-500">{{ fieldError('sku') }}</p>
             </div>
             <div>
               <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Product Code <span class="text-red-500">*</span></label>
-              <input v-model="form.product_code" type="text" placeholder="Ex: PRD-260219010119" class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400 bg-white dark:bg-slate-900 text-slate-900 dark:text-white" required />
+              <input v-model="form.product_code" type="text" placeholder="Ex: PRD-260219010119" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400 bg-white dark:bg-slate-900 text-slate-900 dark:text-white" :class="fieldError('product_code') ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-700'" required />
+              <p v-if="fieldError('product_code')" class="mt-1 text-xs text-red-500">{{ fieldError('product_code') }}</p>
             </div>
           </div>
         </div>
@@ -86,6 +131,7 @@
                 />
              </div>
            </div>
+           <p v-if="fieldError('category_ids')" class="mt-2 text-xs text-red-500">{{ fieldError('category_ids') }}</p>
         </div>
 
         <!-- Pricing & Inventory -->
@@ -103,8 +149,9 @@
                 <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Sale Price <span class="text-red-500">*</span></label>
                 <div class="relative">
                     <span class="absolute left-3 top-2.5 text-gray-500 dark:text-slate-400">৳</span>
-                    <input v-model="form.sale_price" type="number" step="0.01" placeholder="0.00" class="w-full pl-8 pr-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white" required />
+                    <input v-model="form.sale_price" type="number" step="0.01" placeholder="0.00" class="w-full pl-8 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white" :class="fieldError('sale_price') ? 'border-red-400 dark:border-red-500' : 'border-gray-200 dark:border-slate-700'" required />
                 </div>
+                <p v-if="fieldError('sale_price')" class="mt-1 text-xs text-red-500">{{ fieldError('sale_price') }}</p>
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Discount Price</label>
@@ -115,14 +162,16 @@
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Stock Qty <span class="text-red-500">*</span></label>
-                <input v-model="form.stock_qty" type="number" placeholder="0" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white" required />
+                <input v-model="form.stock_qty" type="number" placeholder="0" class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white" :class="fieldError('stock_qty') ? 'border-red-400 dark:border-red-500' : 'border-gray-200 dark:border-slate-700'" :required="!form.has_variants" />
+                <p v-if="fieldError('stock_qty')" class="mt-1 text-xs text-red-500">{{ fieldError('stock_qty') }}</p>
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Weight (kg) <span class="text-red-500">*</span></label>
                 <div class="relative">
-                    <input v-model="form.weight" type="number" step="0.01" min="0" placeholder="0.00" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white pr-10" required />
+                    <input v-model="form.weight" type="number" step="0.01" min="0" placeholder="0.00" class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white pr-10" :class="fieldError('weight') ? 'border-red-400 dark:border-red-500' : 'border-gray-200 dark:border-slate-700'" required />
                     <span class="absolute right-3 top-2.5 text-gray-400 dark:text-slate-500 text-xs font-semibold">kg</span>
                 </div>
+                <p v-if="fieldError('weight')" class="mt-1 text-xs text-red-500">{{ fieldError('weight') }}</p>
               </div>
            </div>
            
@@ -179,6 +228,7 @@
 
               <!-- Matrix UI -->
               <div v-if="generatedVariants.length > 0" class="overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700">
+                  <p v-if="fieldError('variants')" class="px-4 py-2 text-xs text-red-500 bg-red-50 dark:bg-red-900/10 border-b border-red-100 dark:border-red-900/30">{{ fieldError('variants') }}</p>
                   <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
                       <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-slate-800 dark:text-gray-400">
                           <tr>
@@ -205,13 +255,16 @@
                                   </div>
                               </td>
                               <td class="px-4 py-3">
-                                  <input type="number" v-model="variant.price" class="w-full px-2 py-1.5 border border-gray-200 dark:border-slate-600 rounded bg-transparent focus:ring-1 focus:ring-primary-500 outline-none" min="0" step="0.01">
+                                  <input type="number" v-model="variant.price" class="w-full px-2 py-1.5 border rounded bg-transparent focus:ring-1 focus:ring-primary-500 outline-none" :class="variantFieldError(idx, 'price') ? 'border-red-400' : 'border-gray-200 dark:border-slate-600'" min="0" step="0.01">
+                                  <p v-if="variantFieldError(idx, 'price')" class="mt-1 text-[10px] text-red-500">{{ variantFieldError(idx, 'price') }}</p>
                               </td>
                               <td class="px-4 py-3">
-                                  <input type="number" v-model="variant.stock_qty" class="w-full px-2 py-1.5 border border-gray-200 dark:border-slate-600 rounded bg-transparent focus:ring-1 focus:ring-primary-500 outline-none" min="0">
+                                  <input type="number" v-model="variant.stock_qty" class="w-full px-2 py-1.5 border rounded bg-transparent focus:ring-1 focus:ring-primary-500 outline-none" :class="variantFieldError(idx, 'stock_qty') ? 'border-red-400' : 'border-gray-200 dark:border-slate-600'" min="0">
+                                  <p v-if="variantFieldError(idx, 'stock_qty')" class="mt-1 text-[10px] text-red-500">{{ variantFieldError(idx, 'stock_qty') }}</p>
                               </td>
                               <td class="px-4 py-3">
-                                  <input type="text" v-model="variant.sku" class="w-full px-2 py-1.5 border border-gray-200 dark:border-slate-600 rounded bg-transparent focus:ring-1 focus:ring-primary-500 outline-none" placeholder="SKU">
+                                  <input type="text" v-model="variant.sku" class="w-full px-2 py-1.5 border rounded bg-transparent focus:ring-1 focus:ring-primary-500 outline-none" :class="variantFieldError(idx, 'sku') ? 'border-red-400' : 'border-gray-200 dark:border-slate-600'" placeholder="SKU">
+                                  <p v-if="variantFieldError(idx, 'sku')" class="mt-1 text-[10px] text-red-500">{{ variantFieldError(idx, 'sku') }}</p>
                               </td>
                               <td class="px-4 py-3">
                                    <div class="flex items-center space-x-2">
@@ -220,6 +273,9 @@
                                       </div>
                                       <button @click="openMediaLibrary('variant', idx)" type="button" class="text-gray-400 hover:text-primary-500 transition-colors p-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg">
                                           <UploadCloud class="w-5 h-5"/>
+                                      </button>
+                                      <button v-if="variant.imagePreview" @click="removeVariantImage(idx)" type="button" class="text-red-400 hover:text-red-500 transition-colors p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg">
+                                          <X class="w-4 h-4"/>
                                       </button>
                                    </div>
                               </td>
@@ -329,9 +385,10 @@
                   <!-- Description with Toolbar Dummy -->
                   <div>
                     <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Detailed Description <span class="text-red-500">*</span></label>
-                     <div class="prose dark:prose-invert max-w-none">
+                     <div class="prose dark:prose-invert max-w-none" :class="fieldError('description') ? 'ring-2 ring-red-400 rounded-lg' : ''">
                         <AppRichEditor v-model="form.description" placeholder="Enter detailed product description..." />
                      </div>
+                     <p v-if="fieldError('description')" class="mt-1 text-xs text-red-500">{{ fieldError('description') }}</p>
                   </div>
 
                   <!-- SEO Fields -->
@@ -459,7 +516,8 @@
                   <div v-if="form.is_dropshipping" class="space-y-6 pl-8 border-l-2 border-purple-200 dark:border-purple-900">
                      <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Product Full URL <span class="text-red-500">*</span></label>
-                        <input v-model="form.dropshipping_url" type="url" placeholder="https://example.com/product" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white" />
+                        <input v-model="form.dropshipping_url" type="url" placeholder="https://example.com/product" class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white" :class="fieldError('dropshipping_url') ? 'border-red-400 dark:border-red-500' : 'border-gray-200 dark:border-slate-700'" />
+                        <p v-if="fieldError('dropshipping_url')" class="mt-1 text-xs text-red-500">{{ fieldError('dropshipping_url') }}</p>
                      </div>
                      <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Product Code/SKU</label>
@@ -479,14 +537,25 @@
         <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 lg:sticky lg:top-6 z-20 transition-colors">
            <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-4 pb-2 border-b border-slate-100 dark:border-slate-800">Publish Changes</h3>
            <div class="space-y-3">
-              <div class="grid grid-cols-2 gap-2">
-                 <button type="button" class="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-xs transition-colors">Save Draft</button>
-                 <button type="button" class="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-xs transition-colors">Preview</button>
+              <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-3">
+                <div class="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-slate-400">
+                  <span>Setup progress</span>
+                  <span>{{ completionPercentage }}%</span>
+                </div>
+                <div class="mt-2 h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                  <div class="h-full rounded-full bg-indigo-600 transition-all duration-300" :style="{ width: `${completionPercentage}%` }"></div>
+                </div>
               </div>
-              <button type="submit" class="w-full px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-bold text-sm shadow-sm transition-all flex items-center justify-center">
+              <div class="grid grid-cols-2 gap-2">
+                 <button type="button" @click="saveDraft" :disabled="isSubmitting" class="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-xs transition-colors disabled:opacity-60 disabled:cursor-not-allowed">Save Draft</button>
+                 <button type="button" @click="previewValidation" :disabled="isSubmitting" class="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-xs transition-colors disabled:opacity-60 disabled:cursor-not-allowed">Check Form</button>
+              </div>
+              <button type="submit" :disabled="isSubmitting" class="w-full px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-bold text-sm shadow-sm transition-all flex items-center justify-center disabled:opacity-60 disabled:cursor-not-allowed">
+                 <span v-if="isSubmitting" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></span>
                  Save Product
               </button>
            </div>
+            <p class="mt-3 text-[11px] text-slate-400 dark:text-slate-500 leading-5">Tip: save as draft while you finish images, SEO, and advanced content.</p>
         </div>
 
         <!-- Product Status -->
@@ -533,7 +602,7 @@
                <div class="space-y-2">
                   <label v-for="option in [
                     { value: 'quantity', label: 'Show Quantity', desc: 'Display exact numbers' },
-                    { value: 'text_only', label: 'Text Only', desc: 'In-Stock / Out-of-Stock' },
+                    { value: 'text', label: 'Text Only', desc: 'In-Stock / Out-of-Stock' },
                     { value: 'hide', label: 'Hide Stock', desc: 'Hidden from customers' }
                   ]" :key="option.value" 
                   class="flex items-center p-3 rounded-lg border cursor-pointer transition-all"
@@ -569,8 +638,24 @@
               <select v-model="form.discount_type" class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm">
                  <option value="" disabled>Select Type</option>
                  <option value="percent">Percent (%)</option>
-                 <option value="fixed">Fixed Amount</option>
+                 <option value="flat">Fixed Amount</option>
               </select>
+           </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 transition-colors">
+           <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-4">Checklist</h3>
+           <div class="space-y-3">
+             <div v-for="item in completionChecks" :key="item.label" class="flex items-start gap-3">
+               <div class="mt-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
+                 :class="item.done ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500'">
+                 {{ item.done ? 'OK' : completionChecks.findIndex(check => check.label === item.label) + 1 }}
+               </div>
+               <div>
+                 <div class="text-sm font-medium" :class="item.done ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'">{{ item.label }}</div>
+                 <div class="text-[11px] text-slate-400 dark:text-slate-500">{{ item.help }}</div>
+               </div>
+             </div>
            </div>
         </div>
 
@@ -696,22 +781,57 @@ import {
   ListChecks,
   GripVertical,
   Trash2,
-  RefreshCw
+  RefreshCw,
+  Library
 } from 'lucide-vue-next'
 import AppRichEditor from '~/components/AppRichEditor.vue'
 import AppSearchSelect from '~/components/AppSearchSelect.vue'
 import AppMediaLibrary from '~/components/AppMediaLibrary.vue'
+import { toast } from 'vue-sonner'
 
 definePageMeta({
   middleware: 'auth',
   permissions: 'products.create'
 })
 
-const config = useRuntimeConfig()
-const auth = useAuthStore()
+const { buildProductValidationErrors } = useProductValidation()
 const { getAll, createItem } = useCrud()
-const router = useRoute()
-import { toast } from 'vue-sonner';
+const isSubmitting = ref(false)
+const errors = ref({})
+
+const hasValidationErrors = computed(() => Object.keys(errors.value).length > 0)
+const fieldError = (key) => errors.value[key]?.[0] || ''
+const variantFieldError = (index, field) => errors.value[`variants.${index}.${field}`]?.[0] || ''
+const clearErrors = () => {
+  errors.value = {}
+}
+
+const shouldAppendField = (key, value) => {
+  if (value === null || value === undefined) return false
+  if (['brand_id', 'unit_id'].includes(key) && value === '') return false
+  if (key === 'video_url' && String(value).trim() === '') return false
+  if (['discount_value', 'discount_type', 'discount_price', 'purchase_price', 'note', 'dropshipping_url', 'dropshipping_sku', 'slug'].includes(key) && value === '') return false
+  return true
+}
+
+const validateProductForm = () => {
+  clearErrors()
+  const clientErrors = buildProductValidationErrors(form.value, generatedVariants.value)
+
+  if (Object.keys(clientErrors).length) {
+    errors.value = clientErrors
+    toast.error('Please fix the highlighted validation errors.')
+    return false
+  }
+
+  return true
+}
+
+const applyApiErrors = (error) => {
+  if (error?.status === 422 && error?.data?.errors) {
+    errors.value = error.data.errors
+  }
+}
 
 // Accordion State
 const sections = reactive({
@@ -737,26 +857,37 @@ const openMediaLibrary = (mode, index = null) => {
     showMediaModal.value = true
 }
 
-const handleMediaSelection = (selected) => {
+const handleMediaSelection = (selection) => {
+    const getUrl = (file) => file?.file_url || file?.preview || file?.path || file?.value || ''
+
     if (mediaModalMode.value === 'thumbnail') {
-        thumbnailPreview.value = selected.file_url
-        form.value.image = selected.file_url
+        const file = Array.isArray(selection) ? selection[0] : selection
+        if (file) {
+            const url = getUrl(file)
+            form.value.image = url
+            thumbnailPreview.value = url
+        }
     } else if (mediaModalMode.value === 'gallery') {
-        const newImages = Array.isArray(selected) ? selected : [selected]
-        newImages.forEach(img => {
-            if (!galleryItems.value.some(item => item.path === img.file_url)) {
+        const selections = Array.isArray(selection) ? selection : [selection]
+        selections.forEach(file => {
+            const url = getUrl(file)
+            if (url && !galleryItems.value.find(item => item.value === url || item.path === url)) {
                 galleryItems.value.push({
-                    id: img.id,
-                    path: img.file_url,
-                    preview: img.file_url,
+                    id: file.id || crypto.randomUUID?.() || Math.random().toString(36).slice(2),
+                    value: url,
+                    preview: url,
                     source: 'existing'
                 })
             }
         })
-    } else if (mediaModalMode.value === 'variant') {
-        if (targetVariantIndex.value !== null) {
-            generatedVariants.value[targetVariantIndex.value].imagePreview = selected.file_url
-            generatedVariants.value[targetVariantIndex.value].imagePath = selected.file_url
+    } else if (mediaModalMode.value === 'variant' && targetVariantIndex.value !== null) {
+        const file = Array.isArray(selection) ? selection[0] : selection
+        const variant = generatedVariants.value[targetVariantIndex.value]
+        if (file && variant) {
+            const url = getUrl(file)
+            variant.imagePreview = url
+            variant.imagePath = url
+            variant.imageFile = null
         }
     }
 }
@@ -817,6 +948,32 @@ const localSpecificationGroups = ref([
    }
 ])
 
+const completionChecks = computed(() => [
+  { label: 'Product name', done: !!form.value.name.trim(), help: 'Give the product a clear, searchable title.' },
+  { label: 'Category', done: form.value.category_ids.length > 0, help: 'At least one category is required.' },
+  { label: 'Price', done: !!form.value.sale_price, help: 'Set the selling price customers will see.' },
+  { label: 'Main image', done: !!thumbnailPreview.value, help: 'A thumbnail makes the listing look complete.' },
+  { label: 'Description', done: !!form.value.description?.replace(/<[^>]*>/g, '').trim(), help: 'Add product details to improve conversion.' },
+  { label: 'Stock setup', done: form.value.has_variants ? generatedVariants.value.length > 0 : form.value.stock_qty !== '' && form.value.stock_qty !== null, help: 'Configure stock or variant inventory before publishing.' }
+])
+
+const completionCount = computed(() => completionChecks.value.filter(item => item.done).length)
+const completionPercentage = computed(() => Math.round((completionCount.value / completionChecks.value.length) * 100))
+const statusBadgeClass = computed(() => (
+  form.value.status === 'published'
+    ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300'
+    : form.value.status === 'draft'
+      ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+      : 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300'
+))
+const statusDotClass = computed(() => (
+  form.value.status === 'published'
+    ? 'bg-emerald-500'
+    : form.value.status === 'draft'
+      ? 'bg-slate-500'
+      : 'bg-amber-500'
+))
+
 // Image Handlers
 const handleThumbnailUpload = (event) => {
    const file = event.target.files[0]
@@ -841,6 +998,14 @@ const handleGalleryUpload = (event) => {
 
 const removeGalleryImage = (index) => {
    galleryItems.value.splice(index, 1)
+}
+
+const removeVariantImage = (index) => {
+   const variant = generatedVariants.value[index]
+   if (!variant) return
+   variant.imageFile = null
+   variant.imagePath = null
+   variant.imagePreview = null
 }
 
 // Drag and Drop Handlers
@@ -955,7 +1120,8 @@ const fetchOptions = async () => {
         if (unitsRes && unitsRes.data) units.value = unitsRes.data
         if (attributesRes && attributesRes.data) productAttributesList.value = attributesRes.data
     } catch (e) {
-        console.error('Failed to fetch options')
+        console.error('Failed to fetch options', e)
+        toast.error('Failed to load product setup options.')
     }
 }
 
@@ -1111,6 +1277,22 @@ const generateCombinations = () => {
 // Watch config structure to regenerate smartly
 watch(() => selectedAttributesConfig.value, () => generateCombinations(), { deep: true })
 
+watch(() => form.value.has_variants, (enabled) => {
+  if (enabled && selectedAttributesConfig.value.length === 0) {
+    addAttributeLine()
+  }
+})
+
+watch(() => [form.value.name, form.value.short_description], ([name, shortDescription]) => {
+  if (!form.value.seo_title && name) {
+    form.value.seo_title = name
+  }
+
+  if (!form.value.seo_description && shortDescription) {
+    form.value.seo_description = shortDescription
+  }
+})
+
 const handleVariantImage = (event, index) => {
    const file = event.target.files[0]
    if (file) {
@@ -1120,6 +1302,7 @@ const handleVariantImage = (event, index) => {
 }
 
 fetchOptions()
+generateSKU()
 
 // Hierarchical Category Selection Logic
 const selectParents = (categoryId) => {
@@ -1171,7 +1354,12 @@ const handleCategoryCreate = async (name) => {
     if (newCategory) {
       // Refresh categories list
       const categoriesRes = await getAll('/vendor/attributes/categories')
-      if (categoriesRes && categoriesRes.data) categories.value = categoriesRes.data
+      if (categoriesRes && categoriesRes.data) {
+        categories.value = categoriesRes.data.map(cat => ({
+          ...cat,
+          name: getCategoryPath(cat, categoriesRes.data)
+        }))
+      }
       
       // Select the newly created category
       const createdId = newCategory.id || (newCategory.data ? newCategory.data.id : null)
@@ -1183,7 +1371,7 @@ const handleCategoryCreate = async (name) => {
     }
   } catch (error) {
     console.error('Failed to create category:', error)
-    alert(error.data?.message || 'Failed to create category')
+    toast.error(error.data?.message || 'Failed to create category')
   }
 }
 
@@ -1203,7 +1391,7 @@ const handleBrandCreate = async (name) => {
     }
   } catch (error) {
     console.error('Failed to create brand:', error)
-    alert(error.data?.message || 'Failed to create brand')
+    toast.error(error.data?.message || 'Failed to create brand')
   }
 }
 
@@ -1223,29 +1411,42 @@ const handleUnitCreate = async (name) => {
     }
   } catch (error) {
     console.error('Failed to create unit:', error)
-    alert(error.data?.message || 'Failed to create unit')
+    toast.error(error.data?.message || 'Failed to create unit')
   }
 }
 
-const submitProduct = async () => {
-  // Validate required fields
-  if (!form.value.name || !form.value.category_ids?.length || !form.value.sale_price) {
-      alert('Please fill in required fields')
-      return
+const previewValidation = () => {
+  const missing = completionChecks.value.filter(item => !item.done)
+  if (!missing.length) {
+    toast.success('This product is ready to publish.')
+    return
   }
 
+  toast.info(`Still recommended: ${missing.map(item => item.label).join(', ')}`)
+}
+
+const saveDraft = async () => {
+  await submitProduct('draft')
+}
+
+const submitProduct = async (targetStatus = form.value.status) => {
+  if (!validateProductForm()) return
+
+  isSubmitting.value = true
   const formData = new FormData()
   
   // Append basic fields
   Object.keys(form.value).forEach(key => {
       if (key === 'faqs' || key === 'category_ids') return // Handle separately
-      if (form.value[key] !== null && form.value[key] !== undefined) {
-          let value = form.value[key]
-          if (typeof value === 'boolean') {
-              value = value ? 1 : 0
-          }
-          formData.append(key, value)
+      let value = form.value[key]
+      if (key === 'status') {
+          value = targetStatus
       }
+      if (!shouldAppendField(key, value)) return
+      if (typeof value === 'boolean') {
+          value = value ? 1 : 0
+      }
+      formData.append(key, value)
   })
 
   // Append category_ids correctly as an array for Laravel
@@ -1270,7 +1471,7 @@ const submitProduct = async () => {
       if (item.source === 'existing') {
           galleryMetadata.push({
               source: 'existing',
-              value: item.path,
+              value: item.value || item.path,
               index: index
           })
       } else {
@@ -1316,7 +1517,14 @@ const submitProduct = async () => {
       formData.append('variants', JSON.stringify(cleanVariants))
   }
 
-  await createItem('/vendor/products', formData, form)
-  navigateTo('/vendor/products')
+  try {
+    await createItem('/vendor/products', formData, null, false)
+    navigateTo('/vendor/products')
+  } catch (error) {
+    console.error('Error creating product:', error)
+    applyApiErrors(error)
+  } finally {
+    isSubmitting.value = false
+  }
 }
 </script>

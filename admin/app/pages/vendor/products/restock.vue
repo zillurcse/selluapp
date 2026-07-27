@@ -1,250 +1,439 @@
 <template>
-  <div class="p-6 md:p-8 min-h-screen">
+  <div class="p-6 lg:p-8 bg-slate-50 dark:bg-slate-950 min-h-screen transition-colors duration-300">
     <div class="max-w-7xl mx-auto">
       <!-- Header -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <div>
-          <div class="flex items-center gap-2">
-            <button @click="$router.back()" class="p-2 -ml-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 dark:hover:text-gray-300 rounded-lg transition-colors">
-              <ChevronLeft class="w-5 h-5" />
-            </button>
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Restock Inventory</h1>
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div class="flex items-center gap-4">
+          <button
+            @click="$router.back()"
+            class="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm group"
+          >
+            <ChevronLeft class="w-5 h-5 text-slate-500 dark:text-slate-400 group-hover:-translate-x-0.5 transition-transform" />
+          </button>
+          <div>
+            <h1 class="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Restock Inventory</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400">Add stock to products and track inventory changes.</p>
           </div>
-          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 ml-9">Add stock to your products and track historical inventory changes.</p>
         </div>
-        
-        <div class="flex p-1 bg-gray-100/80 dark:bg-gray-800/80 rounded-lg shadow-inner">
-          <button v-for="tab in ['restock', 'history']" :key="tab" @click="activeTab = tab" :class="[
-            'px-5 py-2 text-sm font-medium capitalize rounded-md transition-all duration-200',
-            activeTab === tab ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm ring-1 ring-gray-900/5' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-          ]">
-            {{ tab }}
+
+        <div class="flex flex-wrap items-center gap-2">
+          <button
+            v-for="tab in tabs"
+            :key="tab.value"
+            @click="activeTab = tab.value"
+            :class="[
+              'px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 border',
+              activeTab === tab.value
+                ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/30'
+                : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
+            ]"
+          >
+            {{ tab.label }}
           </button>
         </div>
       </div>
 
       <!-- Restock Tab -->
-      <div v-if="activeTab === 'restock'" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div v-if="activeTab === 'restock'" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Form Column -->
-        <div class="lg:col-span-2">
-          <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
-            <div class="p-6 sm:p-8">
-              <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Stock Entry Details</h2>
-              
-              <div class="space-y-6">
-                <!-- Search -->
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Search Product or Scan Barcode</label>
-                  <div class="relative">
-                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                      <Search class="h-5 w-5 text-gray-400" aria-hidden="true" />
-                    </div>
-                    <input 
-                      type="text" 
-                      v-model="productSearch" 
-                      @input="searchProducts"
-                      placeholder="Search by product name, SKU, or barcode..." 
-                      class="block w-full rounded-xl border-0 py-3.5 pl-11 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-base dark:bg-gray-800 dark:text-white dark:ring-gray-700 transition-shadow" 
-                    />
-                    <!-- Dropdown -->
-                    <ul v-if="searchResults.length > 0" class="absolute z-10 mt-1.5 max-h-60 w-full overflow-auto rounded-xl bg-white dark:bg-gray-800 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm border border-gray-100 dark:border-gray-700">
-                      <li v-for="res in searchResults" :key="res.id" @click="selectProduct(res)" class="relative cursor-pointer select-none py-2.5 pl-3 pr-9 hover:bg-gray-50 dark:hover:bg-gray-700/50 text-gray-900 dark:text-white flex items-center gap-3 transition-colors">
-                        <img :src="res.thumbnail_url || '/placeholder.png'" class="h-10 w-10 flex-shrink-0 rounded-md object-cover border border-gray-200 dark:border-gray-700" />
-                        <div class="flex flex-col">
-                          <span class="block truncate font-medium">{{ res.name }}</span>
-                          <span class="block truncate text-xs text-gray-500 dark:text-gray-400 mt-0.5">Stock: {{ res.stock_qty }} {{ res.unit?.name }} &bull; SKU: {{ res.sku || 'N/A' }}</span>
-                        </div>
-                      </li>
-                    </ul>
+        <div class="lg:col-span-2 space-y-6">
+          <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/20">
+              <h2 class="text-sm font-semibold text-slate-900 dark:text-white">Stock Entry Details</h2>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Search by name, SKU, or scan a barcode.</p>
+            </div>
+
+            <div class="p-6 space-y-6">
+              <!-- Search -->
+              <div ref="searchContainer">
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Product Search</label>
+                <div class="relative">
+                  <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                  <input
+                    ref="searchInput"
+                    v-model="productSearch"
+                    type="text"
+                    placeholder="Search by product name, SKU, or barcode..."
+                    class="w-full h-11 pl-10 pr-10 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 rounded-lg focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400 text-sm font-medium text-slate-700 dark:text-slate-200"
+                    autocomplete="off"
+                    @input="debouncedSearch"
+                    @keydown.enter.prevent="handleSearchEnter"
+                  />
+                  <button
+                    v-if="productSearch"
+                    @click="clearSearch"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                  >
+                    <X class="w-4 h-4" />
+                  </button>
+                </div>
+
+                <!-- Dropdown -->
+                <div
+                  v-if="showSearchDropdown"
+                  class="absolute z-20 mt-1.5 max-h-60 w-full overflow-auto rounded-xl bg-white dark:bg-slate-900 py-1 text-sm shadow-lg ring-1 ring-black/5 border border-slate-200 dark:border-slate-700"
+                  :style="dropdownStyle"
+                >
+                  <div v-if="searching" class="px-4 py-3 text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                    <Loader2 class="w-4 h-4 animate-spin" />
+                    Searching...
                   </div>
-                </div>
-
-                <!-- Selected Product Preview -->
-                <div v-if="selectedProduct" class="rounded-xl border border-indigo-100 dark:border-indigo-900/50 bg-indigo-50/50 dark:bg-indigo-900/10 p-4 transition-all">
-                   <div class="flex items-start justify-between">
-                     <div class="flex items-center gap-4">
-                       <img :src="selectedProduct.thumbnail_url" class="h-16 w-16 rounded-lg object-cover border border-white dark:border-gray-800 shadow-sm bg-white" />
-                       <div>
-                         <h3 class="font-semibold text-gray-900 dark:text-white text-base">{{ selectedProduct.name }}</h3>
-                         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Current Stock: <span class="font-medium text-gray-900 dark:text-gray-300">{{ selectedProduct.stock_qty }}</span></p>
-                       </div>
-                     </div>
-                     <button @click="selectedProduct = null" class="text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-1.5 rounded-lg transition-colors">
-                       <X class="h-5 w-5" />
-                     </button>
-                   </div>
-                </div>
-
-                <!-- Variant Selection -->
-                <div v-if="selectedProduct?.variants?.length > 0">
-                   <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select Variant</label>
-                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                     <div v-for="v in selectedProduct.variants" :key="v.id" @click="selectedVariant = v" :class="[
-                       'cursor-pointer rounded-xl border p-4 transition-all duration-200',
-                       selectedVariant?.id === v.id ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-900/20 ring-1 ring-indigo-600 shadow-sm' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 hover:border-gray-300 dark:hover:border-gray-600'
-                     ]">
-                        <div class="flex items-start justify-between">
-                          <div class="flex flex-col">
-                              <span class="text-sm font-medium text-gray-900 dark:text-white" v-if="v.attributes && v.attributes.length > 0">
-                                  {{ v.attributes.map(a => a.attribute?.name + ': ' + a.value).join(', ') }}
-                              </span>
-                              <span class="text-sm font-medium text-gray-900 dark:text-white" v-else>Variant {{ v.sku }}</span>
-                              <span class="text-xs text-gray-500 dark:text-gray-400 mt-1">SKU: {{ v.sku || 'N/A' }}</span>
-                          </div>
-                          <span class="inline-flex items-center rounded-md bg-gray-50 dark:bg-gray-800 px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 ring-1 ring-inset ring-gray-500/10">Stock: {{ v.stock_qty }}</span>
-                        </div>
-                     </div>
-                   </div>
-                </div>
-
-                <!-- Restock Details (Qty, Cost, Supplier) -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Quantity to Add <span class="text-red-500">*</span></label>
-                    <input v-model="form.quantity" type="number" step="0.01" min="0.01" class="block w-full rounded-xl border-0 py-3 px-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-base dark:bg-gray-800 dark:text-white dark:ring-gray-700" />
-                  </div>
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Unit Purchase Cost <span class="text-gray-400 font-normal">(Optional)</span></label>
-                    <div class="relative">
-                      <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
-                        <span class="text-gray-500 text-base">$</span>
+                  <template v-else-if="searchResults.length > 0">
+                    <button
+                      v-for="res in searchResults"
+                      :key="res.id"
+                      type="button"
+                      @click="selectProduct(res)"
+                      class="w-full text-left relative cursor-pointer select-none py-2.5 px-3 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-900 dark:text-white flex items-center gap-3 transition-colors"
+                    >
+                      <img
+                        :src="productImage(res)"
+                        class="h-10 w-10 flex-shrink-0 rounded-md object-cover border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800"
+                        :alt="res.name"
+                      />
+                      <div class="min-w-0 flex-1">
+                        <span class="block truncate font-medium">{{ res.name }}</span>
+                        <span class="block truncate text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                          Stock: {{ res.has_variants ? 'Variants' : (res.stock_qty ?? 0) }}
+                          <span v-if="res.unit?.name"> {{ res.unit.name }}</span>
+                          · SKU: {{ res.sku || 'N/A' }}
+                        </span>
                       </div>
-                      <input v-model="form.purchase_price" type="number" step="0.01" class="block w-full rounded-xl border-0 py-3 pl-9 pr-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-base dark:bg-gray-800 dark:text-white dark:ring-gray-700" />
-                    </div>
+                    </button>
+                  </template>
+                  <div v-else class="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
+                    No products found. Press Enter to try barcode lookup.
                   </div>
-                </div>
-
-                <!-- Supplier -->
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Supplier <span class="text-gray-400 font-normal">(Optional)</span></label>
-                  <select v-model="form.supplier_id" class="block w-full rounded-xl border-0 py-3 px-4 pr-10 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 text-base dark:bg-gray-800 dark:text-white dark:ring-gray-700">
-                    <option value="">Select a supplier...</option>
-                    <option v-for="s in suppliers" :key="s.id" :value="s.id">{{ s.name }}</option>
-                  </select>
-                </div>
-
-                <!-- Notes -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Note <span class="text-gray-400 font-normal">(Optional)</span></label>
-                    <textarea v-model="form.note" rows="3" class="block w-full rounded-xl border-0 py-3 px-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-base dark:bg-gray-800 dark:text-white dark:ring-gray-700" placeholder="E.g. Restock from new batch, damaged stock replacement..."></textarea>
                 </div>
               </div>
+
+              <!-- Selected Product Preview -->
+              <div
+                v-if="selectedProduct"
+                class="rounded-xl border border-indigo-100 dark:border-indigo-900/50 bg-indigo-50/50 dark:bg-indigo-900/10 p-4"
+              >
+                <div class="flex items-start justify-between gap-3">
+                  <div class="flex items-center gap-4 min-w-0">
+                    <img
+                      :src="productImage(selectedProduct)"
+                      class="h-16 w-16 rounded-lg object-cover border border-white dark:border-slate-800 shadow-sm bg-white dark:bg-slate-800 flex-shrink-0"
+                      :alt="selectedProduct.name"
+                    />
+                    <div class="min-w-0">
+                      <h3 class="font-semibold text-slate-900 dark:text-white truncate">{{ selectedProduct.name }}</h3>
+                      <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                        Current Stock:
+                        <span class="font-medium text-slate-900 dark:text-slate-300">{{ currentStock }}</span>
+                        <span v-if="selectedProduct.unit?.name" class="text-slate-400"> {{ selectedProduct.unit.name }}</span>
+                      </p>
+                      <p v-if="selectedProduct.sku" class="text-xs text-slate-400 mt-0.5">SKU: {{ selectedProduct.sku }}</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    @click="clearSelection"
+                    class="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-1.5 rounded-lg transition-colors flex-shrink-0"
+                  >
+                    <X class="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+
+              <div v-if="loadingProduct" class="flex items-center justify-center py-8 text-sm text-slate-500 dark:text-slate-400 gap-2">
+                <Loader2 class="w-5 h-5 animate-spin text-indigo-600" />
+                Loading product details...
+              </div>
+
+              <!-- Variant Selection -->
+              <div v-else-if="selectedProduct?.variants?.length > 0">
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Select Variant <span class="text-red-500">*</span>
+                </label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    v-for="v in selectedProduct.variants"
+                    :key="v.id"
+                    type="button"
+                    @click="selectedVariant = v"
+                    :class="[
+                      'text-left rounded-xl border p-4 transition-all duration-200',
+                      selectedVariant?.id === v.id
+                        ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-900/20 ring-1 ring-indigo-600 shadow-sm'
+                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 hover:border-slate-300 dark:hover:border-slate-600'
+                    ]"
+                  >
+                    <div class="flex items-start justify-between gap-2">
+                      <div class="min-w-0">
+                        <span v-if="v.attributes?.length" class="text-sm font-medium text-slate-900 dark:text-white block truncate">
+                          {{ v.attributes.map(a => `${a.attribute?.name}: ${a.value}`).join(', ') }}
+                        </span>
+                        <span v-else class="text-sm font-medium text-slate-900 dark:text-white">Variant {{ v.sku || v.id }}</span>
+                        <span class="text-xs text-slate-500 dark:text-slate-400 mt-1 block">SKU: {{ v.sku || 'N/A' }}</span>
+                      </div>
+                      <span class="inline-flex items-center rounded-md bg-slate-50 dark:bg-slate-800 px-2 py-1 text-xs font-medium text-slate-600 dark:text-slate-400 ring-1 ring-inset ring-slate-500/10 flex-shrink-0">
+                        {{ v.stock_qty ?? 0 }}
+                      </span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Restock Details -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                    Quantity to Add <span class="text-red-500">*</span>
+                  </label>
+                  <input
+                    v-model.number="form.quantity"
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    class="w-full h-11 px-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 rounded-lg focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all text-sm font-medium text-slate-700 dark:text-slate-200"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                    Unit Purchase Cost <span class="text-slate-400 font-normal">(Optional)</span>
+                  </label>
+                  <div class="relative">
+                    <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-500 text-sm">৳</span>
+                    <input
+                      v-model="form.purchase_price"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      class="w-full h-11 pl-9 pr-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 rounded-lg focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all text-sm font-medium text-slate-700 dark:text-slate-200"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                  Supplier <span class="text-slate-400 font-normal">(Optional)</span>
+                </label>
+                <select
+                  v-model="form.supplier_id"
+                  class="w-full h-11 px-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 rounded-lg focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all text-sm font-medium text-slate-700 dark:text-slate-200"
+                >
+                  <option value="">Select a supplier...</option>
+                  <option v-for="s in suppliers" :key="s.id" :value="s.id">{{ s.name }}</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                  Note <span class="text-slate-400 font-normal">(Optional)</span>
+                </label>
+                <textarea
+                  v-model="form.note"
+                  rows="3"
+                  maxlength="255"
+                  placeholder="E.g. Restock from new batch, damaged stock replacement..."
+                  class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 rounded-lg focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all text-sm text-slate-700 dark:text-slate-200 resize-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Scanner hint -->
+          <div class="rounded-xl border border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/50 dark:bg-indigo-900/10 p-5 flex gap-4">
+            <div class="p-2.5 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-lg flex-shrink-0 h-fit">
+              <ScanLine class="w-5 h-5" />
+            </div>
+            <div>
+              <h3 class="text-sm font-semibold text-slate-900 dark:text-white">Barcode Scanner Ready</h3>
+              <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                Type or scan a barcode in the search field and press Enter to select the product instantly.
+              </p>
             </div>
           </div>
         </div>
 
-        <!-- Sidebar / Action Column -->
+        <!-- Sidebar -->
         <div class="space-y-6">
-          <div class="bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 sm:p-8">
-            <h2 class="text-base font-semibold text-gray-900 dark:text-white mb-6">Stock Summary</h2>
-            <dl class="space-y-4 text-sm text-gray-600 dark:text-gray-400">
-              <div class="flex justify-between items-center pb-4 border-b border-gray-200 dark:border-gray-700/50">
+          <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
+            <h2 class="text-sm font-semibold text-slate-900 dark:text-white mb-5">Stock Summary</h2>
+            <dl class="space-y-4 text-sm text-slate-600 dark:text-slate-400">
+              <div class="flex justify-between items-center pb-4 border-b border-slate-100 dark:border-slate-800">
                 <dt>Selected Product</dt>
-                <dd class="font-medium text-gray-900 dark:text-white text-right max-w-[150px] truncate" :title="selectedProduct?.name">{{ selectedProduct?.name || '-' }}</dd>
+                <dd class="font-medium text-slate-900 dark:text-white text-right max-w-[150px] truncate" :title="selectedProduct?.name">
+                  {{ selectedProduct?.name || '—' }}
+                </dd>
               </div>
-              <div v-if="selectedVariant" class="flex justify-between items-center pb-4 border-b border-gray-200 dark:border-gray-700/50">
+              <div v-if="selectedVariant" class="flex justify-between items-center pb-4 border-b border-slate-100 dark:border-slate-800">
                 <dt>Variant SKU</dt>
-                <dd class="font-medium text-gray-900 dark:text-white">{{ selectedVariant.sku || 'Yes' }}</dd>
+                <dd class="font-medium text-slate-900 dark:text-white">{{ selectedVariant.sku || '—' }}</dd>
               </div>
-              <div class="flex justify-between items-center pb-4 border-b border-gray-200 dark:border-gray-700/50">
+              <div class="flex justify-between items-center pb-4 border-b border-slate-100 dark:border-slate-800">
+                <dt>Current Stock</dt>
+                <dd class="font-medium text-slate-900 dark:text-white">{{ selectedProduct ? currentStock : '—' }}</dd>
+              </div>
+              <div class="flex justify-between items-center pb-4 border-b border-slate-100 dark:border-slate-800">
                 <dt>Quantity to Add</dt>
-                <dd class="font-medium text-green-600 dark:text-green-500">+ {{ form.quantity || 0 }}</dd>
+                <dd class="font-medium text-emerald-600 dark:text-emerald-400">+{{ validQuantity }}</dd>
               </div>
-              <div class="flex justify-between items-center pt-2">
-                <dt class="font-medium text-gray-900 dark:text-white text-base">Projected Stock</dt>
-                <dd class="font-bold text-gray-900 dark:text-white text-lg">{{ projectedStock }}</dd>
+              <div v-if="form.purchase_price" class="flex justify-between items-center pb-4 border-b border-slate-100 dark:border-slate-800">
+                <dt>Total Cost</dt>
+                <dd class="font-medium text-slate-900 dark:text-white">৳{{ totalCost }}</dd>
+              </div>
+              <div class="flex justify-between items-center pt-1">
+                <dt class="font-medium text-slate-900 dark:text-white">Projected Stock</dt>
+                <dd class="font-bold text-slate-900 dark:text-white text-lg">{{ selectedProduct ? projectedStock : '—' }}</dd>
               </div>
             </dl>
-            
-            <button @click="processRestock" :disabled="!isReady || loading" class="mt-8 w-full flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
-              <svg v-if="loading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+
+            <button
+              @click="processRestock"
+              :disabled="!isReady || loading"
+              class="mt-6 w-full flex items-center justify-center gap-2 h-11 rounded-lg bg-indigo-600 hover:bg-indigo-700 px-4 text-sm font-semibold text-white shadow-sm transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Loader2 v-if="loading" class="w-4 h-4 animate-spin" />
+              <PackagePlus v-else class="w-4 h-4" />
               {{ loading ? 'Processing...' : 'Confirm Restock' }}
             </button>
+
+            <p v-if="selectedProduct?.has_variants && !selectedVariant" class="mt-3 text-xs text-amber-600 dark:text-amber-400 text-center">
+              Please select a variant to continue.
+            </p>
           </div>
 
-          <div class="rounded-2xl border border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/50 dark:bg-indigo-900/10 p-6 flex flex-col gap-4">
-              <div class="flex items-center gap-3">
-                <div class="p-2.5 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-lg">
-                    <Truck class="w-5 h-5" />
-                </div>
-                <div>
-                    <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Supplier Directory</h3>
-                </div>
+          <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 flex flex-col gap-3 shadow-sm">
+            <div class="flex items-center gap-3">
+              <div class="p-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg">
+                <Truck class="w-5 h-5" />
               </div>
-              <p class="text-sm text-gray-500 dark:text-gray-400">Manage your product source directories to maintain a professional inventory ledger.</p>
-              <NuxtLink to="/vendor/products/suppliers" class="mt-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:hover:text-indigo-400 inline-flex items-center gap-1 group">
-                  Go to Suppliers <ChevronRight class="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-              </NuxtLink>
+              <h3 class="text-sm font-semibold text-slate-900 dark:text-white">Supplier Directory</h3>
+            </div>
+            <p class="text-sm text-slate-500 dark:text-slate-400">Manage suppliers to keep your inventory ledger organized.</p>
+            <NuxtLink
+              to="/vendor/products/suppliers"
+              class="text-sm font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 inline-flex items-center gap-1 group"
+            >
+              Go to Suppliers
+              <ChevronRight class="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+            </NuxtLink>
           </div>
         </div>
       </div>
 
       <!-- History Tab -->
-      <div v-else class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden animate-in fade-in duration-300">
-        <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/20">
-          <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-white">Stock Movement History</h3>
-          <button @click="fetchLogs" class="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+      <div v-else class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/30 dark:bg-slate-800/20">
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 dark:text-white">Stock Movement History</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              <span class="font-semibold text-slate-900 dark:text-white">{{ logsPagination.total }}</span>
+              {{ logsPagination.total === 1 ? 'entry' : 'entries' }}
+            </p>
+          </div>
+          <button
+            @click="fetchLogs"
+            :disabled="loadingLogs"
+            class="p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
+          >
             <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': loadingLogs }" />
           </button>
         </div>
-        
+
         <div v-if="loadingLogs" class="py-16 flex justify-center">
-          <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+          <Loader2 class="w-8 h-8 animate-spin text-indigo-600" />
         </div>
 
         <div v-else-if="logs.length === 0" class="py-16 text-center px-6">
-          <div class="mx-auto w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-3">
-              <Package class="h-6 w-6 text-gray-400" />
+          <div class="mx-auto w-14 h-14 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-3">
+            <Package class="h-6 w-6 text-slate-400" />
           </div>
-          <h3 class="text-sm font-semibold text-gray-900 dark:text-white">No stock movements found</h3>
-          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Inventory adjustments and restock logs will appear here.</p>
+          <h3 class="text-sm font-semibold text-slate-900 dark:text-white">No stock movements found</h3>
+          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Inventory adjustments and restock logs will appear here.</p>
         </div>
 
-        <div v-else class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-            <thead class="bg-gray-50 dark:bg-gray-800/50">
-              <tr>
-                <th scope="col" class="py-3.5 pl-6 pr-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Product Info</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Action Type</th>
-                <th scope="col" class="px-3 py-3.5 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Qty change</th>
-                <th scope="col" class="px-3 py-3.5 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Balance</th>
-                <th scope="col" class="py-3.5 pl-3 pr-6 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Remarks</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
-              <tr v-for="log in logs" :key="log.id" class="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
-                <td class="whitespace-nowrap py-4 pl-6 pr-3 text-sm text-gray-500 dark:text-gray-400">
-                  {{ formatDate(log.created_at) }}
-                </td>
-                <td class="px-3 py-4 text-sm max-w-[240px]">
-                  <div class="font-medium text-gray-900 dark:text-white truncate" :title="log.product?.name">{{ log.product?.name }}</div>
-                  <div v-if="log.variant" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">SKU: {{ log.variant.sku }}</div>
-                </td>
-                <td class="whitespace-nowrap px-3 py-4 text-sm">
-                  <span :class="[
-                      'inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset',
-                      log.type === 'restock' ? 'bg-green-50 text-green-700 ring-green-600/20 dark:bg-green-500/10 dark:text-green-400 dark:ring-green-500/20' : 
-                      log.type === 'sale' ? 'bg-blue-50 text-blue-700 ring-blue-700/10 dark:bg-blue-900/20 dark:text-blue-400 dark:ring-blue-900/30' : 
-                      'bg-gray-50 text-gray-600 ring-gray-500/20 dark:bg-gray-400/10 dark:text-gray-400 dark:ring-gray-400/20'
-                  ]">
+        <div v-else>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-100 dark:divide-slate-800">
+              <thead class="bg-slate-50/50 dark:bg-slate-800/50">
+                <tr>
+                  <th scope="col" class="py-3.5 pl-6 pr-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Date</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Product</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Type</th>
+                  <th scope="col" class="px-3 py-3.5 text-right text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Qty Change</th>
+                  <th scope="col" class="px-3 py-3.5 text-right text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Balance</th>
+                  <th scope="col" class="py-3.5 pl-3 pr-6 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Remarks</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                <tr v-for="log in logs" :key="log.id" class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                  <td class="whitespace-nowrap py-4 pl-6 pr-3 text-sm text-slate-500 dark:text-slate-400">
+                    {{ formatDate(log.created_at) }}
+                  </td>
+                  <td class="px-3 py-4 text-sm max-w-[240px]">
+                    <div class="font-medium text-slate-900 dark:text-white truncate" :title="log.product?.name">{{ log.product?.name }}</div>
+                    <div v-if="log.variant" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">SKU: {{ log.variant.sku }}</div>
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm">
+                    <span :class="typeBadgeClass(log.type)">
                       <span class="capitalize">{{ log.type }}</span>
-                  </span>
-                </td>
-                <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-medium" :class="log.quantity > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
-                  {{ log.quantity > 0 ? '+' : '' }}{{ log.quantity }}
-                </td>
-                <td class="whitespace-nowrap px-3 py-4 text-sm text-right text-gray-500 dark:text-gray-400">
-                  <span class="line-through text-gray-400 dark:text-gray-500 text-xs mr-2">{{ log.old_stock }}</span>
-                  <span class="font-medium text-gray-900 dark:text-white">{{ log.new_stock }}</span>
-                </td>
-                <td class="py-4 pl-3 pr-6 text-sm text-gray-500 dark:text-gray-400 max-w-[200px]">
-                   <div v-if="log.supplier" class="font-medium text-gray-900 dark:text-white truncate" :title="log.supplier.name">{{ log.supplier.name }}</div>
-                   <div class="truncate text-xs mt-0.5" :title="log.note">{{ log.note || '-' }}</div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                    </span>
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-medium" :class="log.quantity > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'">
+                    {{ log.quantity > 0 ? '+' : '' }}{{ log.quantity }}
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-right text-slate-500 dark:text-slate-400">
+                    <span class="line-through text-slate-400 dark:text-slate-500 text-xs mr-2">{{ log.old_stock }}</span>
+                    <span class="font-medium text-slate-900 dark:text-white">{{ log.new_stock }}</span>
+                  </td>
+                  <td class="py-4 pl-3 pr-6 text-sm text-slate-500 dark:text-slate-400 max-w-[200px]">
+                    <div v-if="log.supplier" class="font-medium text-slate-900 dark:text-white truncate" :title="log.supplier.name">{{ log.supplier.name }}</div>
+                    <div class="truncate text-xs mt-0.5" :title="log.note">{{ log.note || '—' }}</div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div v-if="logsPagination.last_page > 1" class="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-100 dark:border-slate-800">
+            <p class="text-sm text-slate-500 dark:text-slate-400">
+              Showing
+              <span class="font-semibold text-slate-900 dark:text-white">{{ logsPagination.from }}</span>
+              to
+              <span class="font-semibold text-slate-900 dark:text-white">{{ logsPagination.to }}</span>
+              of
+              <span class="font-semibold text-slate-900 dark:text-white">{{ logsPagination.total }}</span>
+            </p>
+            <div class="flex items-center gap-1.5">
+              <button
+                @click="changeLogsPage(logsPagination.current_page - 1)"
+                :disabled="logsPagination.current_page === 1"
+                class="p-2 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all bg-white dark:bg-slate-900"
+              >
+                <ChevronLeft class="w-4 h-4" />
+              </button>
+              <button
+                v-for="page in visibleLogPages"
+                :key="page"
+                @click="page !== '...' && changeLogsPage(page)"
+                :class="[
+                  'w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all',
+                  page === logsPagination.current_page
+                    ? 'bg-indigo-600 text-white'
+                    : page === '...'
+                      ? 'text-slate-400 cursor-default'
+                      : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
+                ]"
+              >
+                {{ page }}
+              </button>
+              <button
+                @click="changeLogsPage(logsPagination.current_page + 1)"
+                :disabled="logsPagination.current_page === logsPagination.last_page"
+                class="p-2 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all bg-white dark:bg-slate-900"
+              >
+                <ChevronRight class="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -252,12 +441,34 @@
 </template>
 
 <script setup>
-definePageMeta({ layout: 'vendor', middleware: 'auth' })
-import { ref, onMounted, computed, watch } from 'vue'
-import { toast } from 'vue-sonner'
-import { ChevronLeft, ChevronRight, Package, Search, X, Truck, RefreshCw } from 'lucide-vue-next'
+definePageMeta({
+  layout: 'vendor',
+  middleware: 'auth',
+  permissions: 'products.edit'
+})
 
-const { getAll, createItem } = useCrud()
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { toast } from 'vue-sonner'
+import {
+  ChevronLeft,
+  ChevronRight,
+  Package,
+  PackagePlus,
+  Search,
+  X,
+  Truck,
+  RefreshCw,
+  ScanLine,
+  Loader2
+} from 'lucide-vue-next'
+import { debounce } from '~/utils'
+
+const { getAll, getById, createItem } = useCrud()
+
+const tabs = [
+  { label: 'Restock', value: 'restock' },
+  { label: 'History', value: 'history' }
+]
 
 const activeTab = ref('restock')
 const productSearch = ref('')
@@ -266,116 +477,322 @@ const selectedProduct = ref(null)
 const selectedVariant = ref(null)
 const suppliers = ref([])
 const logs = ref([])
-
+const searching = ref(false)
+const hasSearched = ref(false)
+const loadingProduct = ref(false)
 const loading = ref(false)
 const loadingLogs = ref(false)
+const searchContainer = ref(null)
+const searchInput = ref(null)
+const dropdownStyle = ref({})
+
+const logsPagination = ref({
+  current_page: 1,
+  last_page: 1,
+  total: 0,
+  per_page: 15,
+  from: 0,
+  to: 0
+})
 
 const form = ref({
-    product_id: '',
-    variant_id: '',
-    supplier_id: '',
-    quantity: 1,
-    purchase_price: '',
-    note: ''
+  product_id: '',
+  variant_id: '',
+  supplier_id: '',
+  quantity: 1,
+  purchase_price: '',
+  note: ''
+})
+
+const showSearchDropdown = computed(() => {
+  return productSearch.value.length >= 2 && (searching.value || hasSearched.value)
+})
+
+const validQuantity = computed(() => {
+  const qty = parseFloat(form.value.quantity)
+  return qty > 0 ? qty : 0
+})
+
+const currentStock = computed(() => {
+  if (selectedVariant.value) return parseFloat(selectedVariant.value.stock_qty) || 0
+  if (selectedProduct.value) return parseFloat(selectedProduct.value.stock_qty) || 0
+  return 0
+})
+
+const totalCost = computed(() => {
+  const price = parseFloat(form.value.purchase_price)
+  if (!price || !validQuantity.value) return '0.00'
+  return (price * validQuantity.value).toLocaleString('en-BD', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 })
 
 const isReady = computed(() => {
-    if (!selectedProduct.value) return false
-    if (selectedProduct.value.variants?.length > 0 && !selectedVariant.value) return false
-    return form.value.quantity > 0
+  if (!selectedProduct.value || validQuantity.value <= 0) return false
+  if (selectedProduct.value.has_variants && !selectedVariant.value) return false
+  return true
 })
 
 const projectedStock = computed(() => {
-    let current = 0
-    if (selectedVariant.value) current = parseFloat(selectedVariant.value.stock_qty)
-    else if (selectedProduct.value) current = parseFloat(selectedProduct.value.stock_qty)
-    
-    return current + (parseFloat(form.value.quantity) || 0)
+  return currentStock.value + validQuantity.value
 })
 
+const visibleLogPages = computed(() => {
+  const current = logsPagination.value.current_page
+  const last = logsPagination.value.last_page
+
+  if (last <= 7) return Array.from({ length: last }, (_, i) => i + 1)
+  if (current <= 4) return [1, 2, 3, 4, 5, '...', last]
+  if (current >= last - 3) return [1, '...', last - 4, last - 3, last - 2, last - 1, last]
+  return [1, '...', current - 1, current, current + 1, '...', last]
+})
+
+const productImage = (product) => product?.thumbnail || product?.image || '/placeholder.png'
+
+const typeBadgeClass = (type) => {
+  const base = 'inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset'
+  if (type === 'restock') return `${base} bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/20`
+  if (type === 'sale') return `${base} bg-blue-50 text-blue-700 ring-blue-700/10 dark:bg-blue-900/20 dark:text-blue-400 dark:ring-blue-900/30`
+  if (type === 'return') return `${base} bg-violet-50 text-violet-700 ring-violet-600/20 dark:bg-violet-500/10 dark:text-violet-400 dark:ring-violet-500/20`
+  if (type === 'adjustment') return `${base} bg-amber-50 text-amber-700 ring-amber-600/20 dark:bg-amber-500/10 dark:text-amber-400 dark:ring-amber-500/20`
+  return `${base} bg-slate-50 text-slate-600 ring-slate-500/20 dark:bg-slate-400/10 dark:text-slate-400 dark:ring-slate-400/20`
+}
+
+const updateDropdownPosition = () => {
+  if (!searchContainer.value) return
+  const rect = searchContainer.value.getBoundingClientRect()
+  dropdownStyle.value = {
+    position: 'fixed',
+    top: `${rect.bottom + 4}px`,
+    left: `${rect.left}px`,
+    width: `${rect.width}px`
+  }
+}
+
 const fetchSuppliers = async () => {
-    try {
-        const res = await getAll('/vendor/suppliers')
-        suppliers.value = res.data
-    } catch (e) {
-        console.error(e)
-    }
+  try {
+    const res = await getAll('/vendor/suppliers')
+    suppliers.value = res?.data || []
+  } catch (e) {
+    console.error(e)
+  }
 }
 
 const fetchLogs = async () => {
-    loadingLogs.value = true
-    try {
-        const res = await getAll('/vendor/stock/logs')
-        logs.value = res.data.data
-    } catch (e) {
-        console.error(e)
-    } finally {
-        loadingLogs.value = false
+  loadingLogs.value = true
+  try {
+    const res = await getAll('/vendor/stock/logs', {
+      page: logsPagination.value.current_page,
+      per_page: logsPagination.value.per_page
+    })
+    const paginator = res?.data
+    logs.value = paginator?.data || []
+    logsPagination.value = {
+      current_page: paginator?.current_page || 1,
+      last_page: paginator?.last_page || 1,
+      total: paginator?.total || 0,
+      per_page: paginator?.per_page || 15,
+      from: paginator?.from || 0,
+      to: paginator?.to || 0
     }
+  } catch (e) {
+    console.error(e)
+  } finally {
+    loadingLogs.value = false
+  }
+}
+
+const changeLogsPage = (page) => {
+  if (page < 1 || page > logsPagination.value.last_page) return
+  logsPagination.value.current_page = page
+  fetchLogs()
 }
 
 const searchProducts = async () => {
-    if (productSearch.value.length < 2) {
-        searchResults.value = []
-        return
-    }
-    try {
-        const res = await getAll('/vendor/products', { search: productSearch.value, per_page: 5 })
-        searchResults.value = res.data
-    } catch (e) {
-        console.error(e)
-    }
-}
-
-const selectProduct = (p) => {
-    selectedProduct.value = p
-    selectedVariant.value = null
-    form.value.product_id = p.id
-    form.value.variant_id = ''
-    productSearch.value = ''
+  if (productSearch.value.length < 2) {
     searchResults.value = []
+    searching.value = false
+    hasSearched.value = false
+    return
+  }
+
+  searching.value = true
+  hasSearched.value = true
+  updateDropdownPosition()
+
+  try {
+    const res = await getAll('/vendor/products', { search: productSearch.value, per_page: 8 })
+    searchResults.value = res?.data || []
+  } catch (e) {
+    console.error(e)
+    searchResults.value = []
+  } finally {
+    searching.value = false
+  }
 }
 
-watch(selectedVariant, (newV) => {
-    form.value.variant_id = newV ? newV.id : ''
+const debouncedSearch = debounce(searchProducts, 300)
+
+const handleSearchEnter = async () => {
+  const query = productSearch.value.trim()
+  if (!query) return
+
+  try {
+    const res = await getAll('/vendor/barcodes/scan', { code: query })
+    if (res?.data?.product_id) {
+      await loadProduct(res.data.product_id, res.data.variant_id)
+      clearSearch()
+      return
+    }
+  } catch {
+    // Fall through to product search
+  }
+
+  if (searchResults.value.length === 1) {
+    await selectProduct(searchResults.value[0])
+    return
+  }
+
+  if (searchResults.value.length === 0) {
+    await searchProducts()
+    if (searchResults.value.length === 1) {
+      await selectProduct(searchResults.value[0])
+      return
+    }
+  }
+
+  if (searchResults.value.length === 0) {
+    toast.error('No product found for this search or barcode.')
+  }
+}
+
+const loadProduct = async (productId, variantId = null) => {
+  loadingProduct.value = true
+  selectedVariant.value = null
+
+  try {
+    const product = await getById('/vendor/products', productId)
+    selectedProduct.value = product
+    form.value.product_id = product.id
+
+    if (variantId && product.variants?.length) {
+      const variant = product.variants.find(v => v.id === variantId)
+      if (variant) selectedVariant.value = variant
+    } else if (product.variants?.length === 1) {
+      selectedVariant.value = product.variants[0]
+    }
+
+    form.value.variant_id = selectedVariant.value?.id || ''
+    form.value.purchase_price = selectedVariant.value?.purchase_price || product.purchase_price || ''
+  } catch (e) {
+    console.error(e)
+    toast.error('Failed to load product details.')
+  } finally {
+    loadingProduct.value = false
+  }
+}
+
+const selectProduct = async (product) => {
+  clearSearch()
+  await loadProduct(product.id)
+}
+
+const clearSearch = () => {
+  productSearch.value = ''
+  searchResults.value = []
+  searching.value = false
+  hasSearched.value = false
+}
+
+const clearSelection = () => {
+  selectedProduct.value = null
+  selectedVariant.value = null
+  form.value.product_id = ''
+  form.value.variant_id = ''
+  form.value.purchase_price = ''
+}
+
+const handleClickOutside = (event) => {
+  if (searchContainer.value && !searchContainer.value.contains(event.target)) {
+    searchResults.value = []
+  }
+}
+
+watch(selectedVariant, (variant) => {
+  form.value.variant_id = variant?.id || ''
+  if (variant?.purchase_price) {
+    form.value.purchase_price = variant.purchase_price
+  }
 })
 
 const processRestock = async () => {
-    loading.value = true
-    try {
-        await createItem('/vendor/stock/restock', form.value, null, false)
-        toast.success('Inventory updated successfully!')
-        
-        // Reset only partial form
-        form.value.quantity = 1
-        form.value.note = ''
-        
-        // Refresh product data if selected
-        searchProducts() 
-        activeTab.value = 'history'
-        fetchLogs()
-    } catch (e) {
-        console.error(e)
-    } finally {
-        loading.value = false
+  if (!isReady.value) return
+
+  loading.value = true
+  try {
+    const payload = {
+      ...form.value,
+      quantity: validQuantity.value,
+      purchase_price: form.value.purchase_price || null,
+      supplier_id: form.value.supplier_id || null,
+      note: form.value.note || null
     }
+
+    const res = await createItem('/vendor/stock/restock', payload, null, false)
+
+    const newStock = res?.data?.new_stock
+    if (newStock !== undefined) {
+      if (selectedVariant.value) {
+        selectedVariant.value.stock_qty = newStock
+      } else if (selectedProduct.value) {
+        selectedProduct.value.stock_qty = newStock
+      }
+    }
+
+    form.value.quantity = 1
+    form.value.note = ''
+    form.value.supplier_id = ''
+
+    logsPagination.value.current_page = 1
+    activeTab.value = 'history'
+    fetchLogs()
+  } catch (e) {
+    console.error(e)
+  } finally {
+    loading.value = false
+  }
 }
 
 const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit'
-    })
+  return new Date(dateString).toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit'
+  })
 }
 
 onMounted(() => {
-    fetchSuppliers()
-    fetchLogs()
+  fetchSuppliers()
+  fetchLogs()
+  document.addEventListener('click', handleClickOutside)
+  window.addEventListener('resize', updateDropdownPosition)
+  window.addEventListener('scroll', updateDropdownPosition, true)
 })
 
-watch(activeTab, (newTab) => {
-    if (newTab === 'history') fetchLogs()
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+  window.removeEventListener('resize', updateDropdownPosition)
+  window.removeEventListener('scroll', updateDropdownPosition, true)
+})
+
+watch(activeTab, (tab) => {
+  if (tab === 'history') fetchLogs()
+})
+
+watch(productSearch, (value) => {
+  if (value.length < 2) {
+    searchResults.value = []
+    hasSearched.value = false
+  }
 })
 </script>

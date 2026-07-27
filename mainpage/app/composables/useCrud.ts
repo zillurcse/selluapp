@@ -1,4 +1,4 @@
-import { formError } from '~/utils';
+import { formError, resolveVendorId } from '~/utils';
 import { ref } from 'vue'
 import { toast } from 'vue-sonner';
 
@@ -15,9 +15,8 @@ export default function useCrud() {
 
   const getHeaders = () => {
     const storefrontStore = useStorefrontStore();
-    const vendorId = storefrontStore.vendorProfile?.user_id || 5;
+    const vendorId = resolveVendorId();
 
-    // Send the current hostname so the backend resolves the correct tenant
     const domain = import.meta.client
       ? window.location.hostname.replace(/^www\./, '')
       : useRequestURL().hostname.replace(/^www\./, '');
@@ -25,8 +24,11 @@ export default function useCrud() {
     const headers: any = {
       Accept: "application/json",
       "X-Tenant-Domain": domain,
-      "X-Vendor-Id": vendorId.toString(),
     };
+
+    if (vendorId) {
+      headers["X-Vendor-Id"] = vendorId.toString();
+    }
     if (tokenStore.token) {
       headers.Authorization = `Bearer ${tokenStore.token}`;
     }

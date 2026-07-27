@@ -1,55 +1,47 @@
 <template>
   <div class="infinite-category-products">
-    <section 
-      v-for="(category, index) in loadedCategories" 
-      :key="category.id" 
-      class="pt-10 md:pt-16 pb-4" 
-      :class="(index + startOffset) % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'"
+    <section
+      v-for="(category, index) in loadedCategories"
+      :key="category.id"
+      class="section-pad"
+      :class="(index + startOffset) % 2 === 0 ? 'bg-white' : 'bg-[var(--surface)]'"
     >
-      <div class="container mx-auto px-4 sm:px-6">
-        <div class="flex items-center justify-between mb-8 sm:mb-10">
+      <div class="container mx-auto">
+        <div class="flex items-end justify-between mb-8 gap-4">
           <div>
-            <h2 class="text-3xl md:text-5xl font-extrabold tracking-tight text-gray-900 font-heading">
-              {{ category.name }}
-            </h2>
-            <div class="w-20 h-1 bg-rose-600 mt-4 rounded-full"></div>
+            <span class="section-label">Collection</span>
+            <h2 class="section-title mt-1">{{ category.name }}</h2>
           </div>
-          <NuxtLink 
-            :to="`/shop?category=${category.slug}`" 
-            class="text-sm font-bold uppercase tracking-widest text-gray-900 hover:text-rose-600 transition-colors hidden sm:flex items-center gap-2"
+          <NuxtLink
+            :to="`/shop?category=${category.slug}`"
+            class="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-gray-900 hover:opacity-60 transition-opacity"
           >
-            View All
-            <span class="text-lg">→</span>
+            View all
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
           </NuxtLink>
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8 md:gap-10">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <ProductCard
-            v-for="(product, idx) in category.products"
+            v-for="product in category.products"
             :key="product.id"
             :product="product"
-            class="animate-fade-in"
-            :style="{ animationDelay: `${(idx % 4) * 0.1}s` }"
             @add-to-cart="$emit('add-to-cart', $event)"
           />
         </div>
-        
-        <div class="mt-10 text-center sm:hidden">
-          <NuxtLink 
-            :to="`/shop?category=${category.slug}`" 
-            class="inline-flex items-center justify-center px-8 py-4 bg-gray-900 text-white font-bold text-[10px] uppercase tracking-[0.2em] rounded-2xl transition-all active:scale-95 shadow-lg shadow-gray-900/10 w-full"
-          >
+
+        <div class="mt-8 text-center sm:hidden">
+          <NuxtLink :to="`/shop?category=${category.slug}`" class="btn-primary w-full">
             Explore {{ category.name }}
           </NuxtLink>
         </div>
       </div>
     </section>
 
-    <!-- Loading Sentinel -->
-    <div ref="sentinel" class="py-12 flex justify-center items-center h-32">
-      <div v-if="loading" class="animate-spin rounded-full h-10 w-10 border-b-2 border-rose-600"></div>
-      <div v-else-if="allLoaded" class="text-gray-500 font-medium tracking-wide">
-        You have reached the end of the catalog
+    <div ref="sentinel" class="py-12 flex justify-center items-center h-28">
+      <div v-if="loading" class="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-gray-900"></div>
+      <div v-else-if="allLoaded" class="text-sm text-[var(--muted-foreground)]">
+        You’ve reached the end of the catalog
       </div>
     </div>
   </div>
@@ -68,20 +60,14 @@ const props = defineProps({
 defineEmits(['add-to-cart'])
 
 const loadedCategories = ref([])
-const page = ref(1) // We'll query DB with limit=1 and page=N (though offset depends on initial load)
+const page = ref(1)
 const loading = ref(false)
 const allLoaded = ref(false)
 const sentinel = ref(null)
 
 let observer = null
 
-// Note: store might already load the first 3 categories. If we rely on absolute DB pages, 
-// we might fetch overlapping categories. To fix, our API could take offset instead of page, Or we just pass an initial offset to the endpoint.
-// Let's use the DB pagination. Assuming original loads 3 categories, we start fetching from page=4 if limit=1, or we pass `page=1` but offset from previous results?
-// Actually API is `paginate($perPage)`. If we use `page=X`, 1st page gives 1 category.
-// Since the initial load fetched 3 categories, the next one is index 3 (4th category). So we'll start fetching page=4.
-
-const initialPage = 4 // Start loading from the 4th category overall (since index.vue might show 3 initially in `CategoryWiseProducts`).
+const initialPage = 4
 
 const fetchNextCategory = async () => {
   if (loading.value || allLoaded.value) return
@@ -92,14 +78,12 @@ const fetchNextCategory = async () => {
     const apiBase = config.public.apiBase
     const domain = useRequestURL().hostname
 
-    // Fetch next category (1 per page)
     const currentPage = (page.value - 1) + initialPage
-    
-    // Using $fetch
+
     const response = await $fetch(`${apiBase}/storefront/infinite-categories`, {
-      params: { 
-        limit: 1, 
-        page: currentPage 
+      params: {
+        limit: 1,
+        page: currentPage
       },
       headers: {
         'X-Tenant-Domain': domain
@@ -108,7 +92,7 @@ const fetchNextCategory = async () => {
 
     if (response?.data?.length > 0) {
       loadedCategories.value.push(...response.data)
-      
+
       if (currentPage >= response.last_page) {
         allLoaded.value = true
       } else {
@@ -117,7 +101,6 @@ const fetchNextCategory = async () => {
     } else {
       allLoaded.value = true
     }
-
   } catch (error) {
     console.error('Failed to load infinite categories:', error)
   } finally {
@@ -131,7 +114,7 @@ const setupIntersectionObserver = () => {
       fetchNextCategory()
     }
   }, {
-    rootMargin: '400px', // Start loading slightly before reaching the element
+    rootMargin: '400px',
     threshold: 0.1
   })
 
@@ -150,18 +133,3 @@ onUnmounted(() => {
   }
 })
 </script>
-
-<style scoped>
-.font-heading {
-  font-family: var(--font-heading, "Inter", sans-serif);
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(30px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-in {
-  opacity: 0;
-  animation: fadeIn 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-}
-</style>

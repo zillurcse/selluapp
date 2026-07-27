@@ -5,7 +5,6 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use App\Models\ShopSetting;
 use Symfony\Component\HttpFoundation\Response;
 
 class DynamicCorsOrigin
@@ -46,27 +45,8 @@ class DynamicCorsOrigin
         $cacheKey = 'cors_domain_' . md5($domain);
 
         return Cache::remember($cacheKey, 600, function () use ($domain) {
-            // Check custom domain
-            $isCustom = ShopSetting::where('group', 'shop_domain')
-                ->where('key', 'customDomain')
-                ->where('value', $domain)
-                ->exists();
-
-            if ($isCustom) {
-                return true;
-            }
-
-            // Check subdomain — extract the first segment
-            $parts = explode('.', $domain);
-            if (count($parts) >= 2) {
-                $subdomain = $parts[0];
-                return ShopSetting::where('group', 'shop_domain')
-                    ->where('key', 'subDomain')
-                    ->where('value', $subdomain)
-                    ->exists();
-            }
-
-            return false;
+            return app(\App\Services\ShopDomainService::class)
+                ->resolveUserIdFromDomain($domain) !== null;
         });
     }
 }

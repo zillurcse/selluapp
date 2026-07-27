@@ -9,11 +9,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/login-pin', [\App\Http\Controllers\API\PINController::class, 'verifyPin']);
-Route::post('/auth/magic-link', [AuthController::class, 'sendMagicLink']);
-Route::get('/auth/magic-link/verify', [AuthController::class, 'verifyMagicLink'])->name('magic-link.verify');
+Route::middleware('throttle:auth')->group(function () {
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/login-pin', [\App\Http\Controllers\API\PINController::class, 'verifyPin']);
+    Route::post('/auth/magic-link', [AuthController::class, 'sendMagicLink']);
+    Route::get('/auth/magic-link/verify', [AuthController::class, 'verifyMagicLink'])->name('magic-link.verify');
+    Route::post('/auth/google', [SocialAuthController::class, 'googleLogin']);
+});
 
 Route::post('/webhooks/steadfast', [App\Http\Controllers\Vendor\CourierController::class, 'steadfastWebhook']);
 
@@ -23,15 +26,16 @@ use App\Http\Controllers\API\CustomerMessageController;
 
 // Public Storefront Routes
 Route::get('/storefront', [StorefrontController::class, 'index']);
-Route::post('/storefront/contact-message', [CustomerMessageController::class, 'store']);
-Route::post('/storefront/newsletter-subscribe', [\App\Http\Controllers\API\NewsletterController::class, 'subscribe']);
+Route::middleware('throttle:public-forms')->group(function () {
+    Route::post('/storefront/contact-message', [CustomerMessageController::class, 'store']);
+    Route::post('/storefront/newsletter-subscribe', [\App\Http\Controllers\API\NewsletterController::class, 'subscribe']);
+});
+
 Route::get('/storefront/products', [StorefrontController::class, 'products']);
 Route::get('/storefront/products/{product}', [StorefrontController::class, 'show']);
 Route::get('/storefront/landing-page/{slug}', [StorefrontController::class, 'landingPage']);
 Route::get('/storefront/vendors/{slug}', [StorefrontController::class, 'vendor']);
-Route::get('/storefront/categories', function () {
-    return \App\Models\Category::where('is_active', true)->whereNull('parent_id')->get();
-});
+Route::get('/storefront/categories', [StorefrontController::class, 'categories']);
 Route::get('/storefront/infinite-categories', [StorefrontController::class, 'infiniteCategories']);
 Route::get('/storefront/states', [StorefrontController::class, 'states']);
 Route::get('/storefront/cities', [StorefrontController::class, 'cities']);
@@ -48,15 +52,16 @@ Route::get('/storefront/facebook-feed.xml', [FeedController::class, 'facebookFee
 // Facebook Conversion API Server-Side Relay
 Route::post('/storefront/checkout/facebook-capi', [FacebookCapiController::class, 'event']);
 
-// Google Social Login
-Route::post('/auth/google', [SocialAuthController::class, 'googleLogin']);
+// Google Social Login — registered in auth throttle group above
 
-Route::post('/checkout/estimate-shipping', [StorefrontController::class, 'estimateShipping']);
-Route::post('/storefront/checkout', [\App\Http\Controllers\API\CheckoutController::class, 'placeOrder']);
-Route::post('/storefront/checkout/calculate-discount', [\App\Http\Controllers\API\CheckoutController::class, 'getDiscount']);
-Route::post('/storefront/checkout/payment-methods', [\App\Http\Controllers\API\CheckoutController::class, 'getPaymentMethods']);
-Route::post('/storefront/checkout/verify-otp', [\App\Http\Controllers\API\CheckoutController::class, 'verifyOtp']);
-Route::post('/storefront/checkout/resend-otp', [\App\Http\Controllers\API\CheckoutController::class, 'resendOtp']);
+Route::middleware('throttle:checkout')->group(function () {
+    Route::post('/checkout/estimate-shipping', [StorefrontController::class, 'estimateShipping']);
+    Route::post('/storefront/checkout', [\App\Http\Controllers\API\CheckoutController::class, 'placeOrder']);
+    Route::post('/storefront/checkout/calculate-discount', [\App\Http\Controllers\API\CheckoutController::class, 'getDiscount']);
+    Route::post('/storefront/checkout/payment-methods', [\App\Http\Controllers\API\CheckoutController::class, 'getPaymentMethods']);
+    Route::post('/storefront/checkout/verify-otp', [\App\Http\Controllers\API\CheckoutController::class, 'verifyOtp']);
+    Route::post('/storefront/checkout/resend-otp', [\App\Http\Controllers\API\CheckoutController::class, 'resendOtp']);
+});
 
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -93,8 +98,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('reviews/{product}', [\App\Http\Controllers\API\CustomerPanelController::class, 'submitReview']);
     });
 
-    // Admin Routes
-    Route::prefix('admin')->group(function () {
+    // Admin Routes (super-admin only)
+    Route::prefix('admin')->middleware('super-admin')->group(function () {
         Route::get('/users', [App\Http\Controllers\AdminUserController::class, 'index']);
         Route::post('/users', [App\Http\Controllers\AdminUserController::class, 'store']);
         Route::get('/users/{user}', [App\Http\Controllers\AdminUserController::class, 'show']);
@@ -108,10 +113,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // Role & Permission Routes
         Route::apiResource('roles', App\Http\Controllers\RoleController::class);
         Route::get('permissions', [App\Http\Controllers\PermissionController::class, 'index']);
-    });
 
-    // Super Admin Only Routes
-    Route::prefix('admin')->group(function () {
         // Dashboard Stats
         Route::get('dashboard', [App\Http\Controllers\SuperAdmin\VendorManagementController::class, 'dashboardStats']);
 
@@ -224,8 +226,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('orders/{order}/sync', [App\Http\Controllers\Vendor\OrderController::class, 'syncCourier']);
 
         // Shop Settings
+        Route::get('settings/check-subdomain', [App\Http\Controllers\Vendor\SettingController::class, 'checkSubdomain']);
+        Route::post('settings/verify-custom-domain', [App\Http\Controllers\Vendor\SettingController::class, 'verifyCustomDomain']);
+        Route::delete('settings/custom-domain', [App\Http\Controllers\Vendor\SettingController::class, 'removeCustomDomain']);
         Route::get('settings', [App\Http\Controllers\Vendor\SettingController::class, 'index']);
         Route::post('settings', [App\Http\Controllers\Vendor\SettingController::class, 'update']);
+        Route::get('reviews/stats', [App\Http\Controllers\Vendor\ProductReviewController::class, 'stats']);
 
         // Business Settings
         Route::get('business-settings', [App\Http\Controllers\Vendor\BusinessSettingController::class, 'index']);

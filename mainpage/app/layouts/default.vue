@@ -20,6 +20,6 @@
 
 .main-content {
   flex: 1;
-  padding-top: 80px; /* Offset for fixed navbar */
+  padding-top: 72px;
 }
 </style>

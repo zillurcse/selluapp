@@ -156,15 +156,16 @@ import {
   Layout,
   Info
 } from 'lucide-vue-next'
+import { toast } from 'vue-sonner'
 
 const { getAll, createItem } = useCrud()
 const utilityStore = useUtilityStore()
-utilityStore.pageBackLink = '/vendor/landing-page/all'
+utilityStore.pageBackLink = '/vendor/landing-page'
 
 definePageMeta({
   layout: 'default',
   middleware: 'auth',
-  permissions: 'landing_pages.edit'
+  permissions: ['settings.manage', 'landing_pages.edit']
 })
 
 const settings = ref({
@@ -204,17 +205,16 @@ onMounted(() => {
 const saveChanges = async () => {
   isLoading.value = true
   try {
-    const { responseData } = await createItem('/vendor/settings', {
-        group: 'landing_page',
-        settings: {
-          ...settings.value,
-          is_active: settings.value.is_active ? 1 : 0
-        }
-      })
-      navigateTo('/vendor/landing-page/settings')
+    await createItem('/vendor/settings', {
+      group: 'landing_page',
+      settings: {
+        ...settings.value,
+        is_active: settings.value.is_active ? 1 : 0
+      }
+    }, null, false)
+    toast.success('Landing page settings saved successfully.')
   } catch (err) {
     console.error('Error saving settings:', err)
-    toast.error('Could not save settings. Please try again.')
   } finally {
     isLoading.value = false
   }

@@ -1,61 +1,62 @@
 <template>
-  <section class="py-6 md:py-12 animate-fade-in overflow-hidden">
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-      <div 
-        v-if="slides && slides.length > 0" 
-        class="relative h-[360px] sm:h-[440px] md:h-[520px] rounded-[2.5rem] overflow-hidden shadow-[0_40px_100px_-20px_rgba(0,0,0,0.3)] group/slider"
-        @mousemove="handleMouseMove"
-        @mouseleave="handleMouseLeave"
-        ref="sliderRef"
-      >
+  <section class="relative animate-fade-in -mt-[72px]">
+    <div
+      v-if="slides && slides.length > 0"
+      class="relative h-[78vh] min-h-[460px] max-h-[720px] w-full overflow-hidden bg-[var(--muted)]"
+      @mousemove="handleMouseMove"
+      @mouseleave="handleMouseLeave"
+      ref="sliderRef"
+    >
+      <transition name="slide-fade" mode="out-in">
+        <div :key="currentSlide" class="absolute inset-0">
+          <div
+            class="absolute inset-0 scale-105 transition-transform duration-[1200ms] ease-out"
+            :style="{
+              transform: `translate(${parallaxX * 0.02}px, ${parallaxY * 0.02}px) scale(1.05)`
+            }"
+          >
+            <img
+              :src="slides[currentSlide].image"
+              :alt="slides[currentSlide].title || slides[currentSlide].badge"
+              class="w-full h-full object-cover select-none"
+            />
+            <div class="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-black/10"></div>
+            <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+          </div>
 
-        <!-- Main Slide Transition -->
-        <transition name="slide-fade" mode="out-in">
-          <div :key="currentSlide" class="absolute inset-0">
-            <!-- Background Image with Parallax -->
-            <div 
-              class="absolute inset-x-[-5%] inset-y-[-5%] transition-transform duration-[1500ms] ease-out"
-              :style="{ 
-                transform: `translate(${parallaxX * 0.03}px, ${parallaxY * 0.03}px)`
-              }"
-            >
-              <img
-                :src="slides[currentSlide].image"
-                :alt="slides[currentSlide].title || slides[currentSlide].badge"
-                class="w-full h-full object-cover select-none"
-              />
-              <!-- Dark gradient overlay for text readability -->
-              <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
-            </div>
-
-            <!-- Content Overlay -->
-            <div class="absolute inset-0 z-10 flex flex-col justify-end p-6 sm:p-16 md:p-24 pb-8 sm:pb-16 md:pb-24">
-              <div class="max-w-2xl">
+          <div class="absolute inset-0 z-10 flex items-end md:items-center">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 pb-16 md:pb-0 pt-24">
+              <div class="max-w-xl">
                 <transition name="content-reveal" appear>
-                  <div class="flex flex-col gap-2 sm:gap-4 md:gap-6">
-                    <div class="flex flex-col gap-1 sm:gap-2">
-                      <div v-if="slides[currentSlide].badge" class="flex items-center gap-2">
-                        <span class="inline-block px-2.5 py-0.5 sm:px-4 sm:py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[8px] sm:text-[10px] md:text-xs font-bold tracking-[0.2em] uppercase text-white/90">
-                          {{ slides[currentSlide].badge }}
-                        </span>
-                      </div>
-                      <h2 class="text-2xl sm:text-5xl md:text-7xl font-black text-white leading-[1.1] drop-shadow-lg" v-if="slides[currentSlide].title">
-                        {{ slides[currentSlide].title }}
-                      </h2>
-                    </div>
-                    <p class="text-xs sm:text-base md:text-lg text-white/80 max-w-lg font-medium leading-relaxed drop-shadow-md line-clamp-2 sm:line-clamp-none" v-if="slides[currentSlide].description">
+                  <div class="flex flex-col gap-4 sm:gap-5">
+                    <span
+                      v-if="slides[currentSlide].badge"
+                      class="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70"
+                    >
+                      {{ slides[currentSlide].badge }}
+                    </span>
+                    <h1
+                      v-if="slides[currentSlide].title"
+                      class="text-4xl sm:text-5xl md:text-6xl font-semibold text-white leading-[1.05] tracking-tight"
+                      style="font-family: var(--font-heading)"
+                    >
+                      {{ slides[currentSlide].title }}
+                    </h1>
+                    <p
+                      v-if="slides[currentSlide].description"
+                      class="text-sm sm:text-base text-white/75 max-w-md leading-relaxed line-clamp-3"
+                    >
                       {{ slides[currentSlide].description }}
                     </p>
-                    <div class="pt-1 sm:pt-4 md:pt-6" v-if="slides[currentSlide].buttonText">
-                      <NuxtLink 
+                    <div v-if="slides[currentSlide].buttonText" class="pt-2">
+                      <NuxtLink
                         :to="slides[currentSlide].link"
-                        class="group/btn relative inline-flex items-center gap-2 sm:gap-3 px-5 py-2.5 sm:px-8 sm:py-4 bg-white text-black font-bold rounded-xl sm:rounded-2xl overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-2xl"
+                        class="group/btn inline-flex items-center gap-2.5 px-6 py-3.5 bg-white text-gray-900 text-sm font-semibold rounded-xl transition-all hover:bg-gray-100 active:scale-[0.98]"
                       >
-                        <span class="relative z-10 text-xs sm:text-base">{{ slides[currentSlide].buttonText }}</span>
-                        <svg class="relative z-10 w-3.5 h-3.5 sm:w-5 sm:h-5 transition-transform group-hover/btn:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        {{ slides[currentSlide].buttonText }}
+                        <svg class="w-4 h-4 transition-transform group-hover/btn:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                         </svg>
-                        <div class="absolute inset-0 bg-gradient-to-r from-gray-50 via-white to-gray-50 opacity-0 group-hover/btn:opacity-100 transition-opacity"></div>
                       </NuxtLink>
                     </div>
                   </div>
@@ -63,49 +64,61 @@
               </div>
             </div>
           </div>
-        </transition>
+        </div>
+      </transition>
 
-        <!-- Navigation Controls (Glassmorphic) -->
-        <div class="absolute bottom-8 right-8 z-30 hidden md:flex gap-4">
+      <!-- Controls -->
+      <div class="absolute bottom-6 right-4 sm:bottom-8 sm:right-8 z-30 hidden sm:flex gap-2">
+        <button
+          @click="prevSlide"
+          aria-label="Previous slide"
+          class="w-11 h-11 rounded-xl border border-white/25 bg-white/10 text-white flex items-center justify-center backdrop-blur-md transition-all hover:bg-white hover:text-black"
+        >
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <button
+          @click="nextSlide"
+          aria-label="Next slide"
+          class="w-11 h-11 rounded-xl border border-white/25 bg-white/10 text-white flex items-center justify-center backdrop-blur-md transition-all hover:bg-white hover:text-black"
+        >
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Progress -->
+      <div class="absolute bottom-6 left-4 sm:bottom-8 sm:left-8 z-30 flex items-center gap-3">
+        <div class="flex gap-1.5">
           <button
-            @click="prevSlide"
-            class="w-12 h-12 md:w-14 md:h-14 rounded-2xl border border-white/20 bg-white/10 text-white flex items-center justify-center backdrop-blur-xl transition-all hover:bg-white hover:text-black hover:scale-110 active:scale-95 group/prev"
+            v-for="(_, i) in slides"
+            :key="'dot-'+i"
+            @click="goToSlide(i)"
+            :aria-label="`Go to slide ${i + 1}`"
+            class="h-1 rounded-full overflow-hidden bg-white/25 transition-all"
+            :class="currentSlide === i ? 'w-8 sm:w-10' : 'w-4 sm:w-5 hover:bg-white/40'"
           >
-            <svg class="w-6 h-6 transition-transform group-hover/prev:-translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <button
-            @click="nextSlide"
-            class="w-12 h-12 md:w-14 md:h-14 rounded-2xl border border-white/20 bg-white/10 text-white flex items-center justify-center backdrop-blur-xl transition-all hover:bg-white hover:text-black hover:scale-110 active:scale-95 group/next"
-          >
-            <svg class="w-6 h-6 transition-transform group-hover/next:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
-            </svg>
+            <div
+              class="h-full bg-white transition-all ease-linear"
+              :style="{
+                width: currentSlide === i ? `${progress}%` : (currentSlide > i ? '100%' : '0%'),
+                transitionDuration: currentSlide === i ? '100ms' : '400ms'
+              }"
+            ></div>
           </button>
         </div>
+        <span class="text-white/50 text-[11px] font-medium tabular-nums">{{ currentSlide + 1 }} / {{ slides.length }}</span>
+      </div>
+    </div>
 
-        <!-- Progress Indicator (Top Right) -->
-        <div class="absolute top-6 right-6 sm:top-8 sm:right-8 z-30 flex items-center gap-3 sm:gap-4">
-          <div class="flex gap-1.5 sm:gap-2">
-            <button
-              v-for="(_, i) in slides"
-              :key="'dot-'+i"
-              @click="goToSlide(i)"
-              class="w-6 sm:w-8 md:w-12 h-1 rounded-full overflow-hidden bg-white/20 transition-all hover:bg-white/40"
-            >
-              <div 
-                class="h-full bg-white transition-all ease-linear"
-                :style="{ 
-                  width: currentSlide === i ? `${progress}%` : (currentSlide > i ? '100%' : '0%'),
-                  transitionDuration: currentSlide === i ? '100ms' : '500ms'
-                }"
-              ></div>
-            </button>
-          </div>
-          <span class="text-white/60 text-[10px] sm:text-xs font-mono font-bold">{{ currentSlide + 1 }} / {{ slides.length }}</span>
-        </div>
-
+    <!-- Empty state -->
+    <div v-else class="h-[70vh] min-h-[420px] -mt-[72px] pt-[72px] bg-[var(--muted)] flex items-center justify-center">
+      <div class="text-center px-6">
+        <h1 class="text-3xl md:text-5xl font-semibold tracking-tight mb-3" style="font-family: var(--font-heading)">Welcome to our store</h1>
+        <p class="text-[var(--muted-foreground)] mb-6">Discover products curated for everyday living.</p>
+        <NuxtLink to="/shop" class="btn-primary">Shop now</NuxtLink>
       </div>
     </div>
   </section>
@@ -123,7 +136,6 @@ const props = defineProps({
 })
 
 const currentSlide = ref(0)
-const slideInterval = ref(null)
 const progressInterval = ref(null)
 const progress = ref(0)
 const sliderRef = ref(null)
@@ -145,25 +157,18 @@ function handleMouseLeave() {
 }
 
 onMounted(() => {
-  if (props.slides.length > 0) {
-    startSlider()
-  }
+  if (props.slides.length > 0) startSlider()
 })
 
 watch(() => props.slides, (newSlides) => {
-  if (newSlides && newSlides.length > 0 && !slideInterval.value) {
-    startSlider()
-  }
+  if (newSlides?.length > 0 && !progressInterval.value) startSlider()
 }, { deep: true })
 
 function startSlider() {
   resetLogic()
-  
   progressInterval.value = setInterval(() => {
     progress.value += (100 / (SLIDE_DURATION / 100))
-    if (progress.value >= 100) {
-      nextSlide()
-    }
+    if (progress.value >= 100) nextSlide()
   }, 100)
 }
 
@@ -199,32 +204,28 @@ onUnmounted(() => {
 
 <style scoped>
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 .animate-fade-in {
-  opacity: 0;
-  animation: fadeIn 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  animation: fadeIn 0.8s ease forwards;
 }
 
-/* Main Slide Transition */
 .slide-fade-enter-active,
 .slide-fade-leave-active {
-  transition: all 1s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.7s ease;
 }
-.slide-fade-enter-from { opacity: 0; filter: blur(10px) brightness(1.5); }
-.slide-fade-leave-to   { opacity: 0; filter: blur(10px) brightness(0.5); }
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  opacity: 0;
+}
 
-/* Content Reveal Animation */
 .content-reveal-enter-active {
-  transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-  transition-delay: 0.3s;
+  transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: 0.15s;
 }
 .content-reveal-enter-from {
   opacity: 0;
-  transform: translateY(30px);
-  filter: blur(5px);
+  transform: translateY(20px);
 }
 </style>
-
-

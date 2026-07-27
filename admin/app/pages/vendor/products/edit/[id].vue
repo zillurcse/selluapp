@@ -213,6 +213,13 @@
     </div>
 
     <form v-else @submit.prevent="updateProduct" class="grid grid-cols-12 gap-6 lg:gap-8">
+      <div v-if="hasValidationErrors" class="col-span-12 rounded-xl border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-900/10 p-4">
+        <p class="text-sm font-semibold text-red-700 dark:text-red-300">Please fix the following validation errors:</p>
+        <ul class="mt-2 space-y-1 text-sm text-red-600 dark:text-red-400 list-disc list-inside">
+          <li v-for="(messages, field) in errors" :key="field">{{ messages[0] }}</li>
+        </ul>
+      </div>
+
       <!-- Left Column (Main Content) -->
       <div class="col-span-12 lg:col-span-9 space-y-6 lg:space-y-8">
         
@@ -224,8 +231,9 @@
               <input v-model="form.name" type="text" placeholder="Product Name" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all bg-white dark:bg-slate-900 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500" required @input="generateSlug" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Product Slug <span class="text-red-500">*</span></label>
-              <input v-model="form.slug" type="text" placeholder="Product Slug" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all bg-gray-50/50 dark:bg-slate-800/50 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500" required />
+              <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Product Slug</label>
+              <input v-model="form.slug" type="text" placeholder="Product Slug" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all bg-gray-50/50 dark:bg-slate-800/50 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500" />
+              <p class="mt-1 text-xs text-slate-400">Used in the product URL. Leave blank to keep the current slug.</p>
             </div>
             <div class="col-span-1 md:col-span-2">
               <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Short Description</label>
@@ -239,17 +247,19 @@
           <h2 class="text-base font-bold text-slate-900 dark:text-white mb-4">Inventory Codes</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label class="block text-sm text-gray-700 dark:text-slate-300 mb-1.5 uppercase tracking-tighter font-black opacity-60">SKU (Stock Keeping Unit)</label>
+              <label class="block text-sm text-gray-700 dark:text-slate-300 mb-1.5 uppercase tracking-tighter font-black opacity-60">SKU (Stock Keeping Unit) <span class="text-red-500">*</span></label>
               <div class="flex gap-2">
-                 <input v-model="form.sku" type="text" placeholder="Ex: UORLA-14464" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all bg-white dark:bg-slate-900 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 font-bold uppercase"  />
+                 <input v-model="form.sku" type="text" placeholder="Ex: UORLA-14464" class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all bg-white dark:bg-slate-900 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 font-bold uppercase" :class="fieldError('sku') ? 'border-red-400 dark:border-red-500' : 'border-gray-200 dark:border-slate-700'" />
                  <button @click="generateRandomSku" type="button" class="px-4 py-2 bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors shadow-sm">
                    <RefreshCw class="w-4 h-4" />
                  </button>
               </div>
+              <p v-if="fieldError('sku')" class="mt-1 text-xs text-red-500">{{ fieldError('sku') }}</p>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Product Code <span class="text-red-500">*</span></label>
-              <input v-model="form.product_code" type="text" placeholder="Ex: PRD-260219010119" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all bg-white dark:bg-slate-900 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500" required />
+              <input v-model="form.product_code" type="text" placeholder="Ex: PRD-260219010119" class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all bg-white dark:bg-slate-900 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500" :class="fieldError('product_code') ? 'border-red-400 dark:border-red-500' : 'border-gray-200 dark:border-slate-700'" required />
+              <p v-if="fieldError('product_code')" class="mt-1 text-xs text-red-500">{{ fieldError('product_code') }}</p>
             </div>
           </div>
         </div>
@@ -375,6 +385,7 @@
             <!-- Variants Table (Matrix) -->
             <div v-if="generatedVariants.length > 0" class="mt-8 border-t border-gray-100 dark:border-slate-800 pt-8 overflow-hidden">
                 <h4 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest mb-6">Generated Variants Matrix ({{ generatedVariants.length }})</h4>
+                <p v-if="fieldError('variants')" class="mb-4 text-xs text-red-500">{{ fieldError('variants') }}</p>
                 <div class="overflow-x-auto rounded-xl border border-gray-100 dark:border-slate-800">
                     <table class="w-full text-left border-collapse">
                         <thead>
@@ -398,13 +409,16 @@
                                     </div>
                                 </td>
                                 <td class="p-4">
-                                    <input v-model="variant.sku" type="text" class="w-32 px-3 py-1.5 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-lg text-xs font-bold focus:ring-2 focus:ring-primary-500/20" placeholder="SKU" />
+                                    <input v-model="variant.sku" type="text" class="w-32 px-3 py-1.5 bg-white dark:bg-slate-900 border rounded-lg text-xs font-bold focus:ring-2 focus:ring-primary-500/20" :class="variantFieldError(vIdx, 'sku') ? 'border-red-400' : 'border-gray-100 dark:border-slate-800'" placeholder="SKU" />
+                                    <p v-if="variantFieldError(vIdx, 'sku')" class="mt-1 text-[10px] text-red-500">{{ variantFieldError(vIdx, 'sku') }}</p>
                                 </td>
                                 <td class="p-4">
-                                    <input v-model="variant.price" type="number" class="w-24 px-3 py-1.5 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-lg text-xs font-bold focus:ring-2 focus:ring-primary-500/20" />
+                                    <input v-model="variant.price" type="number" class="w-24 px-3 py-1.5 bg-white dark:bg-slate-900 border rounded-lg text-xs font-bold focus:ring-2 focus:ring-primary-500/20" :class="variantFieldError(vIdx, 'price') ? 'border-red-400' : 'border-gray-100 dark:border-slate-800'" />
+                                    <p v-if="variantFieldError(vIdx, 'price')" class="mt-1 text-[10px] text-red-500">{{ variantFieldError(vIdx, 'price') }}</p>
                                 </td>
                                 <td class="p-4">
-                                    <input v-model="variant.stock_qty" type="number" class="w-20 px-3 py-1.5 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-lg text-xs font-bold focus:ring-2 focus:ring-primary-500/20" />
+                                    <input v-model="variant.stock_qty" type="number" class="w-20 px-3 py-1.5 bg-white dark:bg-slate-900 border rounded-lg text-xs font-bold focus:ring-2 focus:ring-primary-500/20" :class="variantFieldError(vIdx, 'stock_qty') ? 'border-red-400' : 'border-gray-100 dark:border-slate-800'" />
+                                    <p v-if="variantFieldError(vIdx, 'stock_qty')" class="mt-1 text-[10px] text-red-500">{{ variantFieldError(vIdx, 'stock_qty') }}</p>
                                 </td>
                                 <td class="p-4">
                                     <div class="flex flex-col items-center gap-1.5">
@@ -669,7 +683,8 @@
                   <div v-if="form.is_dropshipping" class="space-y-6 pl-8 border-l-2 border-purple-200 dark:border-purple-900">
                      <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Product Full URL <span class="text-red-500">*</span></label>
-                        <input v-model="form.dropshipping_url" type="url" placeholder="https://example.com/product" class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white" />
+                        <input v-model="form.dropshipping_url" type="url" placeholder="https://example.com/product" class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white" :class="fieldError('dropshipping_url') ? 'border-red-400 dark:border-red-500' : 'border-gray-200 dark:border-slate-700'" />
+                        <p v-if="fieldError('dropshipping_url')" class="mt-1 text-xs text-red-500">{{ fieldError('dropshipping_url') }}</p>
                      </div>
                      <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Product Code/SKU</label>
@@ -820,6 +835,7 @@ const config = useRuntimeConfig()
 const auth = useAuthStore()
 const { getAll, createItem, getById, deleteItem, updateItem } = useCrud()
 import { toast } from 'vue-sonner';
+const { buildProductValidationErrors } = useProductValidation()
 // Determine if we are in List View (Status) or Edit View (ID)
 const isListView = computed(() => ['published', 'draft', 'pending'].includes(route.params.id))
 
@@ -1108,6 +1124,41 @@ const galleryItems = ref([]) // array of { id, source, value/file, preview }
 const localFaqs = ref([])
 const localSpecificationGroups = ref([])
 const isLoading = ref(true)
+const errors = ref({})
+
+const hasValidationErrors = computed(() => Object.keys(errors.value).length > 0)
+const fieldError = (key) => errors.value[key]?.[0] || ''
+const variantFieldError = (index, field) => errors.value[`variants.${index}.${field}`]?.[0] || ''
+const clearErrors = () => {
+  errors.value = {}
+}
+
+const shouldAppendField = (key, value) => {
+  if (value === null || value === undefined) return false
+  if (['brand_id', 'unit_id'].includes(key) && value === '') return false
+  if (key === 'video_url' && String(value).trim() === '') return false
+  if (['discount_value', 'discount_type', 'discount_price', 'purchase_price', 'note', 'dropshipping_url', 'dropshipping_sku', 'slug'].includes(key) && value === '') return false
+  return true
+}
+
+const validateProductForm = () => {
+  clearErrors()
+  const clientErrors = buildProductValidationErrors(form.value, generatedVariants.value)
+
+  if (Object.keys(clientErrors).length) {
+    errors.value = clientErrors
+    toast.error('Please fix the highlighted validation errors.')
+    return false
+  }
+
+  return true
+}
+
+const applyApiErrors = (error) => {
+  if (error?.status === 422 && error?.data?.errors) {
+    errors.value = error.data.errors
+  }
+}
 
 // Lookups for Edit Form
 const formCategories = ref([])
@@ -1455,10 +1506,7 @@ const handleUnitCreate = async (name) => {
 }
 
 const updateProduct = async () => {
-  if (!form.value.name || !form.value.category_ids?.length || !form.value.sale_price) {
-      toast.error('Please fill in required fields!')
-      return
-  }
+  if (!validateProductForm()) return
 
   const formData = new FormData()
   
@@ -1470,8 +1518,9 @@ const updateProduct = async () => {
       // Handle SKU nullability
       if (key === 'sku' && !value) value = null
       
+      if (!shouldAppendField(key, value)) return
       if (typeof value === 'boolean') value = value ? 1 : 0
-      if (value !== null && value !== undefined) formData.append(key, value)
+      formData.append(key, value)
   })
 
   // Append Categories
@@ -1537,6 +1586,7 @@ const updateProduct = async () => {
     navigateTo('/vendor/products')
   } catch (error) {
      console.error('Error updating product:', error)
+     applyApiErrors(error)
   }
 }
 

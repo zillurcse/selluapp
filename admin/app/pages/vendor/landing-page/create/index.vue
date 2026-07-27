@@ -17,9 +17,9 @@
       </div>
 
       <!-- Step indicator -->
-      <div class="hidden md:flex items-center gap-2">
+      <div class="flex items-center gap-2 overflow-x-auto max-w-full pb-1">
         <div v-for="(step, idx) in steps" :key="idx"
-          class="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all"
+          class="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap flex-shrink-0"
           :class="currentStep === idx ? 'bg-black text-white dark:bg-white dark:text-black' : currentStep > idx ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400 dark:bg-slate-800 dark:text-slate-500'"
         >
           <CheckCircle2 v-if="currentStep > idx" class="w-4 h-4" />
@@ -151,7 +151,13 @@
         </div>
 
         <!-- Product grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div v-if="!loadingProducts && products.length === 0" class="text-center py-16 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-gray-200 dark:border-slate-700">
+          <Package class="w-12 h-12 text-gray-300 mx-auto mb-4" />
+          <p class="font-bold text-gray-700 dark:text-slate-300 mb-1">No products found</p>
+          <p class="text-sm text-gray-500 dark:text-slate-400 mb-4">Add products to your catalog or try a different search term.</p>
+          <NuxtLink to="/vendor/products/create" class="inline-flex items-center text-sm font-bold text-blue-600 hover:text-blue-700">Create a product →</NuxtLink>
+        </div>
+        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           <div v-for="product in products" :key="product.id"
             @click="toggleProduct(product)"
             class="relative flex flex-col p-4 rounded-2xl border-2 transition-all cursor-pointer group hover:shadow-lg"
@@ -407,7 +413,7 @@ import { toast } from 'vue-sonner'
 definePageMeta({
   layout: 'default',
   middleware: 'auth',
-  permissions: 'landing_pages.create'
+  permissions: ['landing_pages.create', 'landing_pages.edit']
 })
 
 const { getAll, createItem, getById, updateItem } = useCrud()
@@ -475,11 +481,12 @@ const fetchProducts = async (page = 1, append = false) => {
   loadingProducts.value = true
   try {
     const res = await getAll('/vendor/products', { search: searchQuery.value, per_page: perPage, page })
-    const newProducts = res.data || res || []
+    const newProducts = res?.data || (Array.isArray(res) ? res : [])
     products.value = append ? [...products.value, ...newProducts] : newProducts
     hasMore.value = newProducts.length === perPage
   } catch (e) {
     console.error(e)
+    toast.error('Could not load products.')
   } finally {
     loadingProducts.value = false
   }
@@ -519,10 +526,24 @@ const removeSelectedProduct = (id) => {
   formData.value.selectedProducts = formData.value.selectedProducts.filter(p => p !== id)
 }
 
-// For drag-to-reorder
+// For drag-to-reorder — include products from edit payload not yet in search results
 const selectedProductObjects = computed(() => {
-  return formData.value.selectedProducts.map(id => products.value.find(p => p.id === id)).filter(Boolean)
+  return formData.value.selectedProducts
+    .map(id => products.value.find(p => p.id === id) || editProductCache.value[id])
+    .filter(Boolean)
 })
+
+const editProductCache = ref({})
+
+const mergeProductsIntoList = (items = []) => {
+  items.forEach((product) => {
+    if (!product?.id) return
+    editProductCache.value[product.id] = product
+    if (!products.value.find(p => p.id === product.id)) {
+      products.value = [product, ...products.value]
+    }
+  })
+}
 
 let dragFromIndex = null
 const dragStart = (idx) => { dragFromIndex = idx }
@@ -601,10 +622,10 @@ onMounted(async () => {
     await fetchPageData(route.query.id)
   } else {
     utilityStore.isEdit = false
-    // Pre-select type from query param (?type=single|multiple|common)
     const t = route.query.type
     if (t && ['single', 'multiple', 'common'].includes(t)) {
       selectType(t)
+      currentStep.value = 1
     }
   }
 })
@@ -614,12 +635,18 @@ const fetchPageData = async (id) => {
     const res = await getById('/vendor/landing-pages', id)
     if (res) {
       const type = res.landing_page_type || 'single'
+      const selectedIds = res.settings?.product_ids || (res.product_id ? [res.product_id] : [])
+      mergeProductsIntoList(res.products || [])
+      if (res.product && !selectedIds.includes(res.product.id)) {
+        mergeProductsIntoList([res.product])
+      }
+
       formData.value = {
         landing_page_type: type,
         template_name: res.template_name || 'modern',
         title: res.title || '',
         product_id: res.product_id || null,
-        selectedProducts: res.settings?.product_ids || (res.product_id ? [res.product_id] : []),
+        selectedProducts: selectedIds,
         status: res.status || 'active',
         is_home: !!(res.is_home === 1 || res.is_home === true),
         campaign_start_at: res.campaign_start_at ? res.campaign_start_at.slice(0, 16) : '',
@@ -634,11 +661,12 @@ const fetchPageData = async (id) => {
           floating_points: res.settings?.floating_points || []
         }
       }
-      // Move to last step for edit
       currentStep.value = 4
     }
   } catch (e) {
     console.error('Failed to load landing page:', e)
+    toast.error('Could not load landing page for editing.')
+    navigateTo('/vendor/landing-page/all')
   }
 }
 
@@ -672,13 +700,12 @@ const submitLandingPage = async () => {
       toast.success('Landing page updated!')
       navigateTo('/vendor/landing-page/all')
     } else {
-      await createItem('/vendor/landing-pages', payload)
+      await createItem('/vendor/landing-pages', payload, null, false)
       toast.success('Landing page created!')
       navigateTo('/vendor/landing-page/all')
     }
   } catch (e) {
     console.error('Submit error:', e)
-    toast.error('Something went wrong. Please try again.')
   }
 }
 </script>

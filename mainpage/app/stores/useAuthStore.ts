@@ -54,18 +54,24 @@ export const useAuthStore = defineStore("auth", () => {
     return user.value?.roles?.some((r: any) => r.name === role) || false;
   });
 
+  const tenantHeaders = (): Record<string, string> => {
+    const headers: Record<string, string> = {};
+    const vendorId = resolveVendorId();
+    if (vendorId) {
+      headers['X-Vendor-Id'] = vendorId.toString();
+    }
+    return headers;
+  };
+
   async function fetchUser() {
     if (!tokenStore.getToken) return;
 
     try {
-      const storefrontStore = useStorefrontStore();
-      const vendorId = storefrontStore.vendorProfile?.user_id || 5;
-
       const data = await $fetch<any>(`${config.public.apiBase}/user`, {
         headers: {
           Accept: "application/json",
           Authorization: `Bearer ${tokenStore.getToken}`,
-          "X-Vendor-Id": vendorId.toString(),
+          ...tenantHeaders(),
         }
       });
       if (data) {
@@ -96,15 +102,11 @@ export const useAuthStore = defineStore("auth", () => {
 
     try {
       utilityStore.isLoading = true;
-      const storefrontStore = useStorefrontStore();
-      const vendorId = storefrontStore.vendorProfile?.user_id || 5;
 
       const res: any = await $fetch(`${config.public.apiBase}/login`, {
         method: "POST",
         body: form,
-        headers: {
-          "X-Vendor-Id": vendorId.toString(),
-        }
+        headers: tenantHeaders(),
       });
 
       const token = res.access_token || res.token;
@@ -142,27 +144,17 @@ export const useAuthStore = defineStore("auth", () => {
   }
 
   async function sendMagicLink(email: string) {
-    const storefrontStore = useStorefrontStore();
-    const vendorId = storefrontStore.vendorProfile?.user_id || 5;
-
     return await $fetch(`${config.public.apiBase}/auth/magic-link`, {
       method: "POST",
       body: { email },
-      headers: {
-        "X-Vendor-Id": vendorId.toString(),
-      }
+      headers: tenantHeaders(),
     });
   }
 
   async function verifyMagicLink(query: any) {
-    const storefrontStore = useStorefrontStore();
-    const vendorId = storefrontStore.vendorProfile?.user_id || 5;
-
     const res: any = await $fetch(`${config.public.apiBase}/auth/magic-link/verify`, {
       params: query,
-      headers: {
-        "X-Vendor-Id": vendorId.toString(),
-      }
+      headers: tenantHeaders(),
     });
 
     const token = res.access_token || res.token;
@@ -180,15 +172,11 @@ export const useAuthStore = defineStore("auth", () => {
 
     try {
       utilityStore.isLoading = true;
-      const storefrontStore = useStorefrontStore();
-      const vendorId = storefrontStore.vendorProfile?.user_id || 5;
 
       const res: any = await $fetch(`${config.public.apiBase}/register`, {
         method: "POST",
         body: form,
-        headers: {
-          "X-Vendor-Id": vendorId.toString(),
-        }
+        headers: tenantHeaders(),
       });
 
       const token = res.access_token || res.token;
@@ -238,14 +226,11 @@ export const useAuthStore = defineStore("auth", () => {
 
     // 2. Inform server in background (non-blocking)
     if (token) {
-      const storefrontStore = useStorefrontStore();
-      const vendorId = storefrontStore.vendorProfile?.user_id || 5;
-
       $fetch(`${config.public.apiBase}/logout`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
-          "X-Vendor-Id": vendorId.toString(),
+          ...tenantHeaders(),
         },
       }).catch((error) => {
         console.error("Logout API error (background):", error);

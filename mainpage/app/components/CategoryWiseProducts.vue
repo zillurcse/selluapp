@@ -1,32 +1,38 @@
 <template>
   <div v-if="categories && categories.length > 0">
-    <section v-for="(category, index) in categories" :key="category.id" class="pt-12 md:pt-20" :class="index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'">
-      <div class="container mx-auto px-4 sm:px-6">
-        <div class="flex items-center justify-between mb-10">
+    <section
+      v-for="(category, index) in categories"
+      :key="category.id"
+      class="section-pad"
+      :class="index % 2 === 0 ? 'bg-white' : 'bg-[var(--surface)]'"
+    >
+      <div class="container mx-auto">
+        <div class="flex items-end justify-between mb-8 gap-4">
           <div>
-            <h2 class="text-3xl md:text-5xl font-extrabold tracking-tight text-gray-900 font-heading">{{ category.name }}</h2>
-            <div class="w-20 h-1 bg-rose-600 mt-4 rounded-full"></div>
+            <span class="section-label">Collection</span>
+            <h2 class="section-title mt-1">{{ category.name }}</h2>
           </div>
-          <NuxtLink :to="`/shop?category=${category.slug}`" class="text-sm font-bold uppercase tracking-widest text-gray-900 hover:text-rose-600 transition-colors hidden sm:flex items-center gap-2">
-            View All
-            <span class="text-lg">→</span>
+          <NuxtLink
+            :to="`/shop?category=${category.slug}`"
+            class="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-gray-900 hover:opacity-60 transition-opacity"
+          >
+            View all
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
           </NuxtLink>
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8 md:gap-10">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <ProductCard
-            v-for="(product, idx) in category.products.slice(0, 4)"
+            v-for="product in category.products.slice(0, 4)"
             :key="product.id"
             :product="product"
-            class="animate-fade-in"
-            :style="{ animationDelay: `${idx * 0.1}s` }"
             @add-to-cart="$emit('add-to-cart', $event)"
           />
         </div>
-        
+
         <div class="mt-8 text-center sm:hidden">
-          <NuxtLink :to="`/shop?category=${category.slug}`" class="inline-flex items-center justify-center px-8 py-4 bg-gray-900 text-white font-bold text-xs uppercase tracking-widest rounded-full transition-all hover:-translate-y-1 hover:shadow-xl w-full">
-            View All {{ category.name }}
+          <NuxtLink :to="`/shop?category=${category.slug}`" class="btn-primary w-full">
+            View all {{ category.name }}
           </NuxtLink>
         </div>
       </div>
@@ -35,7 +41,7 @@
 </template>
 
 <script setup>
-const props = defineProps({
+defineProps({
   categories: {
     type: Array,
     required: true,
@@ -45,18 +51,3 @@ const props = defineProps({
 
 defineEmits(['add-to-cart'])
 </script>
-
-<style scoped>
-.font-heading {
-  font-family: var(--font-heading, "Inter", sans-serif);
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(30px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-in {
-  opacity: 0;
-  animation: fadeIn 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-}
-</style>
