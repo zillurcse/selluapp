@@ -12,27 +12,33 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('business_settings', function (Blueprint $table) {
-            // 1. Drop the incorrect single-column unique index if it exists
-            // We use a try-catch or check indexes to be safe across environments
-            $logicalName = 'business_settings_type_unique';
-            
-            // In Laravel, we can drop by name
-            try {
-                $table->dropUnique($logicalName);
-            } catch (\Exception $e) {
-                // Ignore if it doesn't exist
-            }
+        // NOTE: try/catch inside a Schema::table() closure does not work, because the
+        // queued ALTER TABLE statements only execute after the closure returns. Instead
+        // we check the actual indexes up front so this is safe on fresh and existing DBs.
+        $connection = Schema::getConnection();
+        $database = $connection->getDatabaseName();
 
-            // 2. Ensure the composite unique index exists
-            // The original migration had: $table->unique(['vendor_id', 'type']);
-            // If it already exists, adding it again might fail, so we check or just wrap in try-catch
-            try {
+        $indexExists = function (string $index) use ($connection, $database): bool {
+            return count($connection->select(
+                "SELECT 1 FROM information_schema.statistics
+                 WHERE table_schema = ? AND table_name = 'business_settings' AND index_name = ? LIMIT 1",
+                [$database, $index]
+            )) > 0;
+        };
+
+        // 1. Drop the incorrect single-column unique index only if it exists
+        if ($indexExists('business_settings_type_unique')) {
+            Schema::table('business_settings', function (Blueprint $table) {
+                $table->dropUnique('business_settings_type_unique');
+            });
+        }
+
+        // 2. Ensure the composite unique index exists
+        if (! $indexExists('business_settings_vendor_type_unique')) {
+            Schema::table('business_settings', function (Blueprint $table) {
                 $table->unique(['vendor_id', 'type'], 'business_settings_vendor_type_unique');
-            } catch (\Exception $e) {
-                // Ignore if it already exists
-            }
-        });
+            });
+        }
     }
 
     /**

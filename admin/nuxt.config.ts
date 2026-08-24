@@ -20,6 +20,16 @@ export default defineNuxtConfig({
   future: {
     compatibilityVersion: 4
   },
+  nitro: {
+    // When running behind Docker, proxy API + storage to the backend service so
+    // both SSR (inside the container) and the browser can use relative paths.
+    routeRules: process.env.API_PROXY_TARGET
+      ? {
+          '/api/**': { proxy: `${process.env.API_PROXY_TARGET}/api/**` },
+          '/storage/**': { proxy: `${process.env.API_PROXY_TARGET}/storage/**` },
+        }
+      : {},
+  },
   tailwindcss: {
     configPath: 'tailwind.config.js'
   }

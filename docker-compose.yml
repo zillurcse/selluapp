@@ -1,0 +1,129 @@
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-ecom}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_USER: ${DB_USERNAME:-sellu}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+    ports:
+      - "${DB_FORWARD_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${DB_PASSWORD:-secret}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "${REDIS_FORWARD_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    environment:
+      APP_ENV: ${APP_ENV:-local}
+      APP_DEBUG: ${APP_DEBUG:-true}
+      APP_KEY: ${APP_KEY:-base64:oXavX3Hq2lk0+UFw3iiwGyGKsmWWi+HUM+btciLRMrk=}
+      APP_URL: ${APP_URL:-http://localhost:8000}
+      DEFAULT_VENDOR_ID: ${DEFAULT_VENDOR_ID:-}
+      RUN_MIGRATIONS: "true"
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: ${DB_DATABASE:-ecom}
+      DB_USERNAME: ${DB_USERNAME:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-secret}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      CACHE_STORE: database
+      SESSION_DRIVER: database
+      QUEUE_CONNECTION: database
+    volumes:
+      - ./backend:/var/www/html
+      - backend-vendor:/var/www/html/vendor
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-8000}:80"
+    volumes:
+      - ./backend:/var/www/html
+      - ./backend/docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
+
+  queue:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    command: ["app-entrypoint.sh", "php", "artisan", "queue:work", "--tries=3", "--timeout=90"]
+    environment:
+      APP_ENV: ${APP_ENV:-local}
+      APP_KEY: ${APP_KEY:-base64:oXavX3Hq2lk0+UFw3iiwGyGKsmWWi+HUM+btciLRMrk=}
+      RUN_MIGRATIONS: "false"
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: ${DB_DATABASE:-ecom}
+      DB_USERNAME: ${DB_USERNAME:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-secret}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      QUEUE_CONNECTION: database
+    volumes:
+      - ./backend:/var/www/html
+      - backend-vendor:/var/www/html/vendor
+    depends_on:
+      backend:
+        condition: service_started
+      mysql:
+        condition: service_healthy
+
+  admin:
+    build:
+      context: ./admin
+    restart: unless-stopped
+    environment:
+      # Relative base -> proxied to nginx by the Nuxt server (works for SSR + browser)
+      NUXT_PUBLIC_API_BASE: ${ADMIN_API_BASE:-/api}
+      NUXT_PUBLIC_STOREFRONT_DOMAIN: ${STOREFRONT_DOMAIN:-selluee.test}
+      NITRO_PORT: 3000
+    ports:
+      - "${ADMIN_PORT:-3001}:3000"
+    depends_on:
+      - nginx
+
+  mainpage:
+    build:
+      context: ./mainpage
+    restart: unless-stopped
+    environment:
+      # Relative base -> proxied to nginx by the Nuxt server (works for SSR + browser)
+      NUXT_PUBLIC_API_BASE: ${MAINPAGE_API_BASE:-/api}
+      NUXT_PUBLIC_DEFAULT_VENDOR_ID: ${DEFAULT_VENDOR_ID:-}
+      NUXT_PUBLIC_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      NITRO_PORT: 3000
+    ports:
+      - "${MAINPAGE_PORT:-3000}:3000"
+    depends_on:
+      - nginx
+
+volumes:
+  mysql-data:
+  redis-data:
+  backend-vendor:
