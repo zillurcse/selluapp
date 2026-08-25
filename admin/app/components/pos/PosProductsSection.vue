@@ -72,7 +72,12 @@
           @click="$emit('addToCart', product)"
           class="bg-white dark:bg-slate-900 rounded-[1.5rem] border border-gray-100 dark:border-slate-800 overflow-hidden hover:shadow-xl hover:shadow-gray-200/50 transition-all group cursor-pointer active:scale-95 relative"
         >
-          <div class="absolute top-3 left-3 z-10 bg-indigo-500 text-white text-[10px] font-black px-2 py-1 rounded-md">৳ {{ product.price }}</div>
+          <div class="absolute top-3 left-3 z-10 bg-indigo-500 text-white text-[10px] font-black px-2 py-1 rounded-md">
+            <span v-if="product.has_variants" class="opacity-80 font-bold">from </span>৳ {{ product.price }}
+          </div>
+          <div v-if="product.has_variants" class="absolute bottom-[4.5rem] left-3 z-10 bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-wide">
+            {{ product.variants?.length || 0 }} options
+          </div>
           <div class="absolute top-3 right-3 z-10 text-[10px] font-black px-2 py-1 rounded-md" :class="product.stock > 5 ? 'bg-green-100 text-green-700' : product.stock > 0 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'">
             {{ product.stock > 0 ? product.stock + ' left' : 'Out of stock' }}
           </div>

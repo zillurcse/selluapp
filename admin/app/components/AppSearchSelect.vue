@@ -35,16 +35,16 @@
 
       <div
         v-for="item in filteredItems"
-        :key="item.id"
+        :key="itemValue(item)"
         class="relative cursor-pointer select-none py-2 pl-3 pr-9 hover:bg-blue-50 dark:hover:bg-indigo-900/30 transition-colors"
-        :class="{ 'bg-blue-50 dark:bg-indigo-900/30 text-blue-900 dark:text-indigo-400': isSelected(item.id), 'text-gray-900 dark:text-slate-200': !isSelected(item.id) }"
+        :class="{ 'bg-blue-50 dark:bg-indigo-900/30 text-blue-900 dark:text-indigo-400': isSelected(itemValue(item)), 'text-gray-900 dark:text-slate-200': !isSelected(itemValue(item)) }"
         @click="selectItem(item)"
       >
-        <span class="block truncate" :class="{ 'font-medium': isSelected(item.id), 'font-normal': !isSelected(item.id) }">
-          {{ item.name }}
+        <span class="block truncate" :class="{ 'font-medium': isSelected(itemValue(item)), 'font-normal': !isSelected(itemValue(item)) }">
+          {{ itemLabel(item) }}
         </span>
         <span
-          v-if="isSelected(item.id)"
+          v-if="isSelected(itemValue(item))"
           class="absolute inset-y-0 right-0 flex items-center pr-4 text-blue-600 dark:text-indigo-400"
         >
           <Check class="h-4 w-4" aria-hidden="true" />
@@ -86,7 +86,17 @@ const props = defineProps({
     default: 'Search...'
   },
   required: Boolean,
-  multiple: Boolean
+  multiple: Boolean,
+  // Which item property to display / use as the value. Defaults keep existing
+  // usages ({ id, name }) working; pass e.g. label-key="value" for other shapes.
+  labelKey: {
+    type: String,
+    default: 'name'
+  },
+  valueKey: {
+    type: String,
+    default: 'id'
+  }
 })
 
 const emit = defineEmits(['update:modelValue', 'onCreate'])
@@ -95,17 +105,20 @@ const isOpen = ref(false)
 const searchQuery = ref('')
 const dropdownRef = ref(null)
 
+const itemLabel = (item) => String(item?.[props.labelKey] ?? '')
+const itemValue = (item) => item?.[props.valueKey]
+
 const filteredItems = computed(() => {
   if (!searchQuery.value) return props.items
-  return props.items.filter(item => 
-    item.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+  return props.items.filter(item =>
+    itemLabel(item).toLowerCase().includes(searchQuery.value.toLowerCase())
   )
 })
 
 const exactMatch = computed(() => {
   if (!searchQuery.value) return true
-  return props.items.some(item => 
-    item.name.toLowerCase() === searchQuery.value.toLowerCase()
+  return props.items.some(item =>
+    itemLabel(item).toLowerCase() === searchQuery.value.toLowerCase()
   )
 })
 
@@ -115,8 +128,8 @@ const selectedItemName = computed(() => {
     const count = props.modelValue.length
     return `${count} items selected`
   }
-  const selected = props.items.find(item => item.id === props.modelValue)
-  return selected ? selected.name : ''
+  const selected = props.items.find(item => itemValue(item) === props.modelValue)
+  return selected ? itemLabel(selected) : ''
 })
 
 const isSelected = (id) => {
@@ -127,17 +140,18 @@ const isSelected = (id) => {
 }
 
 const selectItem = (item) => {
+  const value = itemValue(item)
   if (props.multiple) {
     const newValue = Array.isArray(props.modelValue) ? [...props.modelValue] : []
-    const index = newValue.indexOf(item.id)
+    const index = newValue.indexOf(value)
     if (index > -1) {
       newValue.splice(index, 1)
     } else {
-      newValue.push(item.id)
+      newValue.push(value)
     }
     emit('update:modelValue', newValue)
   } else {
-    emit('update:modelValue', item.id)
+    emit('update:modelValue', value)
     searchQuery.value = ''
     isOpen.value = false
   }

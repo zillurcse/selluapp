@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -18,9 +19,9 @@ class ProductController extends Controller implements HasMiddleware
     {
         return [
             new Middleware('package.feature:products'),
-            new Middleware('package.limit:products', only: ['store']),
+            new Middleware('package.limit:products', only: ['store', 'duplicate']),
             new Middleware('permission:products.view', only: ['index', 'show', 'slugByStatusProducts']),
-            new Middleware('permission:products.create', only: ['store']),
+            new Middleware('permission:products.create', only: ['store', 'duplicate']),
             new Middleware('permission:products.edit', only: ['update']),
             new Middleware('permission:products.delete', only: ['destroy']),
         ];
@@ -95,6 +96,8 @@ class ProductController extends Controller implements HasMiddleware
     {
         $validated = $request->validated();
 
+        DB::beginTransaction();
+        try {
         $categoryIds = $validated['category_ids'];
         unset($validated['category_ids']);
 
@@ -212,11 +215,99 @@ class ProductController extends Controller implements HasMiddleware
             }
         }
 
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        }
+
         return response()->json([
             'message' => 'Product created successfully',
             'data' => $product->load(['categories', 'brand', 'unit', 'variants.attributes.attribute']),
             'status' => 201
         ], 201);
+    }
+
+    /**
+     * Duplicate an existing product (with its categories and variants) as a new
+     * draft. SKU / product_code / slug are regenerated to stay unique; variant
+     * rows and their attribute links are copied to the new product.
+     */
+    public function duplicate(Product $product)
+    {
+        return DB::transaction(function () use ($product) {
+            $product->load(['variants.attributes']);
+
+            // Read category ids straight from the pivot: the Category model has a
+            // vendor global scope that can otherwise hide rows during the copy.
+            $categoryIds = DB::table('category_product')
+                ->where('product_id', $product->id)
+                ->pluck('category_id')
+                ->all();
+
+            $copy = $product->replicate([
+                'slug', 'sku', 'product_code', 'created_at', 'updated_at', 'deleted_at',
+            ]);
+            $copy->name = $product->name.' (Copy)';
+            $copy->slug = $this->resolveUniqueSlug($product->name.' copy');
+            $copy->sku = $this->uniqueProductColumn('sku', $product->sku);
+            $copy->product_code = $this->uniqueProductColumn('product_code', 'PRD-'.now()->format('ymdHis'));
+            $copy->status = 'draft';
+            $copy->vendor_id = auth()->id();
+            $copy->save();
+
+            $copy->categories()->sync($categoryIds);
+
+            foreach ($product->variants as $variant) {
+                $newVariant = $variant->replicate(['created_at', 'updated_at']);
+                $newVariant->product_id = $copy->id;
+                $newVariant->save();
+                $newVariant->attributes()->sync($variant->attributes->pluck('id')->all());
+            }
+
+            $this->clearStorefrontCache($copy->vendor_id);
+
+            return response()->json([
+                'message' => 'Product duplicated successfully',
+                'data' => $copy->load(['categories', 'brand', 'unit', 'variants.attributes.attribute']),
+                'status' => 201,
+            ], 201);
+        });
+    }
+
+    /**
+     * Delete a stored file, but NEVER a media-library asset (uploads/*). Those
+     * files are shared: reused across products, as a product's own image, and
+     * kept in the media library. Deleting one here corrupts every reference to
+     * it. Only product-owned uploads (products/*) are safe to remove.
+     */
+    private function safeDeleteFile(?string $path): void
+    {
+        if (! $path || Str::startsWith($path, 'uploads/')) {
+            return;
+        }
+
+        Storage::disk('public')->delete($path);
+    }
+
+    /**
+     * Generate a unique value for a globally-unique product column.
+     */
+    private function uniqueProductColumn(string $column, ?string $base): string
+    {
+        $base = $base ?: strtoupper(Str::random(8));
+        $value = $base.'-COPY';
+        $attempts = 0;
+
+        while (Product::withTrashed()->where($column, $value)->exists()) {
+            $value = $base.'-COPY-'.strtoupper(Str::random(4));
+
+            if (++$attempts > 20) {
+                break;
+            }
+        }
+
+        return $value;
     }
 
     public function show(Product $product)
@@ -247,6 +338,8 @@ class ProductController extends Controller implements HasMiddleware
     {
         $validated = $request->validated();
 
+        DB::beginTransaction();
+        try {
         if (isset($validated['category_ids'])) {
             $product->categories()->sync($validated['category_ids']);
             unset($validated['category_ids']);
@@ -278,21 +371,21 @@ class ProductController extends Controller implements HasMiddleware
 
         // Handle File Uploads or Full URLs with cleanup
         if ($request->hasFile('image')) {
-            if ($product->image) Storage::disk('public')->delete($product->image);
+            if ($product->image) $this->safeDeleteFile($product->image);
             $validated['image'] = $request->file('image')->store('products/images', 'public');
         } elseif (isset($validated['image']) && str_contains($validated['image'], '/storage/')) {
             $validated['image'] = Str::after($validated['image'], '/storage/');
         }
 
         if ($request->hasFile('thumbnail')) {
-            if ($product->thumbnail) Storage::disk('public')->delete($product->thumbnail);
+            if ($product->thumbnail) $this->safeDeleteFile($product->thumbnail);
             $validated['thumbnail'] = $request->file('thumbnail')->store('products/thumbnails', 'public');
         } elseif (isset($validated['thumbnail']) && str_contains($validated['thumbnail'], '/storage/')) {
             $validated['thumbnail'] = Str::after($validated['thumbnail'], '/storage/');
         }
 
         if ($request->hasFile('video')) {
-            if ($product->video) Storage::disk('public')->delete($product->video);
+            if ($product->video) $this->safeDeleteFile($product->video);
             $validated['video'] = $request->file('video')->store('products/videos', 'public');
         } elseif (isset($validated['video']) && str_contains($validated['video'], '/storage/')) {
             $validated['video'] = Str::after($validated['video'], '/storage/');
@@ -325,7 +418,7 @@ class ProductController extends Controller implements HasMiddleware
             // Cleanup: Delete old files that are no longer in the gallery
             foreach ($oldGallery as $oldPath) {
                 if (!in_array($oldPath, $currentlyUsedPaths)) {
-                    Storage::disk('public')->delete($oldPath);
+                    $this->safeDeleteFile($oldPath);
                 }
             }
 
@@ -334,7 +427,7 @@ class ProductController extends Controller implements HasMiddleware
             // Fallback for simple uploads without ordering
             if ($product->gallery) {
                 foreach ($product->gallery as $path) {
-                    Storage::disk('public')->delete($path);
+                    $this->safeDeleteFile($path);
                 }
             }
             
@@ -368,7 +461,7 @@ class ProductController extends Controller implements HasMiddleware
                         $variant = $product->variants()->find($variantData['id']);
                         if ($variant) {
                             if ($hasNewImage) {
-                                if ($variant->image) \Illuminate\Support\Facades\Storage::disk('public')->delete($variant->image);
+                                if ($variant->image) $this->safeDeleteFile($variant->image);
                                 $variantImage = $request->file("variants_image_{$index}")->store('products/variants', 'public');
                             } elseif (isset($variantData['image']) && str_contains($variantData['image'], '/storage/')) {
                                 $variantImage = Str::after($variantData['image'], '/storage/');
@@ -419,7 +512,7 @@ class ProductController extends Controller implements HasMiddleware
                 // Delete variants not in the kept list
                 $product->variants()->whereNotIn('id', $keptVariantIds)->get()->each(function($vdel) {
                     if ($vdel->image) {
-                        \Illuminate\Support\Facades\Storage::disk('public')->delete($vdel->image);
+                        $this->safeDeleteFile($vdel->image);
                     }
                     $vdel->delete();
                 });
@@ -429,10 +522,16 @@ class ProductController extends Controller implements HasMiddleware
             // Delete all variants if turned off
             foreach ($product->variants as $vdel) {
                 if ($vdel->image) {
-                    \Illuminate\Support\Facades\Storage::disk('public')->delete($vdel->image);
+                    $this->safeDeleteFile($vdel->image);
                 }
                 $vdel->delete();
             }
+        }
+
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
         }
 
         return response()->json([

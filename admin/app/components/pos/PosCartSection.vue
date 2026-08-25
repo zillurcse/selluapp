@@ -17,15 +17,16 @@
               <p class="text-xs mt-1">Click a product to add it</p>
             </div>
             <div v-else>
-              <div v-for="item in cart" :key="item.id" class="px-4 py-3 flex items-center text-[12px] font-bold text-gray-700 dark:text-slate-300 border-b border-gray-50 dark:border-slate-800 group">
+              <div v-for="item in cart" :key="item.cartKey || item.id" class="px-4 py-3 flex items-center text-[12px] font-bold text-gray-700 dark:text-slate-300 border-b border-gray-50 dark:border-slate-800 group">
                 <div class="w-1/2 truncate pr-2">
                   <div>{{ item.name }}</div>
+                  <div v-if="item.variantLabel" class="text-[10px] font-bold text-indigo-500 dark:text-indigo-400">{{ item.variantLabel }}</div>
                   <div class="text-[10px] text-gray-400">{{ item.sku }}</div>
                 </div>
                 <div class="w-1/6 text-center flex items-center justify-center gap-1">
-                  <button @click="$emit('updateQty', item.id, -1)" class="w-5 h-5 rounded bg-gray-100 dark:bg-slate-700 hover:bg-red-100 flex items-center justify-center transition-colors">-</button>
+                  <button @click="$emit('updateQty', item.cartKey || item.id, -1)" class="w-5 h-5 rounded bg-gray-100 dark:bg-slate-700 hover:bg-red-100 flex items-center justify-center transition-colors">-</button>
                   <span>{{ item.qty }}</span>
-                  <button @click="$emit('updateQty', item.id, 1)" class="w-5 h-5 rounded bg-gray-100 dark:bg-slate-700 hover:bg-green-100 flex items-center justify-center transition-colors">+</button>
+                  <button @click="$emit('updateQty', item.cartKey || item.id, 1)" class="w-5 h-5 rounded bg-gray-100 dark:bg-slate-700 hover:bg-green-100 flex items-center justify-center transition-colors">+</button>
                 </div>
                 <div class="w-1/6 text-right">৳{{ item.price }}</div>
                 <div class="w-1/6 text-right">৳{{ (item.price * item.qty).toFixed(2) }}</div>

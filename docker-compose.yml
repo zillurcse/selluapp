@@ -47,6 +47,11 @@ services:
       CACHE_STORE: database
       SESSION_DRIVER: database
       QUEUE_CONNECTION: database
+      # Upload limits for product media (5MB thumbnail + up to 10 gallery images
+      # + variant images). Stock PHP defaults (2M/8M) silently drop files / 413.
+      PHP_INI_UPLOAD_MAX_FILESIZE: 20M
+      PHP_INI_POST_MAX_SIZE: 64M
+      PHP_INI_MAX_FILE_UPLOADS: "50"
     volumes:
       - ./backend:/var/www/html
       - backend-vendor:/var/www/html/vendor

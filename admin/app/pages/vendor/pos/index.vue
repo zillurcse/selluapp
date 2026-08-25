@@ -97,6 +97,14 @@
         @close="showCalculator = false"
       />
 
+      <!-- Variant Picker Modal -->
+      <PosVariantModal
+        :is-open="showVariantModal"
+        :product="variantProduct"
+        @close="showVariantModal = false"
+        @select="selectVariant"
+      />
+
       <!-- Invoice Print Modal -->
       <PosInvoicePrint
         :is-open="showInvoice"
@@ -137,6 +145,8 @@ const discountValue   = ref(0)
 const taxPercentage   = ref(0)
 const shipping        = ref(0)
 const showSuccess     = ref(false)
+const showVariantModal = ref(false)
+const variantProduct  = ref(null)
 const cart            = ref([])
 const holdOrders      = ref([])
 const recentSales     = ref([])
@@ -307,33 +317,77 @@ const handleNewCustomer = (customer) => {
 const filteredProducts = computed(() => products.value)
 
 // ── Cart Logic ─────────────────────────────────────────────────────
+// Variant products can't be added directly — open the picker so the cashier
+// chooses the exact variant (its own price/stock/sku).
 const addToCart = (product) => {
-  if (product.stock <= 0) {
-    toast.error('Product is out of stock')
+  if (product.has_variants) {
+    if ((product.stock || 0) <= 0) {
+      toast.error('Product is out of stock')
+      return
+    }
+    variantProduct.value = product
+    showVariantModal.value = true
     return
   }
-  const existing = cart.value.find(item => item.id === product.id)
+  addLineToCart({
+    cartKey: `p${product.id}`,
+    id: product.id,
+    variant_id: null,
+    name: product.name,
+    variantLabel: null,
+    sku: product.sku,
+    price: product.price,
+    stock: product.stock,
+    image: product.image,
+  })
+}
+
+const selectVariant = (product, variant) => {
+  showVariantModal.value = false
+  addLineToCart({
+    cartKey: `p${product.id}v${variant.id}`,
+    id: product.id,
+    variant_id: variant.id,
+    name: product.name,
+    variantLabel: variant.label,
+    sku: variant.sku,
+    price: variant.price,
+    stock: variant.stock,
+    image: product.image,
+  })
+}
+
+const addLineToCart = (line) => {
+  if ((line.stock || 0) <= 0) {
+    toast.error('Out of stock')
+    return
+  }
+  const existing = cart.value.find(item => item.cartKey === line.cartKey)
   if (existing) {
-    if (existing.qty >= product.stock) {
+    if (existing.qty >= line.stock) {
       toast.warning('Cannot exceed available stock')
       return
     }
     existing.qty++
   } else {
-    cart.value.push({ ...product, qty: 1 })
+    cart.value.push({ ...line, qty: 1 })
   }
 }
 
-const updateQty = (id, delta) => {
-  const item = cart.value.find(item => item.id === id)
+const updateQty = (cartKey, delta) => {
+  const item = cart.value.find(item => item.cartKey === cartKey)
   if (item) {
+    if (delta > 0 && item.qty >= item.stock) {
+      toast.warning('Cannot exceed available stock')
+      return
+    }
     item.qty += delta
-    if (item.qty <= 0) removeFromCart(id)
+    if (item.qty <= 0) removeFromCart(cartKey)
   }
 }
 
-const removeFromCart = (id) => {
-  cart.value = cart.value.filter(item => item.id !== id)
+const removeFromCart = (cartKey) => {
+  cart.value = cart.value.filter(item => item.cartKey !== cartKey)
 }
 
 // ── Calculations ───────────────────────────────────────────────────
@@ -367,7 +421,7 @@ const completeSale = async () => {
       headers: getHeaders(),
       body: {
         customer_id:    selectedCustomer.value,
-        cart:           cart.value.map(i => ({ id: i.id, name: i.name, sku: i.sku, price: i.price, qty: i.qty })),
+        cart:           cart.value.map(i => ({ id: i.id, variant_id: i.variant_id ?? null, name: i.name, sku: i.sku, price: i.price, qty: i.qty })),
         discount_type:  discountType.value,
         discount_value: discountValue.value,
         tax_percentage: taxPercentage.value,

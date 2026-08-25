@@ -15,6 +15,24 @@ export const formatDate = (date: Date | string): string => {
 }
 
 /**
+ * Build a browser-usable URL for a stored file path.
+ *
+ * Stored image paths are relative to the public disk (e.g. "uploads/7/x.webp"
+ * or "products/gallery/x.jpg"). Rendered as-is they resolve against the current
+ * page (e.g. /vendor/uploads/...) and 404. They must be served from /storage,
+ * which the Nuxt server proxies to the backend. Absolute URLs and blob/data
+ * URIs are returned unchanged.
+ */
+export const storageUrl = (path?: string | null): string => {
+    if (!path) return ''
+    const p = String(path)
+    if (/^(https?:)?\/\//.test(p) || p.startsWith('blob:') || p.startsWith('data:')) return p
+    const clean = p.replace(/^\/+/, '')
+    if (clean.startsWith('storage/')) return `/${clean}`
+    return `/storage/${clean}`
+}
+
+/**
  * Truncate text to a specified length
  */
 export const truncateText = (text: string, maxLength: number): string => {

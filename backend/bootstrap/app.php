@@ -16,6 +16,12 @@ return Application::configure(basePath: dirname(__DIR__))
         // Must prepend before HandleCors so vendor domains are patched into the config
         $middleware->prepend(\App\Http\Middleware\DynamicCorsOrigin::class);
 
+        // Treat every API request as JSON so auth/validation failures return
+        // JSON (401/422) instead of a 302 redirect the Nuxt proxy turns into 502.
+        $middleware->api(prepend: [
+            \App\Http\Middleware\ForceJsonResponse::class,
+        ]);
+
         $middleware->alias([
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \App\Http\Middleware\CheckPermission::class,
@@ -26,5 +32,10 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // API routes must always answer with JSON (401/403/422/500), never a
+        // browser 302 redirect. A redirect from an /api/* route cannot be
+        // relayed by the Nuxt proxy and surfaces to the client as 502 Bad Gateway.
+        $exceptions->shouldRenderJsonWhen(function ($request, \Throwable $e) {
+            return $request->is('api/*') || $request->expectsJson();
+        });
     })->create();

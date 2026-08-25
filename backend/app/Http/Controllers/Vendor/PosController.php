@@ -7,6 +7,7 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Customer;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\PosSale;
 use App\Models\PosSaleItem;
 use Illuminate\Http\JsonResponse;
@@ -34,7 +35,7 @@ class PosController extends Controller implements HasMiddleware
      */
     public function products(Request $request): JsonResponse
     {
-        $query = Product::with(['categories', 'brand', 'unit'])
+        $query = Product::with(['categories', 'brand', 'unit', 'variants.attributes'])
             ->where('vendor_id', $request->user()->vendor_id ?? $request->user()->id)
             ->where('status', 'published')
             ->where('is_active', true);
@@ -68,15 +69,41 @@ class PosController extends Controller implements HasMiddleware
         $productsPaginated = $query->latest()->paginate($perPage);
 
         $productsPaginated->getCollection()->transform(function ($product) {
+            $hasVariants = (bool) $product->has_variants && $product->variants->isNotEmpty();
+
+            $variants = $hasVariants
+                ? $product->variants->map(function ($variant) {
+                    return [
+                        'id'    => $variant->id,
+                        'sku'   => $variant->sku,
+                        'price' => (float) $variant->price,
+                        'stock' => (int) $variant->stock_qty,
+                        // e.g. "Home / M" — built from the variant's attribute values
+                        'label' => $variant->attributes->pluck('value')->filter()->implode(' / '),
+                    ];
+                })->values()
+                : [];
+
+            // For a variant product, the card shows the "from" price and the
+            // combined sellable stock; the actual price/stock come from the picked variant.
+            $price = $hasVariants
+                ? (float) $product->variants->min('price')
+                : (float) ($product->discount_price ?: $product->sale_price);
+            $stock = $hasVariants
+                ? (int) $product->variants->sum('stock_qty')
+                : (int) $product->stock_qty;
+
             return [
-                'id'       => $product->id,
-                'name'     => $product->name,
-                'sku'      => $product->sku,
-                'price'    => (float) ($product->discount_price ?: $product->sale_price),
-                'stock'    => (int) $product->stock_qty,
-                'image'    => $product->image ? Storage::disk('public')->url($product->image) : null,
-                'category' => $product->categories->first()?->name,
-                'brand'    => $product->brand?->name,
+                'id'           => $product->id,
+                'name'         => $product->name,
+                'sku'          => $product->sku,
+                'price'        => $price,
+                'stock'        => $stock,
+                'image'        => $product->image ? Storage::disk('public')->url($product->image) : null,
+                'category'     => $product->categories->first()?->name,
+                'brand'        => $product->brand?->name,
+                'has_variants' => $hasVariants,
+                'variants'     => $variants,
             ];
         });
 
@@ -148,12 +175,13 @@ class PosController extends Controller implements HasMiddleware
     {
         $validated = $request->validate([
             'customer_id'    => 'nullable',
-            'cart'           => 'required|array|min:1',
-            'cart.*.id'      => 'required|integer|exists:products,id',
-            'cart.*.name'    => 'required|string',
-            'cart.*.sku'     => 'nullable|string',
-            'cart.*.price'   => 'required|numeric|min:0',
-            'cart.*.qty'     => 'required|integer|min:1',
+            'cart'             => 'required|array|min:1',
+            'cart.*.id'        => 'required|integer|exists:products,id',
+            'cart.*.variant_id' => 'nullable|integer|exists:product_variants,id',
+            'cart.*.name'      => 'required|string',
+            'cart.*.sku'       => 'nullable|string',
+            'cart.*.price'     => 'required|numeric|min:0',
+            'cart.*.qty'       => 'required|integer|min:1',
             'discount_type'  => 'nullable|in:fixed,percentage',
             'discount_value' => 'nullable|numeric|min:0',
             'tax_percentage' => 'nullable|numeric|min:0|max:100',
@@ -200,9 +228,12 @@ class PosController extends Controller implements HasMiddleware
             ]);
 
             foreach ($validated['cart'] as $item) {
+                $variantId = $item['variant_id'] ?? null;
+
                 PosSaleItem::create([
                     'pos_sale_id'  => $sale->id,
                     'product_id'   => $item['id'],
+                    'variant_id'   => $variantId,
                     'product_name' => $item['name'],
                     'sku'          => $item['sku'] ?? null,
                     'qty'          => $item['qty'],
@@ -210,8 +241,13 @@ class PosController extends Controller implements HasMiddleware
                     'subtotal'     => round($item['price'] * $item['qty'], 2),
                 ]);
 
-                // Deduct stock
-                Product::where('id', $item['id'])->decrement('stock_qty', $item['qty']);
+                // Deduct stock from the specific variant when one was sold,
+                // otherwise from the product itself.
+                if ($variantId) {
+                    ProductVariant::where('id', $variantId)->decrement('stock_qty', $item['qty']);
+                } else {
+                    Product::where('id', $item['id'])->decrement('stock_qty', $item['qty']);
+                }
             }
 
             DB::commit();

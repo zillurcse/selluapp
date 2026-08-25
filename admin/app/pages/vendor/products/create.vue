@@ -44,7 +44,7 @@
       </div>
     </div>
 
-    <form @submit.prevent="submitProduct" class="grid grid-cols-12 gap-6 lg:gap-8">
+    <form @submit.prevent="submitProduct()" class="grid grid-cols-12 gap-6 lg:gap-8">
       <div v-if="hasValidationErrors" class="col-span-12 rounded-xl border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-900/10 p-4">
         <p class="text-sm font-semibold text-red-700 dark:text-red-300">Please fix the following validation errors:</p>
         <ul class="mt-2 space-y-1 text-sm text-red-600 dark:text-red-400 list-disc list-inside">
@@ -201,7 +201,7 @@
                                     New
                                </button>
                            </div>
-                           <select v-model="config.attribute_id" @change="generateCombinations" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none bg-white dark:bg-slate-900 text-sm font-medium text-slate-900 dark:text-white">
+                           <select v-model="config.attribute_id" @change="onAttributeChange(config)" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none bg-white dark:bg-slate-900 text-sm font-medium text-slate-900 dark:text-white">
                                <option value="" disabled>Select Attribute</option>
                                <option v-for="attr in productAttributesList" :key="attr.id" :value="attr.id">{{ attr.name }}</option>
                            </select>
@@ -1223,23 +1223,37 @@ const removeAttributeLine = (index) => {
     generateCombinations()
 }
 
+const onAttributeChange = (config) => {
+    // Value IDs belong to a specific attribute. When the attribute is switched
+    // (e.g. Home -> Away), clear the previously selected values so stale IDs from
+    // the old attribute can't leak in and create phantom/duplicate variant rows.
+    config.value_ids = []
+    generateCombinations()
+}
+
 const generateCombinations = () => {
     // Get valid sets of values
     const validGroupings = selectedAttributesConfig.value
         .filter(conf => conf.attribute_id && conf.value_ids.length > 0)
         .map(conf => {
             const attrObj = productAttributesList.value.find(a => a.id === conf.attribute_id);
-            return conf.value_ids.map(valId => {
-                const valObj = attrObj.values.find(v => v.id === valId);
-                return {
-                    id: valId,
-                    value: valObj ? valObj.value : '',
-                    meta: valObj ? valObj.meta : '',
-                    attribute_name: attrObj.name,
-                    attribute_id: attrObj.id
-                };
-            });
-        });
+            // Only keep value IDs that actually belong to the selected attribute.
+            // This drops stale IDs left over from a previous attribute selection.
+            return (conf.value_ids || [])
+                .map(valId => {
+                    const valObj = attrObj?.values?.find(v => v.id === valId);
+                    if (!valObj) return null;
+                    return {
+                        id: valId,
+                        value: valObj.value,
+                        meta: valObj.meta,
+                        attribute_name: attrObj.name,
+                        attribute_id: attrObj.id
+                    };
+                })
+                .filter(Boolean);
+        })
+        .filter(group => group.length > 0);
 
     if (validGroupings.length === 0) {
         generatedVariants.value = [];
@@ -1430,6 +1444,11 @@ const saveDraft = async () => {
 }
 
 const submitProduct = async (targetStatus = form.value.status) => {
+  // Guard: if called from a DOM @submit handler the first arg is an Event, not a
+  // status string. Fall back to the form's status in that case.
+  if (!['published', 'draft', 'pending'].includes(targetStatus)) {
+    targetStatus = form.value.status
+  }
   if (!validateProductForm()) return
 
   isSubmitting.value = true

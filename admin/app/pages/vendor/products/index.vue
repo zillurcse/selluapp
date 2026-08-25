@@ -164,7 +164,7 @@
                 <td class="px-4 py-4">
                   <div class="flex items-center min-w-0">
                     <div class="h-10 w-10 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 overflow-hidden flex-shrink-0 shadow-sm">
-                      <img v-if="product.image" :src="product.image" :alt="product.name" class="h-full w-full object-cover">
+                      <img v-if="product.image" :src="storageUrl(product.image)" :alt="product.name" class="h-full w-full object-cover" @error="$event.target.style.display = 'none'">
                       <div v-else class="h-full w-full flex items-center justify-center text-slate-400 bg-slate-50 dark:bg-slate-800">
                         <Image class="w-4 h-4 opacity-40" />
                       </div>
@@ -226,6 +226,10 @@
                     <NuxtLink :to="`/vendor/products/edit/${product.id}`" title="Edit product" class="p-1.5 bg-white dark:bg-slate-800 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 border border-slate-200 dark:border-slate-700 rounded-lg transition-all shadow-sm">
                       <Pencil class="w-4 h-4" />
                     </NuxtLink>
+                    <button @click="duplicateProduct(product.id)" :disabled="duplicatingId === product.id" title="Duplicate product" class="p-1.5 bg-white dark:bg-slate-800 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 border border-slate-200 dark:border-slate-700 rounded-lg transition-all shadow-sm disabled:opacity-50">
+                      <Loader2 v-if="duplicatingId === product.id" class="w-4 h-4 animate-spin" />
+                      <Copy v-else class="w-4 h-4" />
+                    </button>
                     <button @click="openDeleteModal(product.id)" title="Delete product" class="p-1.5 bg-white dark:bg-slate-800 text-slate-400 hover:text-red-600 dark:hover:text-red-400 border border-slate-200 dark:border-slate-700 rounded-lg transition-all shadow-sm">
                       <Trash2 class="w-4 h-4" />
                     </button>
@@ -292,6 +296,8 @@ import {
   Plus,
   Image,
   Pencil,
+  Copy,
+  Loader2,
 } from 'lucide-vue-next'
 import AppProductFilter from '~/components/AppProductFilter.vue'
 import AppConfirmationModal from '~/components/AppConfirmationModal.vue'
@@ -305,8 +311,28 @@ definePageMeta({
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
-const { deleteItem, getAll } = useCrud()
+const { deleteItem, getAll, getHeaders } = useCrud()
+const runtimeConfig = useRuntimeConfig()
+const duplicatingId = ref(null)
 const products = ref([])
+
+const duplicateProduct = async (id) => {
+  if (duplicatingId.value) return
+  duplicatingId.value = id
+  try {
+    const res = await $fetch(`/vendor/products/${id}/duplicate`, {
+      baseURL: runtimeConfig.public.apiBase,
+      method: 'POST',
+      headers: getHeaders(),
+    })
+    toast.success(res?.message || 'Product duplicated')
+    await fetchProducts()
+  } catch (e) {
+    toast.error(e?.data?.message || e?.message || 'Failed to duplicate product')
+  } finally {
+    duplicatingId.value = null
+  }
+}
 const categories = ref([])
 const brands = ref([])
 const searchQuery = ref('')

@@ -140,7 +140,7 @@
               <td class="px-6 py-4">
                 <div class="flex items-center">
                   <div class="h-11 w-11 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 overflow-hidden flex-shrink-0 shadow-sm">
-                    <img v-if="product.image" :src="product.image" class="h-full w-full object-cover">
+                    <img v-if="product.image" :src="storageUrl(product.image)" class="h-full w-full object-cover" @error="$event.target.style.display = 'none'">
                     <div v-else class="h-full w-full flex items-center justify-center text-slate-400 bg-slate-50 dark:bg-slate-900">
                       <Image class="w-4 h-4 opacity-40" />
                     </div>
@@ -384,7 +384,12 @@
 
             <!-- Variants Table (Matrix) -->
             <div v-if="generatedVariants.length > 0" class="mt-8 border-t border-gray-100 dark:border-slate-800 pt-8 overflow-hidden">
-                <h4 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest mb-6">Generated Variants Matrix ({{ generatedVariants.length }})</h4>
+                <div class="flex items-center justify-between mb-6 gap-3 flex-wrap">
+                    <h4 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest">Generated Variants Matrix ({{ generatedVariants.length }})</h4>
+                    <button type="button" @click="generateVariantSkus" class="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/40 text-xs font-bold transition-all">
+                        <RefreshCw class="w-3.5 h-3.5" /> Generate SKUs
+                    </button>
+                </div>
                 <p v-if="fieldError('variants')" class="mb-4 text-xs text-red-500">{{ fieldError('variants') }}</p>
                 <div class="overflow-x-auto rounded-xl border border-gray-100 dark:border-slate-800">
                     <table class="w-full text-left border-collapse">
@@ -396,6 +401,7 @@
                                 <th class="p-4 text-[10px] font-black uppercase text-gray-400 tracking-tighter">Stock</th>
                                 <th class="p-4 text-[10px] font-black uppercase text-gray-400 tracking-tighter text-center">Image</th>
                                 <th class="p-4 text-[10px] font-black uppercase text-gray-400 tracking-tighter text-center">Status</th>
+                                <th class="p-4 text-[10px] font-black uppercase text-gray-400 tracking-tighter text-center">Remove</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-50 dark:divide-slate-800">
@@ -441,6 +447,13 @@
                                             variant.is_active ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-red-50 text-red-600 border border-red-100'
                                         ]">
                                             {{ variant.is_active ? 'Active' : 'Hidden' }}
+                                        </button>
+                                    </div>
+                                </td>
+                                <td class="p-4">
+                                    <div class="flex justify-center">
+                                        <button type="button" @click="removeVariant(vIdx)" title="Remove this variant" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all">
+                                            <Trash2 class="w-4 h-4" />
                                         </button>
                                     </div>
                                 </td>
@@ -933,6 +946,37 @@ const removeAttributeLine = (index) => {
     generateCombinations()
 }
 
+// Combos the user explicitly removed. Kept out of the matrix even when it is
+// regenerated, and excluded from the submit payload so the backend deletes them.
+const removedVariantKeys = ref([])
+
+// (Re)generate a SKU for every variant from the base product SKU + its attribute
+// values, e.g. base "FCB-2627" + Home/M -> "FCB-2627-HOME-M".
+const generateVariantSkus = () => {
+    const base = (form.value.sku || '').trim()
+    if (!base) {
+        toast.error('Set the product SKU first, then generate variant SKUs.')
+        return
+    }
+    generatedVariants.value.forEach(variant => {
+        const suffix = variant.attributes
+            .map(a => String(a.value || '').trim().toUpperCase().replace(/\s+/g, '-'))
+            .filter(Boolean)
+            .join('-')
+        variant.sku = suffix ? `${base}-${suffix}` : base
+    })
+    toast.success('Variant SKUs generated')
+}
+
+const removeVariant = (vIdx) => {
+    const variant = generatedVariants.value[vIdx]
+    if (!variant) return
+    if (variant._key && !removedVariantKeys.value.includes(variant._key)) {
+        removedVariantKeys.value.push(variant._key)
+    }
+    generatedVariants.value.splice(vIdx, 1)
+}
+
 const generateCombinations = () => {
     // Get valid sets of values
     const validGroupings = selectedAttributesConfig.value
@@ -966,13 +1010,15 @@ const generateCombinations = () => {
         return temp;
     }, [[]]);
 
-    // Map to variants keeping old data if possible
-    generatedVariants.value = combinations.map(combo => {
+    // Map to variants keeping old data if possible; skip user-removed combos.
+    generatedVariants.value = combinations
+      .filter(combo => !removedVariantKeys.value.includes(combo.map(c => c.id).sort().join('-')))
+      .map(combo => {
         const comboKey = combo.map(c => c.id).sort().join('-');
-        
+
         // Match by comboKey (attributes)
         const existing = generatedVariants.value.find(v => v._key === comboKey);
-        
+
         return {
             _key: comboKey,
             id: existing ? existing.id : null,
@@ -1281,7 +1327,7 @@ const fetchData = async () => {
             }
 
             // Previews
-            if (productRes.image) thumbnailPreview.value = productRes.image
+            if (productRes.image) thumbnailPreview.value = storageUrl(productRes.image)
             
             // Hydrate Variants Configuration
             if (productRes.variants && productRes.variants.length > 0) {
@@ -1321,7 +1367,7 @@ const fetchData = async () => {
                         price: v.price,
                         stock_qty: v.stock_qty,
                         imagePath: v.image,
-                        imagePreview: v.image,
+                        imagePreview: storageUrl(v.image),
                         is_active: !!v.is_active
                     };
                 });
@@ -1337,7 +1383,7 @@ const fetchData = async () => {
                  id: Math.random().toString(36).substr(2, 9),
                  source: 'existing',
                  value: url,
-                 preview: url
+                 preview: storageUrl(url)
               }))
            }
         }

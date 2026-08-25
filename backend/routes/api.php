@@ -171,6 +171,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('products', App\Http\Controllers\Vendor\ProductController::class);
         Route::apiResource('product-attributes', \App\Http\Controllers\AttributeController::class);
         Route::get('products/{product}/variants', [App\Http\Controllers\Vendor\ProductController::class, 'variants']);
+        Route::post('products/{product}/duplicate', [App\Http\Controllers\Vendor\ProductController::class, 'duplicate']);
         Route::get('products/{slug}', [App\Http\Controllers\Vendor\ProductController::class, 'slugByStatusProducts']);
 
         // Customers Routes
